@@ -2,6 +2,15 @@ module GeometricFlux
 using Requires
 
 include("mesh.jl")
+include("layers.jl")
+
+export
+
+    # layers
+    # MessagePassing,
+    GCNConv,
+
+    ;
 
 function __init__()
     @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" begin
