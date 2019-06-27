@@ -1,15 +1,24 @@
 module GeometricFlux
 using Requires
-
-include("layers.jl")
+using SparseArrays
+using LinearAlgebra: I, issymmetric, diagm
 
 export
 
     # layers
     # MessagePassing,
     GCNConv,
+    # ChebConv,
+    # GraphConv,
+    # GATConv,
 
+    # linalg
+    degree_matrix,
+    laplacian_matrix
     ;
+
+include("layers.jl")
+include("linalg.jl")
 
 function __init__()
     @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" begin
