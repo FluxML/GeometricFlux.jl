@@ -2,11 +2,15 @@
 
 ## Roadmap
 
+Construct layers from adjacency matrix or graph (maybe extend to other structures).
+Input features (including vertex, edge or graph features) of neural network may not need a structure or type.
+Labels or features for output of classification or regression are part of training data, they may not need a specific structure or type, too.
+
 * Start
     * [ ] Establish a simple example of GNN
 * Integration of JuliaGraphs
     * [ ] Construct layer from SimpleGraph
-    * [ ] Construct layer from WeightedSimpleGraph
+    * [ ] Construct layer from SimpleWeightedGraph
     * [ ] Construct layer from Matrix
     * Support vertex/edge/graph features from MetaGraphs
 * Layers
