@@ -14,7 +14,8 @@ export
 
     # linalg
     degree_matrix,
-    laplacian_matrix
+    laplacian_matrix,
+    normalized_laplacian
 
 include("layers.jl")
 include("linalg.jl")

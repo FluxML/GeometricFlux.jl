@@ -11,12 +11,17 @@
            -1 2 -1 0;
            0 -1 2 -1;
            -1 0 -1 2]
+    norm_lap = [1. -.5 0. -.5;
+               -.5 1. -.5 0.;
+               0. -.5 1. -.5;
+               -.5 0. -.5 1.]
 
     for T in [Int8, Float64]
         @test degree_matrix(adj, T, dir=:out) == T.(deg)
         @test degree_matrix(adj, T, dir=:out) == degree_matrix(adj, T, dir=:in)
         @test laplacian_matrix(adj, T) == T.(lap)
     end
+    @test normalized_laplacian(adj, Float64) ≈ norm_lap
 
     adj = [0 2 0 3;
            0 0 4 0;
