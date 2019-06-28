@@ -1,9 +1,13 @@
 using GeometricFlux
 using Test
 
+tests = [
+    "layers",
+    "linalg"
+]
+
 @testset "GeometricFlux" begin
-
-# include("layers.jl")
-include("linalg.jl")
-
+    for t in tests
+        include("$(t).jl")
+    end
 end

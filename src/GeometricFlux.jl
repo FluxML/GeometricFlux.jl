@@ -1,6 +1,7 @@
 module GeometricFlux
 using Requires
-using SparseArrays
+using Flux: param
+using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm
 
 export
