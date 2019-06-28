@@ -1,5 +1,13 @@
 # GeometricFlux.jl
 
+[![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=master)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
+
+## Development
+
+[![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=develop)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
+
+This repository is in early development.
+
 ## Roadmap
 
 Construct layers from adjacency matrix or graph (maybe extend to other structures).
