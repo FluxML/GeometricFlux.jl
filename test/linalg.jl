@@ -23,6 +23,7 @@
     end
     @test normalized_laplacian(adj, Float64) ≈ norm_lap
     @test eltype(normalized_laplacian(adj, Float32)) == Float32
+    @test neighbors(adj) == [[2,4], [1,3], [2,4], [1,3]]
 
     adj = [0 2 0 3;
            0 0 4 0;
@@ -50,4 +51,5 @@
         @test laplacian_matrix(adj, T, dir=:in) == T.(deg_in .- adj)
         @test laplacian_matrix(adj, T, dir=:both) == T.(deg_both .- adj)
     end
+    @test neighbors(adj) == [[2,3,4], [1,3], [1,2,4], [1,3]]
 end
