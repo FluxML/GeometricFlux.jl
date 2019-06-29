@@ -2,16 +2,18 @@ module GeometricFlux
 using Requires
 using Flux: param
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm
+using LinearAlgebra: I, issymmetric, diagm, eigmax
 
 export
 
     # layers
     # MessagePassing,
     GCNConv,
-    # ChebConv,
+    ChebConv,
     # GraphConv,
     # GATConv,
+    message,
+    update,
 
     # linalg
     degree_matrix,

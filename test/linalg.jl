@@ -1,4 +1,4 @@
-@testset "Linear algebra" begin
+@testset "Test Linear Algebra" begin
     adj = [0 1 0 1;
            1 0 1 0;
            0 1 0 1;
