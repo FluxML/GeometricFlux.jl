@@ -3,12 +3,14 @@
 [![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=master)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
 [![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
 
+GeometricFlux is a geometric deep learning library for [Flux](https://github.com/FluxML/Flux.jl). This library aims to be compatible with packages from [JuliaGraphs](https://github.com/JuliaGraphs) ecosystem and have support of CUDA GPU acceleration with [CuArrays](https://github.com/JuliaGPU/CuArrays.jl).
+
 ## Development
 
 [![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=develop)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
 [![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/develop/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
 
-This repository is in early development.
+This repository is in early development. Suggestions and PRs are welcome.
 
 ## Roadmap
 
@@ -26,9 +28,9 @@ Labels or features for output of classification or regression are part of traini
 * Layers
     * Convolution layers
         * [ ] MessagePassing
-        * [ ] GCNConv
+        * [x] GCNConv
         * [ ] GraphConv
-        * [ ] ChebConv
+        * [x] ChebConv
         * [ ] GatedGraphConv
         * [ ] GATConv
         * [ ] EdgeConv
