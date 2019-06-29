@@ -52,3 +52,31 @@ function (c::ChebConv)(X::AbstractMatrix)
     end
     return hcat(Y...)
 end
+
+
+
+struct GraphConv{V,T,F}
+    edgelist::V
+    weight::AbstractMatrix{T}
+    aggr::F
+end
+
+function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
+                   ch::Pair{<:Integer,<:Integer}, aggr=+;
+                   init = glorot_uniform)
+    GraphConv(el, param(init(ch[1], ch[2])), aggr)
+end
+
+function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=+;
+                   init = glorot_uniform)
+    GraphConv(neighbors(adj), ch, aggr)
+end
+
+function (g::GraphConv)(X::AbstractMatrix)
+    X_ = copy(X)'
+    for i = 1:size(X, 2)
+        ne = g.edgelist[i]
+        X_[:,i] += sum(view(X', :, ne), dims=2)
+    end
+    X_' * g.weight
+end

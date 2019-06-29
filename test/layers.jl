@@ -35,3 +35,11 @@ end
     Y = cc(X)
     @test size(Y) == (N, out_channel)
 end
+
+@testset "Test GraphConv layer" begin
+    gc = GraphConv(adj, in_channel=>out_channel)
+    X = rand(N, in_channel)
+    Y = gc(X)
+    @test gc.edgelist == [[2,4], [1,3], [2,4], [1,3]]
+    @test size(Y) == (N, out_channel)
+end

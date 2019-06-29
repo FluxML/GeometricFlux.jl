@@ -11,7 +11,7 @@ export
     # MessagePassing,
     GCNConv,
     ChebConv,
-    # GraphConv,
+    GraphConv,
     # GATConv,
     message,
     update,
