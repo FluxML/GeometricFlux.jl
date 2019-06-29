@@ -1,22 +1,26 @@
 module GeometricFlux
 using Requires
-using Flux: param
+
+using Flux: param, glorot_uniform
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm
+using LinearAlgebra: I, issymmetric, diagm, eigmax
 
 export
 
     # layers
     # MessagePassing,
     GCNConv,
-    # ChebConv,
-    # GraphConv,
+    ChebConv,
+    GraphConv,
     # GATConv,
+    message,
+    update,
 
     # linalg
     degree_matrix,
     laplacian_matrix,
-    normalized_laplacian
+    normalized_laplacian,
+    neighbors
 
 include("layers.jl")
 include("linalg.jl")

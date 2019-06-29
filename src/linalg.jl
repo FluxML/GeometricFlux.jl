@@ -26,10 +26,26 @@ function inv_sqrt_degree_matrix(adj::AbstractMatrix, T::DataType=eltype(adj); di
 end
 
 function laplacian_matrix(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
-    degree_matrix(adj, T, dir=dir) - adj
+    degree_matrix(adj, T, dir=dir) - T.(adj)
 end
 
 function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
-    I - inv_sqrtD * adj * inv_sqrtD
+    I - inv_sqrtD * T.(adj) * inv_sqrtD
+end
+
+function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
+    n = size(adj,1)
+    @assert n == size(adj,2) "adjacency matrix is not a square matrix."
+    A = (adj .!= zero(T))
+    if !issymmetric(adj)
+        A = A .| A'
+    end
+    ne = Vector{Int}[]
+    indecies = collect(1:n)
+    for i = 1:n
+        n = indecies[view(A, :, i)]
+        push!(ne, n)
+    end
+    return ne
 end
