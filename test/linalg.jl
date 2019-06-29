@@ -22,6 +22,7 @@
         @test laplacian_matrix(adj, T) == T.(lap)
     end
     @test normalized_laplacian(adj, Float64) ≈ norm_lap
+    @test eltype(normalized_laplacian(adj, Float32)) == Float32
 
     adj = [0 2 0 3;
            0 0 4 0;

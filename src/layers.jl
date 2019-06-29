@@ -4,9 +4,9 @@ struct GCNConv{T,F}
     σ::F
 end
 
-function GCNConv(adj::AbstractMatrix{T}, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init = randn) where {T}
-    GCNConv(param(init(ch[1], ch[2])), normalized_laplacian(adj+I, Float64), σ)
+function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
+                 init = glorot_uniform, T::DataType=Float32)
+    GCNConv(param(init(ch[1], ch[2])), normalized_laplacian(adj+I, T), σ)
 end
 
 (c::GCNConv)(X::AbstractMatrix) = c.σ(c.norm * X * c.weight)
@@ -21,9 +21,9 @@ struct ChebConv{T}
     out_channel::Integer
 end
 
-function ChebConv(adj::AbstractMatrix{T}, ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = randn) where {T}
-    L̃ = 2. / eigmax(adj) * normalized_laplacian(adj) - I
+function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
+                  init = glorot_uniform, T::DataType=Float32)
+    L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
     ChebConv(param(init(k, ch[1], ch[2])), L̃, k, ch[1], ch[2])
 end
 
