@@ -20,10 +20,18 @@ export
     degree_matrix,
     laplacian_matrix,
     normalized_laplacian,
-    neighbors
+    neighbors,
+
+    # scatter
+    scatter_add!,
+    scatter_sub!,
+    scatter_max!,
+    scatter_min!
 
 include("layers.jl")
 include("linalg.jl")
+include("scatter.jl")
+
 
 function __init__()
     @require LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d" include("graph/simplegraphs.jl")
