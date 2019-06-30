@@ -20,10 +20,18 @@ export
     degree_matrix,
     laplacian_matrix,
     normalized_laplacian,
-    neighbors
+    neighbors,
+
+    # scatter
+    scatter_add!,
+    scatter_sub!,
+    scatter_max!,
+    scatter_min!
 
 include("layers.jl")
 include("linalg.jl")
+include("scatter.jl")
+
 
 function __init__()
     @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" begin
