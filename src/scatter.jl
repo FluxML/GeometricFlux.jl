@@ -69,24 +69,28 @@ for typ ∈ atomictypes
     end
 end
 
-const opnames = Dict{Symbol, Symbol}(:+ => :add, :- => :sub)
-for op in [:+, :-, :max, :min]
+const opnames = Dict{Symbol, Symbol}(:+ => :add, :- => :sub, :* => :mul, :/ => :div)
+for op in [:+, :-, :max, :min, :*, :/]
     opname = get(opnames, op, op)
-    @eval function $(Symbol("atomic_", opname, "!"))(var::Ptr{T}, val::T) where T<:FloatTypes
-        IT = inttype(T)
-        old = unsafe_load(var)
-        while true
-            new = $op(old, val)
-            cmp = old
-            old = atomic_cas!(var, cmp, new)
-            reinterpret(IT, old) == reinterpret(IT, cmp) && return new
-            # Temporary solution before we have gc transition support in codegen.
-            ccall(:jl_gc_safepoint, Cvoid, ())
+    for typ ∈ atomictypes
+        typ == Bool && continue
+        !(op == :/ || op == :*) && typ <: Integer && continue
+        @eval function $(Symbol("atomic_", opname, "!"))(var::Ptr{T}, val::T) where T<: $typ
+            IT = inttype(T)
+            old = unsafe_load(var)
+            while true
+                new = $op(old, val)
+                cmp = old
+                old = atomic_cas!(var, cmp, new)
+                reinterpret(IT, old) == reinterpret(IT, cmp) && return new
+                # Temporary solution before we have gc transition support in codegen.
+                ccall(:jl_gc_safepoint, Cvoid, ())
+            end
         end
     end
 end
 
-for op = [:add, :sub, :max, :min]
+for op = [:add, :sub, :max, :min, :mul, :div]
     @eval function $(Symbol("scatter_", op, "!"))(ys::Matrix{T}, us::Array{T}, xs::Array{Int}) where T
         l = length(xs)
         s = size(ys, 1)

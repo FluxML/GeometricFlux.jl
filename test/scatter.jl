@@ -39,3 +39,20 @@ end
         @test scatter_min!(T.(copy(ys)), T.(us), xs) == T.(ys_)
     end
 end
+
+@testset "Test Scatter Mul" begin
+    ys_ = [3 3 4 4 5;
+           5 5 6 6 7]
+    for T = types
+        @test scatter_max!(T.(copy(ys)), T.(us), xs) == T.(ys_)
+    end
+end
+
+@testset "Test Scatter Div" begin
+    us_div = us .* 2
+    ys_ = [0.75 0.75 0.25 1. 1.25;
+           1.25 1.25 0.375 1.5 1.75]
+    for T = [Float16, Float32, Float64]
+        @test scatter_div!(T.(copy(ys)), T.(us_div), xs) == T.(ys_)
+    end
+end
