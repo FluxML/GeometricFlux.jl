@@ -23,3 +23,19 @@ end
         @test scatter_sub!(T.(copy(ys)), T.(us), xs) == T.(ys_)
     end
 end
+
+@testset "Test Scatter Max" begin
+    ys_ = [3 3 4 4 5;
+           5 5 6 6 7]
+    for T = types
+        @test scatter_max!(T.(copy(ys)), T.(us), xs) == T.(ys_)
+    end
+end
+
+@testset "Test Scatter Min" begin
+    ys_ = [1 1 1 1 1;
+           1 1 1 1 1]
+    for T = types
+        @test scatter_min!(T.(copy(ys)), T.(us), xs) == T.(ys_)
+    end
+end
