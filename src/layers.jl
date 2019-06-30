@@ -35,7 +35,7 @@ function (c::ChebConv)(X::AbstractMatrix)
     fout = c.out_channel
 
     T = eltype(X)
-    Y = Vector{T}()
+    Y = Vector{TrackedArray}()
     Z = Array{T}(undef, n, c.k, fin)
     for j = 1:fout
         Z[:,1,:] = X

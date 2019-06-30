@@ -1,7 +1,7 @@
 module GeometricFlux
 using Requires
 
-using Flux: param, glorot_uniform
+using Flux: param, glorot_uniform, TrackedArray
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
 
