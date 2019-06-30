@@ -26,7 +26,9 @@ export
     scatter_add!,
     scatter_sub!,
     scatter_max!,
-    scatter_min!
+    scatter_min!,
+    scatter_mul!,
+    scatter_div!
 
 include("layers.jl")
 include("linalg.jl")
