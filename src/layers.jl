@@ -69,7 +69,7 @@ end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=+;
                    init = glorot_uniform)
-    GraphConv(neighbors(adj), ch, aggr)
+    GraphConv(neighbors(adj), param(init(ch[1], ch[2])), aggr)
 end
 
 function (g::GraphConv)(X::AbstractMatrix)
