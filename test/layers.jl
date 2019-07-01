@@ -9,6 +9,23 @@ const adj = [0. 1. 0. 1.;
              1. 0. 1. 0.]
 
 
+struct NewLayer <: MessagePassing
+    weight
+    NewLayer(m, n) = new(randn(m,n))
+end
+
+(l::NewLayer)(X) = propagate(l, neighbors(adj), X, zeros(10, N, N), aggr=+)
+message(n::NewLayer, xi, xj, eij) = n.weight' * xj
+update(::NewLayer, xi, mi) = mi
+
+@testset "Test MessagePassing layer" begin
+    l = NewLayer(in_channel, out_channel)
+    X = rand(N, in_channel)
+    Y = l(X)
+    @test size(Y) == (N, out_channel)
+end
+
+
 @testset "Test GCNConv layer" begin
     gc = GCNConv(adj, in_channel=>out_channel)
     X = rand(N, in_channel)

@@ -19,14 +19,14 @@ import Base.Sys: ARCH, WORD_SIZE
 export
 
     # layers
-    # MessagePassing,
+    MessagePassing,
     GCNConv,
     ChebConv,
     GraphConv,
     GATConv,
-    # message,
-    # update,
-    # propagate,
+    message,
+    update,
+    propagate,
 
     # linalg
     degree_matrix,

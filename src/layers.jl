@@ -1,3 +1,27 @@
+# const aggr_func = Dict(:+ => scatter_add!, :max => scatter_max!)
+
+abstract type MessagePassing end
+message(m::T, xi, xj, eij) where {T<:MessagePassing} = error("not implement")
+update(m::T, xi, mi) where {T<:MessagePassing} = error("not implement")
+
+function propagate(mp::T, neighbors, X, E; aggr=+) where {T<:MessagePassing}
+    # aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
+    # scatter_func = aggr_func[aggr]
+    Y = Vector{AbstractArray}()
+    for i = 1:length(neighbors)
+        xi = view(X', :, i)
+        ne = view(neighbors, i)
+        xjs = map(j -> view(X', :, j), ne)
+        eijs = map(j -> view(E, :, i, j), ne)
+        m = map((xj, eij) -> message(mp, xi, xj, eij), xjs, eijs)[]
+        mi = sum(m, dims=2)  # BUG: aggr(m...)
+        push!(Y, update(mp, xi, mi))
+    end
+    return hcat(Y...)'
+end
+
+
+
 struct GCNConv{T,F}
     weight::AbstractMatrix{T}
     norm::AbstractMatrix{T}
