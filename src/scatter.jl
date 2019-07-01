@@ -1,16 +1,5 @@
 # from https://github.com/chengchingwen/Transformers.jl/tree/master/src/fix
 
-using Core.Intrinsics: llvmcall
-using Base.Threads
-
-import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
-       atomic_cas!,
-       atomic_xchg!,
-       atomic_add!, atomic_sub!,
-       atomic_and!, atomic_nand!, atomic_or!, atomic_xor!,
-       atomic_max!, atomic_min!
-
-import Base.Sys: ARCH, WORD_SIZE
 
 for typ ∈ atomictypes
     lt = llvmtypes[typ]

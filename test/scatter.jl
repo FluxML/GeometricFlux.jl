@@ -5,7 +5,7 @@ const xs = [1 2 3 4;
             4 2 1 3;
             3 5 5 3]
 const types = [UInt8, UInt16, UInt32, UInt64,
-               Int8, Int16, Int32, Int64,
+               Int8, Int16, Int32, Int64, Int128,
                Float16, Float32, Float64]
 
 @testset "Test Scatter Add" begin

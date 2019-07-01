@@ -1,9 +1,20 @@
 module GeometricFlux
 using Requires
 
-using Flux: param, glorot_uniform, TrackedArray
+using Core.Intrinsics: llvmcall
+using Base.Threads
+using Flux: param, glorot_uniform, TrackedArray, leakyrelu
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
+
+import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
+       atomic_cas!,
+       atomic_xchg!,
+       atomic_add!, atomic_sub!,
+       atomic_and!, atomic_nand!, atomic_or!, atomic_xor!,
+       atomic_max!, atomic_min!
+
+import Base.Sys: ARCH, WORD_SIZE
 
 export
 
@@ -13,8 +24,9 @@ export
     ChebConv,
     GraphConv,
     # GATConv,
-    message,
-    update,
+    # message,
+    # update,
+    # propagate,
 
     # linalg
     degree_matrix,
@@ -30,9 +42,9 @@ export
     scatter_mul!,
     scatter_div!
 
+include("scatter.jl")
 include("layers.jl")
 include("linalg.jl")
-include("scatter.jl")
 
 
 function __init__()

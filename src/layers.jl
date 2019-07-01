@@ -30,13 +30,13 @@ end
 function (c::ChebConv)(X::AbstractMatrix)
     fin = c.in_channel
     @assert size(X, 2) == fin "Input feature size must match input channel size."
-    n = size(c.L̃, 1)
-    @assert size(X, 1) == n "Input vertex number must match Laplacian matrix size."
+    N = size(c.L̃, 1)
+    @assert size(X, 1) == N "Input vertex number must match Laplacian matrix size."
     fout = c.out_channel
 
     T = eltype(X)
     Y = Vector{TrackedArray}()
-    Z = Array{T}(undef, n, c.k, fin)
+    Z = Array{T}(undef, N, c.k, fin)
     for j = 1:fout
         Z[:,1,:] = X
         Z[:,2,:] = c.L̃ * X
@@ -73,8 +73,9 @@ function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=+;
 end
 
 function (g::GraphConv)(X::AbstractMatrix)
+    N = size(X, 1)
     X_ = copy(X)'
-    for i = 1:size(X, 2)
+    for i = 1:N
         ne = g.edgelist[i]
         X_[:,i] += sum(view(X', :, ne), dims=2)
     end
