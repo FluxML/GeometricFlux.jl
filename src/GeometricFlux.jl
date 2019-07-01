@@ -23,7 +23,7 @@ export
     GCNConv,
     ChebConv,
     GraphConv,
-    # GATConv,
+    GATConv,
     # message,
     # update,
     # propagate,

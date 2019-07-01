@@ -81,3 +81,38 @@ function (g::GraphConv)(X::AbstractMatrix)
     end
     X_' * g.weight
 end
+
+
+
+struct GATConv{V,T}
+    edgelist::V
+    weight::AbstractMatrix{T}
+    a::AbstractArray
+    negative_slope::Real
+end
+
+function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
+                 concat=true, negative_slope=0.2, init=glorot_uniform)
+    GATConv(neighbors(adj), param(init(ch[1], ch[2])), param(init(2 * ch[2])), negative_slope)
+end
+
+function (g::GATConv)(X::AbstractMatrix)
+    N = size(X, 1)
+    X_ = (X * g.weight)'
+    Y = Vector{TrackedArray}()
+    for i = 1:N
+        ne = g.edgelist[i]
+        i_ne = vcat([i], ne)
+        α = [leakyrelu(g.a' * vcat(X_[:,i], X_[:,j]), g.negative_slope) for j in i_ne]
+        α = asoftmax(α)
+        y = sum(α[i] * X_[:,i_ne[i]] for i = 1:length(α))
+        push!(Y, y)
+    end
+    return hcat(Y...)'
+end
+
+function asoftmax(xs)
+    xs = [exp.(x) for x in xs]
+    s = sum(xs)
+    return [x ./ s for x in xs]
+end
