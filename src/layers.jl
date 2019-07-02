@@ -24,21 +24,25 @@ end
 
 struct GCNConv{T,F}
     weight::AbstractMatrix{T}
+    bias::AbstractMatrix{T}
     norm::AbstractMatrix{T}
     σ::F
 end
 
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init = glorot_uniform, T::DataType=Float32)
-    GCNConv(param(init(ch[1], ch[2])), normalized_laplacian(adj+I, T), σ)
+                 init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+    N = size(adj, 1)
+    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    GCNConv(param(init(ch[1], ch[2])), b, normalized_laplacian(adj+I, T), σ)
 end
 
-(c::GCNConv)(X::AbstractMatrix) = c.σ(c.norm * X * c.weight)
+(c::GCNConv)(X::AbstractMatrix) = c.σ(c.norm * X * c.weight + c.bias)
 
 
 
 struct ChebConv{T}
     weight::AbstractArray{T,3}
+    bias::AbstractMatrix{T}
     L̃::AbstractMatrix{T}
     k::Integer
     in_channel::Integer
@@ -46,9 +50,11 @@ struct ChebConv{T}
 end
 
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32)
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+    N = size(adj, 1)
+    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
     L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
-    ChebConv(param(init(k, ch[1], ch[2])), L̃, k, ch[1], ch[2])
+    ChebConv(param(init(k, ch[1], ch[2])), b, L̃, k, ch[1], ch[2])
 end
 
 function (c::ChebConv)(X::AbstractMatrix)
@@ -59,7 +65,7 @@ function (c::ChebConv)(X::AbstractMatrix)
     fout = c.out_channel
 
     T = eltype(X)
-    Y = Vector{TrackedArray}()
+    Y = Array{TrackedReal}(undef, N, fout)
     Z = Array{T}(undef, N, c.k, fin)
     for j = 1:fout
         Z[:,1,:] = X
@@ -72,9 +78,10 @@ function (c::ChebConv)(X::AbstractMatrix)
         for i = 2:fin
             y += view(Z, :, :, i) * view(c.weight, :, i, j)
         end
-        push!(Y, y)  # can be optimized
+        Y[:,j] = y
     end
-    return hcat(Y...)
+    Y += c.bias
+    return Y
 end
 
 
@@ -82,18 +89,23 @@ end
 struct GraphConv{V,T,F}
     edgelist::V
     weight::AbstractMatrix{T}
+    bias::AbstractMatrix{T}
     aggr::F
 end
 
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=+;
-                   init = glorot_uniform)
-    GraphConv(el, param(init(ch[1], ch[2])), aggr)
+                   init = glorot_uniform, bias::Bool=true)
+    N = size(el, 1)
+    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    GraphConv(el, param(init(ch[1], ch[2])), b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=+;
-                   init = glorot_uniform)
-    GraphConv(neighbors(adj), param(init(ch[1], ch[2])), aggr)
+                   init = glorot_uniform, bias::Bool=true)
+    N = size(adj, 1)
+    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    GraphConv(neighbors(adj), param(init(ch[1], ch[2])), b, aggr)
 end
 
 function (g::GraphConv)(X::AbstractMatrix)
@@ -103,7 +115,7 @@ function (g::GraphConv)(X::AbstractMatrix)
         ne = g.edgelist[i]
         X_[:,i] += sum(view(X', :, ne), dims=2)
     end
-    X_' * g.weight
+    X_' * g.weight + g.bias
 end
 
 
@@ -111,28 +123,33 @@ end
 struct GATConv{V,T}
     edgelist::V
     weight::AbstractMatrix{T}
+    bias::AbstractMatrix{T}
     a::AbstractArray
     negative_slope::Real
 end
 
 function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
-                 concat=true, negative_slope=0.2, init=glorot_uniform)
-    GATConv(neighbors(adj), param(init(ch[1], ch[2])), param(init(2 * ch[2])), negative_slope)
+                 concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
+    N = size(adj, 1)
+    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    GATConv(neighbors(adj), param(init(ch[1], ch[2])), b, param(init(2 * ch[2])), negative_slope)
 end
 
 function (g::GATConv)(X::AbstractMatrix)
     N = size(X, 1)
+    fout = size(g.weight, 2)
     X_ = (X * g.weight)'
-    Y = Vector{TrackedArray}()
+    Y = Array{TrackedReal}(undef, fout, N)
     for i = 1:N
         ne = g.edgelist[i]
         i_ne = vcat([i], ne)
         α = [leakyrelu(g.a' * vcat(X_[:,i], X_[:,j]), g.negative_slope) for j in i_ne]
         α = asoftmax(α)
         y = sum(α[i] * X_[:,i_ne[i]] for i = 1:length(α))
-        push!(Y, y)
+        Y[:,i] = y
     end
-    return hcat(Y...)'
+    Y = Y' + g.bias
+    return Y
 end
 
 function asoftmax(xs)
