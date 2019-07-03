@@ -26,6 +26,7 @@ export
     ChebConv,
     GraphConv,
     GATConv,
+    EdgeConv,
     message,
     update,
     propagate,

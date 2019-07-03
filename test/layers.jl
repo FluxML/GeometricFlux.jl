@@ -1,3 +1,4 @@
+using Flux: Dense
 import GeometricFlux: message, update, propagate
 
 const in_channel = 3
@@ -55,5 +56,13 @@ end
     X = rand(N, in_channel)
     Y = gat(X)
     @test gat.edgelist == [[2,4], [1,3], [2,4], [1,3]]
+    @test size(Y) == (N, out_channel)
+end
+
+@testset "Test EdgeConv layer" begin
+    ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
+    X = rand(N, in_channel)
+    Y = ec(X)
+    @test ec.edgelist == [[2,4], [1,3], [2,4], [1,3]]
     @test size(Y) == (N, out_channel)
 end

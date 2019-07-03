@@ -158,3 +158,28 @@ function asoftmax(xs)
     s = sum(xs)
     return [x ./ s for x in xs]
 end
+
+
+struct EdgeConv{V,F}
+    edgelist::V
+    nn
+    aggr::F
+end
+
+function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
+    aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
+    EdgeConv(neighbors(adj), nn, aggr)
+end
+
+function (e::EdgeConv)(X::AbstractMatrix)
+    X_ = X'
+    N = size(e.edgelist, 1)
+    Y = Vector{AbstractArray}()
+    for i = 1:N
+        ne = e.edgelist[i]
+        x_i = X_[:,i]
+        y = [e.nn(vcat(x_i, X_[:,j] - x_i)) for j = ne]
+        push!(Y, aggr_func[e.aggr](y))
+    end
+    return hcat(Y...)'
+end
