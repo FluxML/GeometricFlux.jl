@@ -56,3 +56,11 @@ end
         @test scatter_div!(T.(copy(ys)), T.(us_div), xs) == T.(ys_)
     end
 end
+
+@testset "Test Scatter Mean" begin
+    ys_ = [4 4 5 5 6;
+           6 6 7 7 8]
+    for T = [Float16, Float32, Float64]
+        @test scatter_mean!(T.(copy(ys)), T.(us), xs) == T.(ys_)
+    end
+end

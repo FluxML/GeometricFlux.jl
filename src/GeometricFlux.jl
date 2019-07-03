@@ -43,7 +43,8 @@ export
     scatter_max!,
     scatter_min!,
     scatter_mul!,
-    scatter_div!
+    scatter_div!,
+    scatter_mean!
 
 include("scatter.jl")
 include("layers.jl")
