@@ -14,7 +14,7 @@ struct NewLayer <: MessagePassing
     NewLayer(m, n) = new(randn(m,n))
 end
 
-(l::NewLayer)(X) = propagate(l, neighbors(adj), X, zeros(10, N, N), aggr=+)
+(l::NewLayer)(X) = propagate(l, neighbors(adj), X, zeros(10, N, N), aggr=:+)
 message(n::NewLayer, xi, xj, eij) = n.weight' * xj
 update(::NewLayer, xi, mi) = mi
 

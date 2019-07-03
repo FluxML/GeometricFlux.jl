@@ -1,20 +1,21 @@
-# const aggr_func = Dict(:+ => scatter_add!, :max => scatter_max!)
+const aggr_func = Dict{Symbol,Function}(:+ => sum, :max => maximum, :mean => mean)
 
 abstract type MessagePassing end
 message(m::T, xi, xj, eij) where {T<:MessagePassing} = error("not implement")
 update(m::T, xi, mi) where {T<:MessagePassing} = error("not implement")
 
-function propagate(mp::T, neighbors, X, E; aggr=+) where {T<:MessagePassing}
-    # aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
-    # scatter_func = aggr_func[aggr]
+function propagate(mp::T, neighbors::AbstractVector, X, E;
+                   aggr::Symbol=:+) where {T<:MessagePassing}
+    aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
+    N = length(neighbors)
     Y = Vector{AbstractArray}()
-    for i = 1:length(neighbors)
+    for i = 1:N
         xi = view(X', :, i)
         ne = view(neighbors, i)
         xjs = map(j -> view(X', :, j), ne)
         eijs = map(j -> view(E, :, i, j), ne)
         m = map((xj, eij) -> message(mp, xi, xj, eij), xjs, eijs)[]
-        mi = sum(m, dims=2)  # BUG: aggr(m...)
+        mi = aggr_func[aggr](m, dims=2)
         push!(Y, update(mp, xi, mi))
     end
     return hcat(Y...)'
