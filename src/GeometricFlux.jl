@@ -51,6 +51,7 @@ export
 include("scatter.jl")
 include("layers.jl")
 include("linalg.jl")
+include("utils.jl")
 
 
 function __init__()
