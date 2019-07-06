@@ -37,6 +37,8 @@ function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identi
     GCNConv(param(init(ch[1], ch[2])), b, normalized_laplacian(adj+I, T), σ)
 end
 
+@treelike GCNConv
+
 (c::GCNConv)(X::AbstractMatrix) = c.σ(c.norm * X * c.weight + c.bias)
 
 
@@ -57,6 +59,8 @@ function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer
     L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
     ChebConv(param(init(k, ch[1], ch[2])), b, L̃, k, ch[1], ch[2])
 end
+
+@treelike ChebConv
 
 function (c::ChebConv)(X::AbstractMatrix)
     fin = c.in_channel
@@ -109,6 +113,8 @@ function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=+;
     GraphConv(neighbors(adj), param(init(ch[1], ch[2])), b, aggr)
 end
 
+@treelike GraphConv
+
 function (g::GraphConv)(X::AbstractMatrix)
     N = size(X, 1)
     X_ = copy(X)'
@@ -136,6 +142,8 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
     GATConv(neighbors(adj), param(init(ch[1], ch[2])), b, param(init(2 * ch[2])), negative_slope)
 end
 
+@treelike GATConv
+
 function (g::GATConv)(X::AbstractMatrix)
     N = size(X, 1)
     fout = size(g.weight, 2)
@@ -160,6 +168,7 @@ function asoftmax(xs)
 end
 
 
+
 struct EdgeConv{V,F}
     edgelist::V
     nn
@@ -168,8 +177,10 @@ end
 
 function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
     aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
-    EdgeConv(neighbors(adj), nn, aggr)
+    EdgeConv(neighbors(adj), nn, aggr_func[aggr])
 end
+
+@treelike EdgeConv
 
 function (e::EdgeConv)(X::AbstractMatrix)
     X_ = X'
@@ -179,7 +190,7 @@ function (e::EdgeConv)(X::AbstractMatrix)
         ne = e.edgelist[i]
         x_i = X_[:,i]
         y = [e.nn(vcat(x_i, X_[:,j] - x_i)) for j = ne]
-        push!(Y, aggr_func[e.aggr](y))
+        push!(Y, e.aggr(y))
     end
     return hcat(Y...)'
 end
