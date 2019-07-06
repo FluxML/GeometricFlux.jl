@@ -3,7 +3,8 @@ using Test
 
 tests = [
     "layers",
-    "linalg"
+    "linalg",
+    "scatter"
 ]
 
 @testset "GeometricFlux" begin
