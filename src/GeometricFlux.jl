@@ -46,17 +46,22 @@ export
     scatter_min!,
     scatter_mul!,
     scatter_div!,
-    scatter_mean!
+    scatter_mean!,
+
+    # graph/utils
+    fadj
 
 include("scatter.jl")
 include("layers.jl")
 include("linalg.jl")
-include("utils.jl")
 
 
 function __init__()
     @require LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d" include("graph/simplegraphs.jl")
-    @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" include("graph/weightedgraphs.jl")
+    @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
+        include("graph/weightedgraphs.jl")
+        include("graph/utils.jl")
+    end
     @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" include("metagraphs.jl")
 end
 

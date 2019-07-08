@@ -1,0 +1,19 @@
+using SimpleWeightedGraphs
+using SimpleWeightedGraphs: add_edge!
+
+
+@testset "Test fadj" begin
+    ug = SimpleWeightedGraph(6)
+    add_edge!(ug, 1, 3, 2); add_edge!(ug, 2, 3, 2); add_edge!(ug, 1, 6, 1)
+    add_edge!(ug, 2, 5, -2); add_edge!(ug, 3, 4, -2); add_edge!(ug, 3, 5, -1)
+    el_ug = Vector{Int64}[[3, 6], [3, 5], [1, 2, 4, 5], [3], [2, 3], [1]]
+
+    @test fadj(ug) == el_ug
+
+    dg = SimpleWeightedDiGraph(6)
+    add_edge!(dg, 1, 3, 2); add_edge!(dg, 2, 3, 2); add_edge!(dg, 1, 6, 1)
+    add_edge!(dg, 2, 5, -2); add_edge!(dg, 3, 4, -2); add_edge!(dg, 3, 5, -1)
+    el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
+
+    @test fadj(dg) == el_dg
+end
