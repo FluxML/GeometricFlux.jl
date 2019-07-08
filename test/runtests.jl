@@ -1,4 +1,6 @@
 using GeometricFlux
+using LightGraphs
+using SimpleWeightedGraphs
 using Test
 
 tests = [
