@@ -14,7 +14,7 @@ function ChebConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer},
     N = nv(g)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
     adj = adjacency_matrix(g)
-    L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
+    L̃ = T(2. / eigmax(Matrix(adj))) * normalized_laplacian(adj, T) - I
     ChebConv(param(init(k, ch[1], ch[2])), b, L̃, k, ch[1], ch[2])
 end
 
@@ -23,7 +23,7 @@ function GraphConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}
                    init = glorot_uniform, bias::Bool=true)
     N = nv(g)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(fadj(g), param(init(ch[1], ch[2])), b, aggr)
+    GraphConv(adjlist(g), param(init(ch[1], ch[2])), b, aggr)
 end
 
 
@@ -31,11 +31,11 @@ function GATConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}; 
                  concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
     N = nv(g)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GATConv(fadj(g), param(init(ch[1], ch[2])), b, param(init(2 * ch[2])), negative_slope)
+    GATConv(adjlist(g), param(init(ch[1], ch[2])), b, param(init(2 * ch[2])), negative_slope)
 end
 
 
 function EdgeConv(g::AbstractSimpleWeightedGraph, nn; aggr::Symbol=:max)
     aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
-    EdgeConv(fadj(g), nn, aggr_func[aggr])
+    EdgeConv(adjlist(g), nn, aggr_func[aggr])
 end

@@ -9,6 +9,8 @@ tests = [
     "layers",
     "linalg",
     "scatter",
+    "graph/simplegraphs",
+    "graph/weightedgraphs",
     "graph/utils"
 ]
 
