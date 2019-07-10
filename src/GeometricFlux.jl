@@ -49,7 +49,7 @@ export
     scatter_mean!,
 
     # graph/utils
-    fadj
+    adjlist
 
 include("scatter.jl")
 include("layers.jl")

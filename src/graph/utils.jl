@@ -1,10 +1,14 @@
+using LightGraphs: AbstractSimpleGraph
 using SimpleWeightedGraphs: AbstractSimpleWeightedGraph, outneighbors
 
-function fadj(g::AbstractSimpleWeightedGraph)
+function adjlist(g::AbstractSimpleGraph)
     N = nv(g)
-    el = Vector{Vector{Int}}(undef, N)
-    for i = 1:N
-        el[i] = outneighbors(g, i)
-    end
+    el = Vector{Int}[outneighbors(g, i) for i = 1:N]
+    return el
+end
+
+function adjlist(g::AbstractSimpleWeightedGraph)
+    N = nv(g)
+    el = Vector{Int}[outneighbors(g, i) for i = 1:N]
     return el
 end
