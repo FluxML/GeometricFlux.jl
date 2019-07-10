@@ -21,19 +21,19 @@ Labels or features for output of classification or regression are part of traini
 * Start
     * [ ] Establish a simple example of GNN
 * Integration of JuliaGraphs
-    * [ ] Construct layer from SimpleGraph
-    * [ ] Construct layer from SimpleWeightedGraph
-    * [ ] Construct layer from Matrix
+    * [x] Construct layer from SimpleGraph
+    * [x] Construct layer from SimpleWeightedGraph
+    * [x] Construct layer from Matrix
     * Support vertex/edge/graph features from MetaGraphs
 * Layers
     * Convolution layers
-        * [ ] MessagePassing
+        * [x] MessagePassing
         * [x] GCNConv
-        * [ ] GraphConv
+        * [x] GraphConv
         * [x] ChebConv
         * [ ] GatedGraphConv
-        * [ ] GATConv
-        * [ ] EdgeConv
+        * [x] GATConv
+        * [x] EdgeConv
         * [ ] Meta
     * Pooling layers
         * [ ] GlobalPool
@@ -44,5 +44,6 @@ Labels or features for output of classification or regression are part of traini
         * [ ] InnerProductDecoder
 * Networks
     * [ ] VGAE
+    * [ ] GAE
 * Datasets
     * Benchmark JLD2, BSON
