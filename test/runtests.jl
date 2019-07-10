@@ -1,5 +1,7 @@
 using GeometricFlux
+using GeometricFlux: neighbors, laplacian_matrix
 using LightGraphs
+using LightGraphs: neighbors, laplacian_matrix
 using SimpleWeightedGraphs
 using Test
 
