@@ -31,7 +31,7 @@ version = "0.8.10"
 deps = ["Libdl", "Logging", "SHA"]
 git-tree-sha1 = "8153fd64131cd00a79544bb23788877741f627bb"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.5"
+version = "0.5.6"
 
 [[CSTParser]]
 deps = ["Tokenize"]

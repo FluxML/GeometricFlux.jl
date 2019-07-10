@@ -1,3 +1,5 @@
+using SimpleWeightedGraphs: AbstractSimpleWeightedGraph, nv
+
 function GCNConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = nv(g)
