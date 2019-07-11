@@ -22,7 +22,7 @@ import Base.Sys: ARCH, WORD_SIZE
 
 export
 
-    # layers
+    # layers/conv
     MessagePassing,
     GCNConv,
     ChebConv,
@@ -52,7 +52,7 @@ export
     adjlist
 
 include("scatter.jl")
-include("layers.jl")
+include("layers/conv.jl")
 include("linalg.jl")
 
 

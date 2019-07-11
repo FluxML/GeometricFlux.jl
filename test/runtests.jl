@@ -6,7 +6,7 @@ using SimpleWeightedGraphs
 using Test
 
 tests = [
-    "layers",
+    "layers/conv",
     "linalg",
     "scatter",
     "graph/simplegraphs",
