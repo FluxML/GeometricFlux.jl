@@ -44,7 +44,7 @@ end
     ys_ = [3 3 4 4 5;
            5 5 6 6 7]
     for T = types
-        @test scatter_max!(T.(copy(ys)), T.(us), xs) == T.(ys_)
+        @test scatter_mul!(T.(copy(ys)), T.(us), xs) == T.(ys_)
     end
 end
 
