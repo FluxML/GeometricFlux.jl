@@ -190,3 +190,12 @@ end
 #
 #     return ys
 # end
+
+scatter!(op::Symbol, ys::Array, us::Array, xs::Array) = scatter!(Val(op), ys, us, xs)
+scatter!(::Val{:add}, ys::Array, us::Array, xs::Array) = scatter_add!(ys, us, xs)
+scatter!(::Val{:sub}, ys::Array, us::Array, xs::Array) = scatter_sub!(ys, us, xs)
+scatter!(::Val{:mul}, ys::Array, us::Array, xs::Array) = scatter_mul!(ys, us, xs)
+scatter!(::Val{:div}, ys::Array, us::Array, xs::Array) = scatter_div!(ys, us, xs)
+scatter!(::Val{:max}, ys::Array, us::Array, xs::Array) = scatter_max!(ys, us, xs)
+scatter!(::Val{:min}, ys::Array, us::Array, xs::Array) = scatter_min!(ys, us, xs)
+scatter!(::Val{:mean}, ys::Array, us::Array, xs::Array) = scatter_mean!(ys, us, xs)

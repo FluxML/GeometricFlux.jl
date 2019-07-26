@@ -47,6 +47,7 @@ export
     scatter_mul!,
     scatter_div!,
     scatter_mean!,
+    scatter!,
 
     # graph/utils
     adjlist
