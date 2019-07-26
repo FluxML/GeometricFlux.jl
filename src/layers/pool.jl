@@ -5,6 +5,24 @@ samesize_float = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Flo
 #
 # TopKPool()
 
+# struct MaxPool
+#
+# end
+#
+# function MaxPool(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity)
+#     MaxPool()
+# end
+#
+# (m::MaxPool)(X::AbstractMatrix) = maxpool(m.cluster, X)
+#
+#
+#
+# struct MeanPool
+#
+# end
+#
+# (m::MeanPool)(X::AbstractMatrix) = meanpool(m.cluster, X)
+
 
 
 function sumpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
@@ -34,15 +52,16 @@ end
 function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
-    Y = ones(T, dims..., c)
-    scatter_div!(Y, X, cluster)
+    FT = (T <: Integer) ? samesize_float[T] : T
+    Y = ones(FT, dims..., c)
+    scatter_div!(Y, FT.(X), cluster)
     Y
 end
 
 function maxpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
-    Y = fill(T(-Inf), dims..., c)
+    Y = fill(typemin(T), dims..., c)
     scatter_max!(Y, X, cluster)
     Y
 end
@@ -50,7 +69,7 @@ end
 function minpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
-    Y = fill(T(-Inf), dims..., c)
+    Y = fill(typemax(T), dims..., c)
     scatter_min!(Y, X, cluster)
     Y
 end
@@ -73,3 +92,12 @@ function _pooling_dim_check(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     @assert dim_c == dim_X[n+1:end] "X must have the same latter dimension with cluster."
     dim_X[1:n]
 end
+
+pool(op::Symbol, cluster::Array, X::Array) = pool(Val(op), cluster, X)
+pool(::Val{:add}, cluster::Array, X::Array) = sumpool(cluster, X)
+pool(::Val{:sub}, cluster::Array, X::Array) = subpool(cluster, X)
+pool(::Val{:mul}, cluster::Array, X::Array) = prodpool(cluster, X)
+pool(::Val{:div}, cluster::Array, X::Array) = divpool(cluster, X)
+pool(::Val{:max}, cluster::Array, X::Array) = maxpool(cluster, X)
+pool(::Val{:min}, cluster::Array, X::Array) = minpool(cluster, X)
+pool(::Val{:mean}, cluster::Array, X::Array) = meanpool(cluster, X)

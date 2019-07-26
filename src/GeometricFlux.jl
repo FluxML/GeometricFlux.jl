@@ -35,9 +35,13 @@ export
 
     # layer/pool
     sumpool,
+    subpool,
     prodpool,
+    divpool,
     maxpool,
+    minpool,
     meanpool,
+    pool,
 
     # linalg
     degree_matrix,
