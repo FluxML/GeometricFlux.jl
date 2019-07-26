@@ -33,6 +33,12 @@ export
     update,
     propagate,
 
+    # layer/pool
+    sumpool,
+    prodpool,
+    maxpool,
+    meanpool,
+
     # linalg
     degree_matrix,
     laplacian_matrix,
@@ -54,6 +60,7 @@ export
 
 include("scatter.jl")
 include("layers/conv.jl")
+include("layers/pool.jl")
 include("linalg.jl")
 
 

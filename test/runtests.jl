@@ -7,6 +7,7 @@ using Test
 
 tests = [
     "layers/conv",
+    "layers/pool",
     "linalg",
     "scatter",
     "graph/simplegraphs",
