@@ -11,16 +11,17 @@ adj = [0. 1. 0. 1.;
 
 
 struct NewLayer <: MessagePassing
+    adjlist
     weight
-    NewLayer(m, n) = new(randn(m,n))
+    NewLayer(adj, m, n) = new(neighbors(adj), randn(m,n))
 end
 
-(l::NewLayer)(X) = propagate(l, neighbors(adj), X=X, aggr=:add)
+(l::NewLayer)(X) = propagate(l, X=X, aggr=:add)
 message(n::NewLayer; X::AbstractArray=zeros(0), E::AbstractArray=zeros(0)) = X * n.weight
 update(::NewLayer; X::AbstractArray=zeros(0), M::AbstractArray=zeros(0)) = M
 
 @testset "Test MessagePassing layer" begin
-    l = NewLayer(in_channel, out_channel)
+    l = NewLayer(adj, in_channel, out_channel)
     X = rand(N, in_channel)
     Y = l(X)
     @test size(Y) == (N, out_channel)

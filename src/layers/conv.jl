@@ -1,13 +1,14 @@
 const aggr_func = Dict{Symbol,Function}(:+ => sum, :max => maximum, :mean => mean)
 
 abstract type MessagePassing end
+adjlist(m::T) where {T<:MessagePassing} = m.adjlist
 message(m::T) where {T<:MessagePassing} = error("not implement")
 update(m::T) where {T<:MessagePassing} = error("not implement")
 
-function propagate(mp::T, adjlist::AbstractVector; X::AbstractArray=zeros(0),
+function propagate(mp::T; X::AbstractArray=zeros(0),
                    E::AbstractArray=zeros(0), aggr::Symbol=:add) where {T<:MessagePassing}
     M = message(mp, X=X, E=E)
-    M, cluster = neighboring(M', adjlist)
+    M, cluster = neighboring(M', adjlist(mp))
     M = pool(aggr, cluster, M)
     Y = update(mp, X=X, M=M')
     return Y
@@ -110,7 +111,7 @@ end
 
 message(g::GraphConv; X::AbstractArray=zeros(0), E::AbstractArray=zeros(0)) = X*g.weight2
 update(g::GraphConv; X::AbstractArray=zeros(0), M::AbstractArray=zeros(0)) = X*g.weight1 + M + g.bias
-(g::GraphConv)(X::AbstractMatrix) = propagate(g, g.adjlist, X=X, aggr=:add)
+(g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
 
 
 
@@ -164,7 +165,6 @@ struct EdgeConv{V,F}
 end
 
 function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
-    aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
     EdgeConv(neighbors(adj), nn, aggr_func[aggr])
 end
 
