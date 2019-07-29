@@ -19,11 +19,11 @@ function ChebConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer},
 end
 
 
-function GraphConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, aggr=+;
+function GraphConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = nv(g)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(adjlist(g), param(init(ch[1], ch[2])), b, aggr)
+    GraphConv(adjlist(g), param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
 end
 
 

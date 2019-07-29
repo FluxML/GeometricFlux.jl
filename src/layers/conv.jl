@@ -83,39 +83,34 @@ end
 
 
 
-struct GraphConv{V,T,F}
+struct GraphConv{V,T} <: MessagePassing
     adjlist::V
-    weight::AbstractMatrix{T}
+    weight1::AbstractMatrix{T}
+    weight2::AbstractMatrix{T}
     bias::AbstractMatrix{T}
-    aggr::F
+    aggr::Symbol
 end
 
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
-                   ch::Pair{<:Integer,<:Integer}, aggr=+;
+                   ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(el, 1)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(el, param(init(ch[1], ch[2])), b, aggr)
+    GraphConv(el, param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
 end
 
-function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=+;
+function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(adj, 1)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(neighbors(adj), param(init(ch[1], ch[2])), b, aggr)
+    GraphConv(neighbors(adj), param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
 end
 
 @treelike GraphConv
 
-function (g::GraphConv)(X::AbstractMatrix)
-    N = size(X, 1)
-    X_ = copy(X)'
-    for i = 1:N
-        ne = g.adjlist[i]
-        X_[:,i] += sum(view(X', :, ne), dims=2)
-    end
-    X_' * g.weight + g.bias
-end
+message(g::GraphConv; X::AbstractArray=zeros(0), E::AbstractArray=zeros(0)) = X*g.weight2
+update(g::GraphConv; X::AbstractArray=zeros(0), M::AbstractArray=zeros(0)) = X*g.weight1 + M + g.bias
+(g::GraphConv)(X::AbstractMatrix) = propagate(g, g.adjlist, X=X, aggr=:add)
 
 
 

@@ -37,7 +37,8 @@ end
 @testset "Test support of LightGraphs for GraphConv layer" begin
     gc = GraphConv(ug, in_channel=>out_channel)
     @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
-    @test size(gc.weight) == (in_channel, out_channel)
+    @test size(gc.weight1) == (in_channel, out_channel)
+    @test size(gc.weight2) == (in_channel, out_channel)
     @test size(gc.bias) == (N, out_channel)
 end
 

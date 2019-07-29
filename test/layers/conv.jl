@@ -57,7 +57,8 @@ end
 @testset "Test GraphConv layer" begin
     gc = GraphConv(adj, in_channel=>out_channel)
     @test gc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-    @test size(gc.weight) == (in_channel, out_channel)
+    @test size(gc.weight1) == (in_channel, out_channel)
+    @test size(gc.weight2) == (in_channel, out_channel)
     @test size(gc.bias) == (N, out_channel)
 
     X = rand(N, in_channel)
