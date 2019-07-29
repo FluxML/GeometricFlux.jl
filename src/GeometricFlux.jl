@@ -60,12 +60,16 @@ export
     scatter!,
 
     # graph/utils
-    adjlist
+    adjlist,
+
+    # utils
+    neighboring
 
 include("scatter.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("linalg.jl")
+include("utils.jl")
 
 
 function __init__()
