@@ -1,24 +1,16 @@
 const aggr_func = Dict{Symbol,Function}(:+ => sum, :max => maximum, :mean => mean)
 
 abstract type MessagePassing end
-message(m::T, xi, xj, eij) where {T<:MessagePassing} = error("not implement")
-update(m::T, xi, mi) where {T<:MessagePassing} = error("not implement")
+message(m::T) where {T<:MessagePassing} = error("not implement")
+update(m::T) where {T<:MessagePassing} = error("not implement")
 
-function propagate(mp::T, neighbors::AbstractVector, X, E;
-                   aggr::Symbol=:+) where {T<:MessagePassing}
-    aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
-    N = length(neighbors)
-    Y = Vector{AbstractArray}()
-    for i = 1:N
-        xi = view(X', :, i)
-        ne = view(neighbors, i)
-        xjs = map(j -> view(X', :, j), ne)
-        eijs = map(j -> view(E, :, i, j), ne)
-        m = map((xj, eij) -> message(mp, xi, xj, eij), xjs, eijs)[]
-        mi = aggr_func[aggr](m, dims=2)
-        push!(Y, update(mp, xi, mi))
-    end
-    return hcat(Y...)'
+function propagate(mp::T, adjlist::AbstractVector; X::AbstractArray=zeros(0),
+                   E::AbstractArray=zeros(0), aggr::Symbol=:add) where {T<:MessagePassing}
+    M = message(mp, X=X, E=E)
+    M, cluster = neighboring(M', adjlist)
+    M = pool(aggr, cluster, M)
+    Y = update(mp, X=X, M=M')
+    return Y
 end
 
 
@@ -39,7 +31,7 @@ end
 
 @treelike GCNConv
 
-(c::GCNConv)(X::AbstractMatrix) = c.σ(c.norm * X * c.weight + c.bias)
+(g::GCNConv)(X::AbstractMatrix) = g.σ(g.norm * X * g.weight + g.bias)
 
 
 
@@ -92,7 +84,7 @@ end
 
 
 struct GraphConv{V,T,F}
-    edgelist::V
+    adjlist::V
     weight::AbstractMatrix{T}
     bias::AbstractMatrix{T}
     aggr::F
@@ -119,7 +111,7 @@ function (g::GraphConv)(X::AbstractMatrix)
     N = size(X, 1)
     X_ = copy(X)'
     for i = 1:N
-        ne = g.edgelist[i]
+        ne = g.adjlist[i]
         X_[:,i] += sum(view(X', :, ne), dims=2)
     end
     X_' * g.weight + g.bias
@@ -128,7 +120,7 @@ end
 
 
 struct GATConv{V,T}
-    edgelist::V
+    adjlist::V
     weight::AbstractMatrix{T}
     bias::AbstractMatrix{T}
     a::AbstractArray
@@ -150,7 +142,7 @@ function (g::GATConv)(X::AbstractMatrix)
     X_ = (X * g.weight)'
     Y = Array{TrackedReal}(undef, fout, N)
     for i = 1:N
-        ne = g.edgelist[i]
+        ne = g.adjlist[i]
         i_ne = vcat([i], ne)
         α = [leakyrelu(g.a' * vcat(X_[:,i], X_[:,j]), g.negative_slope) for j in i_ne]
         α = asoftmax(α)
@@ -170,7 +162,7 @@ end
 
 
 struct EdgeConv{V,F}
-    edgelist::V
+    adjlist::V
     nn
     aggr::F
 end
@@ -184,10 +176,10 @@ end
 
 function (e::EdgeConv)(X::AbstractMatrix)
     X_ = X'
-    N = size(e.edgelist, 1)
+    N = size(e.adjlist, 1)
     Y = Vector{AbstractArray}()
     for i = 1:N
-        ne = e.edgelist[i]
+        ne = e.adjlist[i]
         x_i = X_[:,i]
         y = [e.nn(vcat(x_i, X_[:,j] - x_i)) for j = ne]
         push!(Y, e.aggr(y))

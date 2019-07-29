@@ -1,15 +1,15 @@
 using LightGraphs
 using LightGraphs: add_edge!
 
-const in_channel = 3
-const out_channel = 5
-const N = 6
-const adj = [0. 1. 1. 0. 0. 0.;
-             1. 0. 1. 0. 1. 0.;
-             1. 1. 0. 1. 0. 1.;
-             0. 0. 1. 0. 0. 0.;
-             0. 1. 0. 0. 0. 0.;
-             0. 0. 1. 0. 0. 0.]
+in_channel = 3
+out_channel = 5
+N = 6
+adj = [0. 1. 1. 0. 0. 0.;
+       1. 0. 1. 0. 1. 0.;
+       1. 1. 0. 1. 0. 1.;
+       0. 0. 1. 0. 0. 0.;
+       0. 1. 0. 0. 0. 0.;
+       0. 0. 1. 0. 0. 0.]
 
 ug = SimpleGraph(6)
 add_edge!(ug, 1, 2); add_edge!(ug, 1, 3); add_edge!(ug, 2, 3)
@@ -36,19 +36,19 @@ end
 
 @testset "Test support of LightGraphs for GraphConv layer" begin
     gc = GraphConv(ug, in_channel=>out_channel)
-    @test gc.edgelist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+    @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
     @test size(gc.weight) == (in_channel, out_channel)
     @test size(gc.bias) == (N, out_channel)
 end
 
 @testset "Test support of LightGraphs for GATConv layer" begin
     gat = GATConv(ug, in_channel=>out_channel)
-    @test gat.edgelist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+    @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
     @test size(gat.weight) == (in_channel, out_channel)
     @test size(gat.bias) == (N, out_channel)
 end
 
 @testset "Test support of LightGraphs for EdgeConv layer" begin
     ec = EdgeConv(ug, Dense(2*in_channel, out_channel))
-    @test ec.edgelist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+    @test ec.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
 end
