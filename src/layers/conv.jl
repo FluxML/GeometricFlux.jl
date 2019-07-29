@@ -62,7 +62,7 @@ function (c::ChebConv)(X::AbstractMatrix)
     fout = c.out_channel
 
     T = eltype(X)
-    Y = Array{TrackedReal}(undef, N, fout)
+    Y = Array{T}(undef, N, fout)
     Z = Array{T}(undef, N, c.k, fin)
     for j = 1:fout
         Z[:,1,:] = X
@@ -139,8 +139,9 @@ end
 function (g::GATConv)(X::AbstractMatrix)
     N = size(X, 1)
     fout = size(g.weight, 2)
+    T = eltype(X)
     X_ = (X * g.weight)'
-    Y = Array{TrackedReal}(undef, fout, N)
+    Y = Array{T}(undef, fout, N)
     for i = 1:N
         ne = g.adjlist[i]
         i_ne = vcat([i], ne)
