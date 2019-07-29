@@ -40,10 +40,13 @@ Labels or features for output of classification or regression are part of traini
         * [ ] TopKPool
         * [ ] MaxPool
         * [ ] MeanPool
+        * [x] sum/sub/prod/div/max/min/mean pool
     * Embedding layers
         * [ ] InnerProductDecoder
-* Networks
+* Models
     * [ ] VGAE
     * [ ] GAE
+* Internals
+    * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
 * Datasets
     * Benchmark JLD2, BSON
