@@ -1,21 +1,3 @@
-const aggr_func = Dict{Symbol,Function}(:+ => sum, :max => maximum, :mean => mean)
-
-abstract type MessagePassing end
-adjlist(m::T) where {T<:MessagePassing} = m.adjlist
-message(m::T) where {T<:MessagePassing} = error("not implement")
-update(m::T) where {T<:MessagePassing} = error("not implement")
-
-function propagate(mp::T; X::AbstractArray=zeros(0),
-                   E::AbstractArray=zeros(0), aggr::Symbol=:add) where {T<:MessagePassing}
-    M = message(mp, X=X, E=E)
-    M, cluster = neighboring(M', adjlist(mp))
-    M = pool(aggr, cluster, M)
-    Y = update(mp, X=X, M=M')
-    return Y
-end
-
-
-
 struct GCNConv{T,F}
     weight::AbstractMatrix{T}
     bias::AbstractMatrix{T}
@@ -109,8 +91,8 @@ end
 
 @treelike GraphConv
 
-message(g::GraphConv; X::AbstractArray=zeros(0), E::AbstractArray=zeros(0)) = X*g.weight2
-update(g::GraphConv; X::AbstractArray=zeros(0), M::AbstractArray=zeros(0)) = X*g.weight1 + M + g.bias
+message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2' * x_j
+update(g::GraphConv; X=zeros(0), M=zeros(0)) = X*g.weight1 + M + g.bias
 (g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
 
 

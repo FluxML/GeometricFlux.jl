@@ -21,8 +21,11 @@ import Base.Sys: ARCH, WORD_SIZE
 
 export
 
-    # layers/conv
+    # layers/msgpass
     MessagePassing,
+    neighboring,
+    
+    # layers/conv
     GCNConv,
     ChebConv,
     GraphConv,
@@ -59,16 +62,13 @@ export
     scatter!,
 
     # graph/utils
-    adjlist,
-
-    # utils
-    neighboring
+    adjlist
 
 include("scatter.jl")
+include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("linalg.jl")
-include("utils.jl")
 
 
 function __init__()
