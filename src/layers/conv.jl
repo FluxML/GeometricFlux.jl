@@ -140,27 +140,21 @@ end
 
 
 
-struct EdgeConv{V,F}
+struct EdgeConv{V} <: MessagePassing
     adjlist::V
     nn
-    aggr::F
+    aggr::Symbol
 end
 
 function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
-    EdgeConv(neighbors(adj), nn, aggr_func[aggr])
+    EdgeConv(neighbors(adj), nn, aggr)
 end
 
 @treelike EdgeConv
 
-function (e::EdgeConv)(X::AbstractMatrix)
-    X_ = X'
-    N = size(e.adjlist, 1)
-    Y = Vector{AbstractArray}()
-    for i = 1:N
-        ne = e.adjlist[i]
-        x_i = X_[:,i]
-        y = [e.nn(vcat(x_i, X_[:,j] - x_i)) for j = ne]
-        push!(Y, e.aggr(y))
-    end
-    return hcat(Y...)'
+function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
+    n = size(x_j, 2)
+    e.nn(vcat(repeat(x_i, outer=(1,n)), x_j .- x_i))
 end
+update(e::EdgeConv; X=zeros(0), M=zeros(0)) = M
+(e::EdgeConv)(X::AbstractMatrix) = propagate(e, X=X, aggr=e.aggr)
