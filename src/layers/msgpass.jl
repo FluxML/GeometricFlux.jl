@@ -1,5 +1,3 @@
-const aggr_func = Dict{Symbol,Function}(:+ => sum, :max => maximum, :mean => mean)
-
 abstract type MessagePassing end
 
 adjlist(m::T) where {T<:MessagePassing} = m.adjlist

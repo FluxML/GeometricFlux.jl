@@ -36,6 +36,5 @@ end
 
 
 function EdgeConv(g::AbstractSimpleWeightedGraph, nn; aggr::Symbol=:max)
-    aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
     EdgeConv(adjlist(g), nn, aggr)
 end
