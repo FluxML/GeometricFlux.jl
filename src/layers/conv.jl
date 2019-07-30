@@ -97,7 +97,7 @@ update(g::GraphConv; X=zeros(0), M=zeros(0)) = X*g.weight1 + M + g.bias
 
 
 
-struct GATConv{V,T}
+struct GATConv{V,T} <: MessagePassing
     adjlist::V
     weight::AbstractMatrix{T}
     bias::AbstractMatrix{T}
@@ -114,23 +114,15 @@ end
 
 @treelike GATConv
 
-function (g::GATConv)(X::AbstractMatrix)
-    N = size(X, 1)
-    fout = size(g.weight, 2)
-    T = eltype(X)
-    X_ = (X * g.weight)'
-    Y = Array{T}(undef, fout, N)
-    for i = 1:N
-        ne = g.adjlist[i]
-        i_ne = vcat([i], ne)
-        α = [leakyrelu(g.a' * vcat(X_[:,i], X_[:,j]), g.negative_slope) for j in i_ne]
-        α = asoftmax(α)
-        y = sum(α[i] * X_[:,i_ne[i]] for i = 1:length(α))
-        Y[:,i] = y
-    end
-    Y = Y' + g.bias
-    return Y
+function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
+    n = size(x_j, 2)
+    α = leakyrelu.(g.a' * vcat(repeat(x_i, outer=(1,n)), x_j), g.negative_slope)
+    α = asoftmax(α)
+    α .* x_j
 end
+update(g::GATConv; X=zeros(0), M=zeros(0)) = M + g.bias
+(g::GATConv)(X::AbstractMatrix) = propagate(g, X=X * g.weight, aggr=:add)
+
 
 function asoftmax(xs)
     xs = [exp.(x) for x in xs]
