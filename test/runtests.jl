@@ -6,6 +6,7 @@ using SimpleWeightedGraphs
 using Test
 
 tests = [
+    "layers/msgpass",
     "layers/conv",
     "layers/pool",
     "linalg",
@@ -13,7 +14,6 @@ tests = [
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/utils",
-    "utils"
 ]
 
 @testset "GeometricFlux" begin

@@ -5,9 +5,8 @@ using Core.Intrinsics: llvmcall
 using Base.Threads
 using Statistics: mean
 using Flux
-using Flux: param, glorot_uniform, TrackedArray, leakyrelu, GRUCell
+using Flux: param, glorot_uniform, leakyrelu, GRUCell
 using Flux: @treelike
-using Flux.Tracker: TrackedReal
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
 
@@ -22,12 +21,16 @@ import Base.Sys: ARCH, WORD_SIZE
 
 export
 
-    # layers/conv
+    # layers/msgpass
     MessagePassing,
+    neighboring,
+
+    # layers/conv
     GCNConv,
     ChebConv,
     GraphConv,
     GATConv,
+    GatedGraphConv,
     EdgeConv,
     message,
     update,
@@ -60,16 +63,13 @@ export
     scatter!,
 
     # graph/utils
-    adjlist,
-
-    # utils
-    neighboring
+    adjlist
 
 include("scatter.jl")
+include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("linalg.jl")
-include("utils.jl")
 
 
 function __init__()

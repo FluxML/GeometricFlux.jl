@@ -20,11 +20,11 @@ function ChebConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, k::Inte
 end
 
 
-function GraphConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, aggr=+;
+function GraphConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = nv(g)
     b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(adjlist(g), param(init(ch[1], ch[2])), b, aggr)
+    GraphConv(adjlist(g), param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
 end
 
 
@@ -36,7 +36,15 @@ function GATConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}; heads=1,
 end
 
 
+function GatedGraphConv(g::AbstractSimpleGraph, out_ch::Integer, num_layers::Integer;
+                        aggr=:add, init=glorot_uniform)
+    N = nv(g)
+    w = param(init(out_ch, out_ch, num_layers))
+    gru = GRUCell(out_ch, out_ch)
+    GatedGraphConv(adjlist(g), w, gru, out_ch, num_layers, aggr)
+end
+
+
 function EdgeConv(g::AbstractSimpleGraph, nn; aggr::Symbol=:max)
-    aggr in keys(aggr_func) || throw(DomainError(aggr, "not supported aggregation function."))
-    EdgeConv(adjlist(g), nn, aggr_func[aggr])
+    EdgeConv(adjlist(g), nn, aggr)
 end

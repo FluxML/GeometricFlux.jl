@@ -1,5 +1,4 @@
 using Flux: Dense
-import GeometricFlux: message, update, propagate
 
 in_channel = 3
 out_channel = 5
@@ -8,23 +7,6 @@ adj = [0. 1. 0. 1.;
        1. 0. 1. 0.;
        0. 1. 0. 1.;
        1. 0. 1. 0.]
-
-
-struct NewLayer <: MessagePassing
-    weight
-    NewLayer(m, n) = new(randn(m,n))
-end
-
-(l::NewLayer)(X) = propagate(l, neighbors(adj), X=X, aggr=:add)
-message(n::NewLayer; X::AbstractArray=zeros(0), E::AbstractArray=zeros(0)) = X * n.weight
-update(::NewLayer; X::AbstractArray=zeros(0), M::AbstractArray=zeros(0)) = M
-
-@testset "Test MessagePassing layer" begin
-    l = NewLayer(in_channel, out_channel)
-    X = rand(N, in_channel)
-    Y = l(X)
-    @test size(Y) == (N, out_channel)
-end
 
 
 @testset "Test GCNConv layer" begin
@@ -57,7 +39,8 @@ end
 @testset "Test GraphConv layer" begin
     gc = GraphConv(adj, in_channel=>out_channel)
     @test gc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-    @test size(gc.weight) == (in_channel, out_channel)
+    @test size(gc.weight1) == (in_channel, out_channel)
+    @test size(gc.weight2) == (in_channel, out_channel)
     @test size(gc.bias) == (N, out_channel)
 
     X = rand(N, in_channel)
@@ -73,6 +56,17 @@ end
 
     X = rand(N, in_channel)
     Y = gat(X)
+    @test size(Y) == (N, out_channel)
+end
+
+@testset "Test GatedGraphConv layer" begin
+    num_layers = 3
+    ggc = GatedGraphConv(adj, out_channel, num_layers)
+    @test ggc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
+    @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+
+    X = rand(N, in_channel)
+    Y = ggc(X)
     @test size(Y) == (N, out_channel)
 end
 
