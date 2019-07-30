@@ -49,6 +49,13 @@ end
     @test size(gat.bias) == (N, out_channel)
 end
 
+@testset "Test support of LightGraphs for GatedGraphConv layer" begin
+    num_layers = 3
+    ggc = GatedGraphConv(ug, out_channel, num_layers)
+    @test ggc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+    @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+end
+
 @testset "Test support of LightGraphs for EdgeConv layer" begin
     ec = EdgeConv(ug, Dense(2*in_channel, out_channel))
     @test ec.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]

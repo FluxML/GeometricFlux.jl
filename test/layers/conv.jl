@@ -59,6 +59,17 @@ end
     @test size(Y) == (N, out_channel)
 end
 
+@testset "Test GatedGraphConv layer" begin
+    num_layers = 3
+    ggc = GatedGraphConv(adj, out_channel, num_layers)
+    @test ggc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
+    @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+
+    X = rand(N, in_channel)
+    Y = ggc(X)
+    @test size(Y) == (N, out_channel)
+end
+
 @testset "Test EdgeConv layer" begin
     ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
     @test ec.adjlist == [[2,4], [1,3], [2,4], [1,3]]

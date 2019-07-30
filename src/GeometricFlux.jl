@@ -24,12 +24,13 @@ export
     # layers/msgpass
     MessagePassing,
     neighboring,
-    
+
     # layers/conv
     GCNConv,
     ChebConv,
     GraphConv,
     GATConv,
+    GatedGraphConv,
     EdgeConv,
     message,
     update,

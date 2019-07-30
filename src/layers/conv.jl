@@ -132,6 +132,45 @@ end
 
 
 
+struct GatedGraphConv{V,T,R} <: MessagePassing
+    adjlist::V
+    weight::AbstractArray{T}
+    gru::R
+    out_ch::Integer
+    num_layers::Integer
+    aggr::Symbol
+end
+
+function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer;
+                        aggr=:add, init=glorot_uniform)
+    N = size(adj, 1)
+    w = param(init(out_ch, out_ch, num_layers))
+    gru = GRUCell(out_ch, out_ch)
+    GatedGraphConv(neighbors(adj), w, gru, out_ch, num_layers, aggr)
+end
+
+@treelike GatedGraphConv
+
+message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
+update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
+function (g::GatedGraphConv)(X::AbstractMatrix)
+    H = X
+    m, n = size(H)
+    T = eltype(H)
+    @assert (n <= g.out_ch) "number of input features must less or equals to output features."
+    (n < g.out_ch) && (H = hcat(H, zeros(T, m, g.out_ch - n)))
+
+    for i = 1:g.num_layers
+        M = H * view(g.weight, :, :, i)
+        M = propagate(g, X=M, aggr=g.aggr)
+        H, _ = g.gru(H', M')
+        H = H'
+    end
+    H
+end
+
+
+
 struct EdgeConv{V} <: MessagePassing
     adjlist::V
     nn

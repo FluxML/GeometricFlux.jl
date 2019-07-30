@@ -36,6 +36,15 @@ function GATConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}; heads=1,
 end
 
 
+function GatedGraphConv(g::AbstractSimpleGraph, out_ch::Integer, num_layers::Integer;
+                        aggr=:add, init=glorot_uniform)
+    N = nv(g)
+    w = param(init(out_ch, out_ch, num_layers))
+    gru = GRUCell(out_ch, out_ch)
+    GatedGraphConv(adjlist(g), w, gru, out_ch, num_layers, aggr)
+end
+
+
 function EdgeConv(g::AbstractSimpleGraph, nn; aggr::Symbol=:max)
     EdgeConv(adjlist(g), nn, aggr)
 end
