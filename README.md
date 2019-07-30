@@ -31,7 +31,7 @@ Labels or features for output of classification or regression are part of traini
         * [x] GCNConv
         * [x] GraphConv
         * [x] ChebConv
-        * [ ] GatedGraphConv
+        * [x] GatedGraphConv
         * [x] GATConv
         * [x] EdgeConv
         * [ ] Meta
