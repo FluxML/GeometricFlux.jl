@@ -14,7 +14,7 @@ end
 
 @treelike GCNConv
 
-(g::GCNConv)(X::AbstractMatrix) = g.σ(g.norm * X * g.weight + g.bias)
+(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.norm * X * g.weight + g.bias)
 
 
 
