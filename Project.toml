@@ -3,6 +3,9 @@ uuid = "7e08b658-56d3-11e9-2997-919d5b31e4ea"
 authors = ["Yueh-Hua Tu <a504082002@gmail.com>"]
 version = "0.1.0"
 
+[compat]
+julia = "1"
+
 [deps]
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
