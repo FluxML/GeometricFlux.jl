@@ -10,7 +10,7 @@ GeometricFlux is a geometric deep learning library for [Flux](https://github.com
 [![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=develop)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
 [![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/develop/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
 
-This repository is in early development. Suggestions and PRs are welcome.
+This repository is a work-in-progress project. Suggestions, issues and pull requsts are welcome.
 
 ## Roadmap
 
@@ -19,7 +19,7 @@ Input features (including vertex, edge or graph features) of neural network may 
 Labels or features for output of classification or regression are part of training data, they may not need a specific structure or type, too.
 
 * Start
-    * [ ] Establish a simple example of GNN
+    * [x] Establish a simple example of GNN
 * Integration of JuliaGraphs
     * [x] Construct layer from SimpleGraph
     * [x] Construct layer from SimpleWeightedGraph
@@ -45,8 +45,9 @@ Labels or features for output of classification or regression are part of traini
         * [ ] InnerProductDecoder
 * Models
     * [ ] VGAE
-    * [ ] GAE
+    * [x] GAE
 * Internals
+    * [x] use Zygote
     * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
 * Datasets
     * Benchmark JLD2, BSON
