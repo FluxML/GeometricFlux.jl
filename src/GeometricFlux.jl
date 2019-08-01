@@ -46,6 +46,12 @@ export
     meanpool,
     pool,
 
+    # models
+    GAE,
+    VGAE,
+    InnerProductDecoder,
+    VariationalEncoder,
+
     # linalg
     degree_matrix,
     laplacian_matrix,
@@ -69,6 +75,7 @@ include("scatter.jl")
 include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
+include("models.jl")
 include("linalg.jl")
 
 

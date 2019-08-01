@@ -9,6 +9,7 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
+    "models",
     "linalg",
     "scatter",
     "graph/simplegraphs",

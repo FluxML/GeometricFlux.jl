@@ -201,9 +201,9 @@ version = "0.5.0"
 
 [[MetaGraphs]]
 deps = ["JLD2", "LightGraphs"]
-git-tree-sha1 = "4adf54adeadc332d85dc15473a34cfe660748b56"
+git-tree-sha1 = "c6a4c88304e1ecef6fc372f12d3b8e427e128c1a"
 uuid = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
-version = "0.6.2"
+version = "0.6.3"
 
 [[Missings]]
 deps = ["SparseArrays", "Test"]
