@@ -1,6 +1,6 @@
 import GeometricFlux: message, update, propagate
 
-in_channel = 100
+in_channel = 10
 out_channel = 5
 N = 6
 adj = [0. 1. 0. 0. 0. 0.;
@@ -36,6 +36,15 @@ end
 message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = n.weight' * x_j
 
 @testset "Test MessagePassing layer" begin
+    Y = l(X)
+    @test size(Y) == (N, out_channel)
+end
+
+in_channel = 100
+X = Array(reshape(1:N*in_channel, N, in_channel))
+l = NewLayer(adj, in_channel, out_channel)
+
+@testset "Test multi-thread MessagePassing layer" begin
     Y = l(X)
     @test size(Y) == (N, out_channel)
 end
