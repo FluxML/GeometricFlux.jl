@@ -11,13 +11,13 @@ adj = [0. 1. 0. 1.;
 
 @testset "Test GCNConv layer" begin
     gc = GCNConv(adj, in_channel=>out_channel)
-    @test size(gc.weight) == (in_channel, out_channel)
-    @test size(gc.bias) == (N, out_channel)
+    @test size(gc.weight) == (out_channel, in_channel)
+    @test size(gc.bias) == (out_channel, N)
     @test size(gc.norm) == (N, N)
 
-    X = rand(N, in_channel)
+    X = rand(in_channel, N)
     Y = gc(X)
-    @test size(Y) == (N, out_channel)
+    @test size(Y) == (out_channel, N)
 end
 
 
@@ -39,24 +39,24 @@ end
 @testset "Test GraphConv layer" begin
     gc = GraphConv(adj, in_channel=>out_channel)
     @test gc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-    @test size(gc.weight1) == (in_channel, out_channel)
-    @test size(gc.weight2) == (in_channel, out_channel)
-    @test size(gc.bias) == (N, out_channel)
+    @test size(gc.weight1) == (out_channel, in_channel)
+    @test size(gc.weight2) == (out_channel, in_channel)
+    @test size(gc.bias) == (out_channel, N)
 
-    X = rand(N, in_channel)
+    X = rand(in_channel, N)
     Y = gc(X)
-    @test size(Y) == (N, out_channel)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test GATConv layer" begin
     gat = GATConv(adj, in_channel=>out_channel)
     @test gat.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-    @test size(gat.weight) == (in_channel, out_channel)
-    @test size(gat.bias) == (N, out_channel)
+    @test size(gat.weight) == (out_channel, in_channel)
+    @test size(gat.bias) == (out_channel, N)
 
-    X = rand(N, in_channel)
+    X = rand(in_channel, N)
     Y = gat(X)
-    @test size(Y) == (N, out_channel)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test GatedGraphConv layer" begin
@@ -65,16 +65,16 @@ end
     @test ggc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
     @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-    X = rand(N, in_channel)
+    X = rand(in_channel, N)
     Y = ggc(X)
-    @test size(Y) == (N, out_channel)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test EdgeConv layer" begin
     ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
     @test ec.adjlist == [[2,4], [1,3], [2,4], [1,3]]
 
-    X = rand(N, in_channel)
+    X = rand(in_channel, N)
     Y = ec(X)
-    @test size(Y) == (N, out_channel)
+    @test size(Y) == (out_channel, N)
 end

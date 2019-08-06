@@ -4,9 +4,9 @@ import LightGraphs: neighbors, laplacian_matrix
 function GCNConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = nv(g)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
     adj = adjacency_matrix(g)
-    GCNConv(param(init(ch[1], ch[2])), b, normalized_laplacian(adj+I, T), σ)
+    GCNConv(param(init(ch[2], ch[1])), b, normalized_laplacian(adj+I, T), σ)
 end
 
 
@@ -23,16 +23,16 @@ end
 function GraphConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = nv(g)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(adjlist(g), param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    GraphConv(adjlist(g), param(init(ch[2], ch[1])), param(init(ch[2], ch[1])), b, aggr)
 end
 
 
 function GATConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}; heads=1,
                  concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
     N = nv(g)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GATConv(adjlist(g), param(init(ch[1], ch[2])), b, param(init(2 * ch[2])), negative_slope)
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    GATConv(adjlist(g), param(init(ch[2], ch[1])), b, param(init(2 * ch[2])), negative_slope)
 end
 
 

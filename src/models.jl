@@ -40,7 +40,7 @@ end
 
 @treelike InnerProductDecoder
 
-(i::InnerProductDecoder)(Z::AbstractArray) = i.σ(Z*Z')
+(i::InnerProductDecoder)(Z::AbstractArray) = i.σ(Z'*Z)
 
 
 
@@ -59,8 +59,8 @@ end
 
 function (ve::VariationalEncoder)(X::AbstractMatrix)
     h = ve.nn(X)
-    μ, logσ = summarize(ve, h')
-    Z = sampling(ve, μ, logσ)'
+    μ, logσ = summarize(ve, h)
+    Z = sampling(ve, μ, logσ)
     Z
 end
 

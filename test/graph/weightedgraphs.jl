@@ -17,8 +17,8 @@ add_edge!(ug, 3, 4, 5); add_edge!(ug, 2, 5, 2); add_edge!(ug, 3, 6, 2)
 
 @testset "Test support of SimpleWeightedGraphs for GCNConv layer" begin
     gc = GCNConv(ug, in_channel=>out_channel)
-    @test size(gc.weight) == (in_channel, out_channel)
-    @test size(gc.bias) == (N, out_channel)
+    @test size(gc.weight) == (out_channel, in_channel)
+    @test size(gc.bias) == (out_channel, N)
     @test size(gc.norm) == (N, N)
 end
 
@@ -37,16 +37,16 @@ end
 @testset "Test support of SimpleWeightedGraphs for GraphConv layer" begin
     gc = GraphConv(ug, in_channel=>out_channel)
     @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
-    @test size(gc.weight1) == (in_channel, out_channel)
-    @test size(gc.weight2) == (in_channel, out_channel)
-    @test size(gc.bias) == (N, out_channel)
+    @test size(gc.weight1) == (out_channel, in_channel)
+    @test size(gc.weight2) == (out_channel, in_channel)
+    @test size(gc.bias) == (out_channel, N)
 end
 
 @testset "Test support of SimpleWeightedGraphs for GATConv layer" begin
     gat = GATConv(ug, in_channel=>out_channel)
     @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
-    @test size(gat.weight) == (in_channel, out_channel)
-    @test size(gat.bias) == (N, out_channel)
+    @test size(gat.weight) == (out_channel, in_channel)
+    @test size(gat.bias) == (out_channel, N)
 end
 
 @testset "Test support of SimpleWeightedGraphs for GatedGraphConv layer" begin

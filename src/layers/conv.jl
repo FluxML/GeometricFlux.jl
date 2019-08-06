@@ -8,13 +8,13 @@ end
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GCNConv(param(init(ch[1], ch[2])), b, normalized_laplacian(adj+I, T), σ)
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    GCNConv(param(init(ch[2], ch[1])), b, normalized_laplacian(adj+I, T), σ)
 end
 
 @treelike GCNConv
 
-(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.norm * X * g.weight + g.bias)
+(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm + g.bias)
 
 
 
@@ -78,21 +78,21 @@ function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(el, 1)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(el, param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    GraphConv(el, param(init(ch[2], ch[1])), param(init(ch[2], ch[1])), b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GraphConv(neighbors(adj), param(init(ch[1], ch[2])), param(init(ch[1], ch[2])), b, aggr)
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    GraphConv(neighbors(adj), param(init(ch[2], ch[1])), param(init(ch[2], ch[1])), b, aggr)
 end
 
 @treelike GraphConv
 
-message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2' * x_j
-update(g::GraphConv; X=zeros(0), M=zeros(0)) = X*g.weight1 + M + g.bias
+message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
+update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M + g.bias
 (g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
 
 
@@ -108,8 +108,8 @@ end
 function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
                  concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
-    GATConv(neighbors(adj), param(init(ch[1], ch[2])), b, param(init(2 * ch[2])), negative_slope)
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    GATConv(neighbors(adj), param(init(ch[2], ch[1])), b, param(init(2 * ch[2])), negative_slope)
 end
 
 @treelike GATConv
@@ -121,7 +121,7 @@ function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
     α .* x_j
 end
 update(g::GATConv; X=zeros(0), M=zeros(0)) = M + g.bias
-(g::GATConv)(X::AbstractMatrix) = propagate(g, X=X * g.weight, aggr=:add)
+(g::GATConv)(X::AbstractMatrix) = propagate(g, X=g.weight*X, aggr=:add)
 
 
 function asoftmax(xs)
@@ -153,18 +153,16 @@ end
 
 message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
 update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
-function (g::GatedGraphConv)(X::AbstractMatrix)
+function (g::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
     H = X
     m, n = size(H)
-    T = eltype(H)
-    @assert (n <= g.out_ch) "number of input features must less or equals to output features."
-    (n < g.out_ch) && (H = hcat(H, zeros(T, m, g.out_ch - n)))
+    @assert (m <= g.out_ch) "number of input features must less or equals to output features."
+    (m < g.out_ch) && (H = vcat(H, zeros(T, g.out_ch - m, n)))
 
     for i = 1:g.num_layers
-        M = H * view(g.weight, :, :, i)
+        M = view(g.weight, :, :, i) * H
         M = propagate(g, X=M, aggr=g.aggr)
-        H, _ = g.gru(H', M')
-        H = H'
+        H, _ = g.gru(H, M)
     end
     H
 end

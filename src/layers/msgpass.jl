@@ -7,7 +7,7 @@ update(m::T) where {T<:MessagePassing} = error("not implement")
 function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
     M, cluster = neighboring(mp; kwargs...)
     M = pool(aggr, cluster, M)
-    upd_args = Dict{Symbol,AbstractArray}(:M=>M')
+    upd_args = Dict{Symbol,AbstractArray}(:M=>M)
     haskey(kwargs, :X) && (upd_args[:X] = kwargs[:X])
     Y = update(mp; upd_args...)
     return Y
@@ -23,8 +23,8 @@ end
 function getdata(d, i::Integer, ne)
     result = Dict{Symbol,AbstractArray}()
     if haskey(d, :X)
-        result[:x_i] = view(d[:X]', :, i)
-        result[:x_j] = view(d[:X]', :, ne)
+        result[:x_i] = view(d[:X], :, i)
+        result[:x_j] = view(d[:X], :, ne)
     end
     if haskey(d, :E)
         result[:e_ij] = view(d[:E], :, i, ne)
