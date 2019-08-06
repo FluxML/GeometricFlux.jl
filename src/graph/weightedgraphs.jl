@@ -12,10 +12,10 @@ end
 function ChebConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = nv(g)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
     adj = adjacency_matrix(g)
     L̃ = T(2. / eigmax(Matrix(adj))) * normalized_laplacian(adj, T) - I
-    ChebConv(param(init(k, ch[1], ch[2])), b, L̃, k, ch[1], ch[2])
+    ChebConv(param(init(ch[2], ch[1], k)), b, L̃, k, ch[1], ch[2])
 end
 
 

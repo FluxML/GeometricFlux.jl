@@ -26,8 +26,8 @@ end
 @testset "Test support of SimpleWeightedGraphs for ChebConv layer" begin
     k = 4
     cc = ChebConv(ug, in_channel=>out_channel, k)
-    @test size(cc.weight) == (k, in_channel, out_channel)
-    @test size(cc.bias) == (N, out_channel)
+    @test size(cc.weight) == (out_channel, in_channel, k)
+    @test size(cc.bias) == (out_channel, N)
     @test size(cc.L̃) == (N, N)
     @test cc.k == k
     @test cc.in_channel == in_channel

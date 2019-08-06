@@ -30,35 +30,30 @@ end
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(N, ch[2])) : zeros(T, N, ch[2])
+    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
     L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
-    ChebConv(param(init(k, ch[1], ch[2])), b, L̃, k, ch[1], ch[2])
+    ChebConv(param(init(ch[2], ch[1], k)), b, L̃, k, ch[1], ch[2])
 end
 
 @treelike ChebConv
 
-function (c::ChebConv)(X::AbstractMatrix)
+function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     fin = c.in_channel
-    @assert size(X, 2) == fin "Input feature size must match input channel size."
+    @assert size(X, 1) == fin "Input feature size must match input channel size."
     N = size(c.L̃, 1)
-    @assert size(X, 1) == N "Input vertex number must match Laplacian matrix size."
+    @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
     fout = c.out_channel
 
-    T = eltype(X)
-    Y = Array{T}(undef, N, fout)
-    Z = Array{T}(undef, N, c.k, fin)
-    for j = 1:fout
-        Z[:,1,:] = X
-        Z[:,2,:] = c.L̃ * X
-        for k = 3:c.k
-            Z[:,k,:] = 2*c.L̃* view(Z, :, k-1, :) - view(Z, :, k-2, :)
-        end
+    Z = Array{T}(undef, fin, N, c.k)
+    Z[:,:,1] = X
+    Z[:,:,2] = X * c.L̃
+    for k = 3:c.k
+        Z[:,:,k] = 2*view(Z, :, :, k-1)*c.L̃ - view(Z, :, :, k-2)
+    end
 
-        y = view(Z, :, :, 1) * view(c.weight, :, 1, j)
-        for i = 2:fin
-            y += view(Z, :, :, i) * view(c.weight, :, i, j)
-        end
-        Y[:,j] = y
+    Y = view(c.weight, :, :, 1) * view(Z, :, :, 1)
+    for k = 2:c.k
+        Y += view(c.weight, :, :, k) * view(Z, :, :, k)
     end
     Y += c.bias
     return Y

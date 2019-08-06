@@ -22,18 +22,18 @@ end
 
 
 @testset "Test ChebConv layer" begin
-    k = 4
+    k = 6
     cc = ChebConv(adj, in_channel=>out_channel, k)
-    @test size(cc.weight) == (k, in_channel, out_channel)
-    @test size(cc.bias) == (N, out_channel)
+    @test size(cc.weight) == (out_channel, in_channel, k)
+    @test size(cc.bias) == (out_channel, N)
     @test size(cc.L̃) == (N, N)
     @test cc.k == k
     @test cc.in_channel == in_channel
     @test cc.out_channel == out_channel
 
-    X = rand(N, in_channel)
+    X = rand(in_channel, N)
     Y = cc(X)
-    @test size(Y) == (N, out_channel)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test GraphConv layer" begin
