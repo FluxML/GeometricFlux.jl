@@ -15,8 +15,8 @@ num_features = 1433
 target_catg = 7
 
 ## Preprocessing data
-train_X = features
-train_y = labels
+train_X = features  # dim: num_features * num_nodes
+train_y = labels  # dim: target_catg * num_nodes
 
 ## Model
 model = Chain(GCNConv(g, num_features=>1000, relu),
