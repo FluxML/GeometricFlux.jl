@@ -48,6 +48,7 @@ Labels or features for output of classification or regression are part of traini
     * [x] GAE
 * Internals
     * [x] use Zygote
+    * [x] compatible with layers in Flux
     * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
 * Datasets
     * Benchmark JLD2, BSON
