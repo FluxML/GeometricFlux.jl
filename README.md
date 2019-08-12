@@ -47,7 +47,7 @@ Labels or features for output of classification or regression are part of traini
     * [ ] VGAE
     * [x] GAE
 * Internals
-    * [x] use Zygote
+    * [ ] use Zygote
     * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
 * Datasets
     * Benchmark JLD2, BSON
