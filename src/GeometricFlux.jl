@@ -80,6 +80,7 @@ include("linalg.jl")
 
 
 function __init__()
+    @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" include("cuda/scatter.jl")
     @require LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d" begin
         include("graph/simplegraphs.jl")
     end
@@ -87,7 +88,6 @@ function __init__()
         include("graph/weightedgraphs.jl")
         include("graph/utils.jl")
     end
-    @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" include("metagraphs.jl")
 end
 
 end
