@@ -25,7 +25,7 @@ samesize_float = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Flo
 
 
 
-function sumpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     Y = zeros(T, dims..., c)
@@ -33,7 +33,7 @@ function sumpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function subpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     Y = zeros(T, dims..., c)
@@ -41,7 +41,7 @@ function subpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     Y = ones(T, dims..., c)
@@ -49,7 +49,7 @@ function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     FT = (T <: Integer) ? samesize_float[T] : T
@@ -58,7 +58,7 @@ function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function maxpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     Y = fill(typemin(T), dims..., c)
@@ -66,7 +66,7 @@ function maxpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function minpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     Y = fill(typemax(T), dims..., c)
@@ -74,7 +74,7 @@ function minpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function meanpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
     FT = (T <: Integer) ? samesize_float[T] : T
@@ -83,7 +83,7 @@ function meanpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
-function _pooling_dim_check(cluster::Array{Int}, X::Array{T}) where {T<:Real}
+function _pooling_dim_check(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dim_c = size(cluster)
     d = length(dim_c)
     dim_X = size(X)
@@ -93,11 +93,20 @@ function _pooling_dim_check(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     dim_X[1:n]
 end
 
-pool(op::Symbol, cluster::Array, X::Array) = pool(Val(op), cluster, X)
-pool(::Val{:add}, cluster::Array, X::Array) = sumpool(cluster, X)
-pool(::Val{:sub}, cluster::Array, X::Array) = subpool(cluster, X)
-pool(::Val{:mul}, cluster::Array, X::Array) = prodpool(cluster, X)
-pool(::Val{:div}, cluster::Array, X::Array) = divpool(cluster, X)
-pool(::Val{:max}, cluster::Array, X::Array) = maxpool(cluster, X)
-pool(::Val{:min}, cluster::Array, X::Array) = minpool(cluster, X)
-pool(::Val{:mean}, cluster::Array, X::Array) = meanpool(cluster, X)
+function pool(op::Symbol, cluster::AbstractArray, X::AbstractArray)
+    if op == :add
+        return sumpool(cluster, X)
+    elseif op == :sub
+        return subpool(cluster, X)
+    elseif op == :mul
+        return prodpool(cluster, X)
+    elseif op == :div
+        return divpool(cluster, X)
+    elseif op == :max
+        return maxpool(cluster, X)
+    elseif op == :min
+        return minpool(cluster, X)
+    elseif op == :mean
+        return meanpool(cluster, X)
+    end
+end
