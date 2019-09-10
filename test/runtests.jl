@@ -15,7 +15,7 @@ tests = [
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/utils",
-    "cuda/scatter"
+    "utils",
 ]
 
 @testset "GeometricFlux" begin
