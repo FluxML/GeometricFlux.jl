@@ -1,3 +1,22 @@
+const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏", :div => "1/∏",
+                                     :max => "max", :min => "min", :mean => "𝔼[]")
+
+"""
+    GCNConv(graph, in=>out)
+    GCNConv(graph, in=>out, σ)
+
+Graph convolutional layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `in`: the dimension of input features.
+- `out`: the dimension of output features.
+- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+
+Data should be stored in (# features, # nodes) order.
+For example, a 1000-node graph each node of which poses 100 feautres is constructed.
+The input data would be a `1000×100` array.
+"""
 struct GCNConv{T,F}
     weight::AbstractMatrix{T}
     bias::AbstractMatrix{T}
@@ -16,8 +35,29 @@ end
 
 (g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm + g.bias)
 
+function Base.show(io::IO, l::GCNConv)
+    in_channel = size(l.weight, ndims(l.weight))
+    out_channel = size(l.weight, ndims(l.weight)-1)
+    print(io, "GCNConv(G(V=", size(l.norm, 1))
+    print(io, ", E), ", in_channel, "=>", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ")")
+end
 
 
+
+"""
+    ChebConv(graph, in=>out, k)
+
+Chebyshev spectral graph convolutional layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `in`: the dimension of input features.
+- `out`: the dimension of output features.
+- `k`: the order of Chebyshev polynomial.
+- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+"""
 struct ChebConv{T}
     weight::AbstractArray{T,3}
     bias::AbstractMatrix{T}
@@ -59,8 +99,28 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     return Y
 end
 
+function Base.show(io::IO, l::ChebConv)
+    print(io, "ChebConv(G(V=", size(l.L̃, 1))
+    print(io, ", E), ", l.in_channel, "=>", l.out_channel)
+    print(io, ", k=", l.k)
+    print(io, ")")
+end
 
 
+
+"""
+    GraphConv(graph, in=>out)
+    GraphConv(graph, in=>out, aggr)
+
+Graph neural network layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `in`: the dimension of input features.
+- `out`: the dimension of output features.
+- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+- `aggr::Symbol=:add`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
+"""
 struct GraphConv{V,T} <: MessagePassing
     adjlist::V
     weight1::AbstractMatrix{T}
@@ -90,8 +150,29 @@ message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
 update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M + g.bias
 (g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
 
+function Base.show(io::IO, l::GraphConv)
+    in_channel = size(l.weight1, ndims(l.weight1))
+    out_channel = size(l.weight1, ndims(l.weight1)-1)
+    print(io, "GraphConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)
+    print(io, "), ", in_channel, "=>", out_channel)
+    print(io, ", aggr=", AGGR2STR[l.aggr])
+    print(io, ")")
+end
 
 
+
+"""
+    GATConv(graph, in=>out)
+
+Graph attentional layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `in`: the dimension of input features.
+- `out`: the dimension of output features.
+- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+- `negative_slope::Real=0.2`: keyword argument, the parameter of LeakyReLU.
+"""
 struct GATConv{V,T} <: MessagePassing
     adjlist::V
     weight::AbstractMatrix{T}
@@ -125,8 +206,28 @@ function asoftmax(xs)
     return [x ./ s for x in xs]
 end
 
+function Base.show(io::IO, l::GATConv)
+    in_channel = size(l.weight, ndims(l.weight))
+    out_channel = size(l.weight, ndims(l.weight)-1)
+    print(io, "GATConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)
+    print(io, "), ", in_channel, "=>", out_channel)
+    print(io, ", LeakyReLU(λ=", l.negative_slope)
+    print(io, "))")
+end
 
 
+
+"""
+    GatedGraphConv(graph, out, num_layers)
+
+Gated graph convolution layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `out`: the dimension of output features.
+- `num_layers` specifies the number of gated recurrent unit.
+- `aggr::Symbol=:add`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
+"""
 struct GatedGraphConv{V,T,R} <: MessagePassing
     adjlist::V
     weight::AbstractArray{T}
@@ -162,8 +263,27 @@ function (g::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
     H
 end
 
+function Base.show(io::IO, l::GatedGraphConv)
+    print(io, "GatedGraphConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)
+    print(io, "), (=>", l.out_ch)
+    print(io, ")^", l.num_layers)
+    print(io, ", aggr=", AGGR2STR[l.aggr])
+    print(io, ")")
+end
 
 
+
+"""
+    EdgeConv(graph, nn)
+    EdgeConv(graph, nn, aggr)
+
+Edge convolutional layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `nn`: a neural network
+- `aggr::Symbol=:max`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
+"""
 struct EdgeConv{V} <: MessagePassing
     adjlist::V
     nn
@@ -182,3 +302,10 @@ function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
 end
 update(e::EdgeConv; X=zeros(0), M=zeros(0)) = M
 (e::EdgeConv)(X::AbstractMatrix) = propagate(e, X=X, aggr=e.aggr)
+
+function Base.show(io::IO, l::EdgeConv)
+    print(io, "EdgeConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)
+    print(io, "), ", l.nn)
+    print(io, ", aggr=", AGGR2STR[l.aggr])
+    print(io, ")")
+end
