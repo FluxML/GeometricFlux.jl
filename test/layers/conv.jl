@@ -1,4 +1,4 @@
-using Flux: Dense
+using Flux: Dense, gpu
 
 in_channel = 3
 out_channel = 5
@@ -18,6 +18,11 @@ adj = [0. 1. 0. 1.;
     X = rand(in_channel, N)
     Y = gc(X)
     @test size(Y) == (out_channel, N)
+
+    X = X |> gpu
+    gc = gc |> gpu
+    Y = gc(X)
+    @test size(Y) == (out_channel, N)
 end
 
 
@@ -34,6 +39,11 @@ end
     X = rand(in_channel, N)
     Y = cc(X)
     @test size(Y) == (out_channel, N)
+
+    X = X |> gpu
+    cc = cc |> gpu
+    Y = cc(X)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test GraphConv layer" begin
@@ -44,6 +54,11 @@ end
     @test size(gc.bias) == (out_channel, N)
 
     X = rand(in_channel, N)
+    Y = gc(X)
+    @test size(Y) == (out_channel, N)
+
+    X = X |> gpu
+    gc = gc |> gpu
     Y = gc(X)
     @test size(Y) == (out_channel, N)
 end
@@ -57,6 +72,11 @@ end
     X = rand(in_channel, N)
     Y = gat(X)
     @test size(Y) == (out_channel, N)
+
+    X = X |> gpu
+    gat = gat |> gpu
+    Y = gat(X)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test GatedGraphConv layer" begin
@@ -68,6 +88,11 @@ end
     X = rand(in_channel, N)
     Y = ggc(X)
     @test size(Y) == (out_channel, N)
+
+    X = X |> gpu
+    ggc = ggc |> gpu
+    Y = ggc(X)
+    @test size(Y) == (out_channel, N)
 end
 
 @testset "Test EdgeConv layer" begin
@@ -75,6 +100,11 @@ end
     @test ec.adjlist == [[2,4], [1,3], [2,4], [1,3]]
 
     X = rand(in_channel, N)
+    Y = ec(X)
+    @test size(Y) == (out_channel, N)
+    
+    X = X |> gpu
+    ec = ec |> gpu
     Y = ec(X)
     @test size(Y) == (out_channel, N)
 end

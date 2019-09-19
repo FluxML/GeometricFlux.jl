@@ -40,8 +40,7 @@ function apply_messages(mp, M::AbstractMatrix{T}, adj::AbstractVector{<:Abstract
         return thread_apply_messages(mp, M, adj, F, N, n; kwargs...)
     else
         ne_N = mapreduce(length, +, adj)
-        Y = Matrix{T}(undef, F, ne_N)
-        Y[:, 1:n] = M
+        Y = M
         cluster = Vector{Int}(undef, ne_N)
         cluster[1:n] .= 1
         j = n
@@ -49,7 +48,7 @@ function apply_messages(mp, M::AbstractMatrix{T}, adj::AbstractVector{<:Abstract
             ne = adj[i]
             n = length(ne)
             msg_args = getdata(kwargs, i, ne)
-            Y[:, j+1:j+n] = message(mp; msg_args...)
+            Y = hcat(Y, message(mp; msg_args...))
             cluster[j+1:j+n] .= i
             j += n
         end

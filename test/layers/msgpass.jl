@@ -1,4 +1,5 @@
 import GeometricFlux: message, update, propagate
+using Flux: gpu
 
 in_channel = 10
 out_channel = 5
@@ -33,12 +34,23 @@ l = NewLayer(adj, in_channel, out_channel)
     @test clst == [1, 2, 2, 2, 2, 3, 4, 4, 5, 5, 5, 6 ,6, 6]
 end
 
+
 message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = n.weight' * x_j
 
 @testset "Test MessagePassing layer" begin
     Y = l(X)
     @test size(Y) == (out_channel, N)
 end
+
+
+X = X |> gpu
+l = l |> gpu
+
+@testset "Test MessagePassing layer in CUDA" begin
+    Y = l(X)
+    @test size(Y) == (out_channel, N)
+end
+
 
 in_channel = 100
 X = Array(reshape(1:N*in_channel, in_channel, N))
