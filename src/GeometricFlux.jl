@@ -4,9 +4,11 @@ using Requires
 using Core.Intrinsics: llvmcall
 using Base.Threads
 using Statistics: mean
+using DataStructures: DefaultDict
 using Flux
 using Flux: param, glorot_uniform, leakyrelu, GRUCell
 using Flux: @treelike
+using Flux.Tracker: TrackedArray, track, data, @grad
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
 

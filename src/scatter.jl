@@ -191,6 +191,87 @@ end
 #     return ys
 # end
 
+scatter_add!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_add!, ys, us, xs)
+scatter_add!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_add!, ys, us, xs)
+scatter_add!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_add!, ys, us, xs)
+
+scatter_sub!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_sub!, ys, us, xs)
+scatter_sub!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_sub!, ys, us, xs)
+scatter_sub!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_sub!, ys, us, xs)
+
+scatter_mul!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_mul!, ys, us, xs)
+scatter_mul!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_mul!, ys, us, xs)
+scatter_mul!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_mul!, ys, us, xs)
+
+scatter_div!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_div!, ys, us, xs)
+scatter_div!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_div!, ys, us, xs)
+scatter_div!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_div!, ys, us, xs)
+
+scatter_max!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_max!, ys, us, xs)
+scatter_max!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_max!, ys, us, xs)
+scatter_max!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_max!, ys, us, xs)
+
+scatter_min!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_min!, ys, us, xs)
+scatter_min!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_min!, ys, us, xs)
+scatter_min!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_min!, ys, us, xs)
+
+scatter_mean!(ys::TrackedArray, us::TrackedArray, xs::Array) = track(scatter_mean!, ys, us, xs)
+scatter_mean!(ys::AbstractArray, us::TrackedArray, xs::Array) = track(scatter_mean!, ys, us, xs)
+scatter_mean!(ys::TrackedArray, us::AbstractArray, xs::Array) = track(scatter_mean!, ys, us, xs)
+
+@grad scatter_add!(ys, us, xs) = scatter_add!(data(ys), data(us), xs), Δ -> (Δ, gather(Δ, xs), nothing)
+@grad scatter_sub!(ys, us, xs) = scatter_sub!(data(ys), data(us), xs), Δ -> (Δ, -gather(Δ, xs), nothing)
+
+@grad function scatter_mul!(ys, us, xs)
+    scatter_mul!(data(ys), data(us), xs), function (Δ)
+        rev_xs = gather_indices(xs)
+        ∇us = gather(ys, xs) .* gather(Δ, xs)
+        @inbounds for ind = CartesianIndices(xs)
+            inds = filter(x -> x != ind, rev_xs[xs[ind]])
+            ∇us[:, ind] *= prod(data(us)[:, inds])
+        end
+        (scatter_mul!(Δ, data(us), xs), ∇us, nothing)
+    end
+end
+
+@grad function scatter_div!(ys, us, xs)
+    scatter_div!(data(ys), data(us), xs), function (Δ)
+        rev_xs = gather_indices(xs)
+        ∇us = - gather(ys, xs) .* gather(Δ, xs) ./ data(us).^2
+        @inbounds for ind = CartesianIndices(xs)
+            inds = filter(x -> x != ind, rev_xs[xs[ind]])
+            ∇us[:, ind] /= prod(data(us)[:, inds])
+        end
+        (scatter_div!(Δ, data(us), xs), ∇us, nothing)
+    end
+end
+
+function gather_indices(X::Array{T}) where T
+    Y = DefaultDict{T,Vector{CartesianIndex}}(CartesianIndex[])
+    @inbounds for (ind, val) = pairs(X)
+        push!(Y[val], ind)
+    end
+    Y
+end
+
+@grad function scatter_max!(ys, us, xs)
+   max = scatter_max!(data(ys), data(us), xs)
+   max, function (Δ)
+       Δy′ = (data(ys) .== max) .* data(Δ)
+       Δu′ = (data(us) .== gather(max, xs)) .* gather(data(Δ), xs)
+       return (Δy′, Δu′, nothing)
+   end
+end
+
+@grad function scatter_min!(ys, us, xs)
+   min = scatter_min!(data(ys), data(us), xs)
+   min, function (Δ)
+       Δy′ = (data(ys) .== min) .* data(Δ)
+       Δu′ = (data(us) .== gather(min, xs)) .* gather(data(Δ), xs)
+       return (Δy′, Δu′, nothing)
+   end
+end
+
 function scatter!(op::Symbol, ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     if op == :add
         return scatter_add!(ys, us, xs)
