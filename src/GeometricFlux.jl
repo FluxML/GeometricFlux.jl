@@ -86,7 +86,11 @@ include("utils.jl")
 
 
 function __init__()
-    @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" include("cuda/scatter.jl")
+    @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
+        using CUDAnative
+        using CuArrays
+        include("cuda/scatter.jl")
+    end
     @require LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d" begin
         include("graph/simplegraphs.jl")
     end

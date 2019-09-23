@@ -6,6 +6,7 @@ using SimpleWeightedGraphs
 using Test
 
 tests = [
+    "cuda/scatter",
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
