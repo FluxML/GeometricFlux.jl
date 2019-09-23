@@ -1,5 +1,5 @@
-samesize_float = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Float16,
-                      Int32=>Float32, UInt32=>Float32, Int64=>Float64, UInt64=>Float64)
+const INT2FLOAT = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Float16,
+                       Int32=>Float32, UInt32=>Float32, Int64=>Float64, UInt64=>Float64)
 
 # GlobalPool(x, aggr, batch, size=nothing) # aggr=sum, mean, max
 #
@@ -52,7 +52,7 @@ end
 function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
-    FT = (T <: Integer) ? samesize_float[T] : T
+    FT = (T <: Integer) ? INT2FLOAT[T] : T
     Y = ones(FT, dims..., c)
     scatter_div!(Y, FT.(X), cluster)
     Y
@@ -77,7 +77,7 @@ end
 function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))
-    FT = (T <: Integer) ? samesize_float[T] : T
+    FT = (T <: Integer) ? INT2FLOAT[T] : T
     Y = zeros(FT, dims..., c)
     scatter_mean!(Y, FT.(X), cluster)
     Y
