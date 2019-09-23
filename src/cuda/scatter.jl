@@ -1,6 +1,3 @@
-using CUDAnative
-using CuArrays
-
 const MAX_THREADS = 256
 
 for op = [:add, :sub, :max, :min, :and, :or, :xor]
@@ -107,11 +104,11 @@ end
 
 function scatter_mean!(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
     pdiv(x, y) = ifelse(iszero(y), x, x/y)
-    yt = fill!(similar(ys), 0)
-    ot = fill!(similar(ys), 0)
-    os = fill!(similar(us), 1)
+    yt = CuArrays.zero(ys)
+    ot = CuArrays.zero(ys)
+    os = CuArrays.one.(us)
     scatter_add!(ot, os, xs)
     scatter_add!(yt, us, xs)
-    m = pdiv.(yt, ot)
-    return ys .+= m
+    ys .+= pdiv.(yt, ot)
+    return ys
 end
