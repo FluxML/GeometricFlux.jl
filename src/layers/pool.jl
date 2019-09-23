@@ -41,6 +41,8 @@ function subpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     Y
 end
 
+subpool(cluster, X::AbstractArray{T}) where {T<:Unsigned} = error("not implement")
+
 function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     dims = _pooling_dim_check(cluster, X)
     c = length(Set(cluster))

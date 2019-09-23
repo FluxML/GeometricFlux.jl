@@ -7,6 +7,7 @@ using Test
 
 tests = [
     "cuda/scatter",
+    "cuda/pool",
     "layers/msgpass",
     "layers/conv",
     "layers/pool",

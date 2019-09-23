@@ -90,6 +90,7 @@ function __init__()
         using CUDAnative
         using CuArrays
         include("cuda/scatter.jl")
+        include("cuda/pool.jl")
     end
     @require LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d" begin
         include("graph/simplegraphs.jl")
