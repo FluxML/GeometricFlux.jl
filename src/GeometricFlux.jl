@@ -7,6 +7,7 @@ using Statistics: mean
 using Flux
 using Flux: param, glorot_uniform, leakyrelu, GRUCell
 using Flux: @treelike
+using ZygoteRules
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
 
