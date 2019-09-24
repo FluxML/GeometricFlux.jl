@@ -84,7 +84,7 @@ function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add
     GraphConv(neighbors(adj), param(init(ch[2], ch[1])), param(init(ch[2], ch[1])), b, aggr)
 end
 
-@treelike GraphConv
+children(g::GraphConv) = (g.weight1, g.weight2, g.bias)
 
 message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
 update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M + g.bias
@@ -107,7 +107,7 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
     GATConv(neighbors(adj), param(init(ch[2], ch[1])), b, param(init(2 * ch[2])), negative_slope)
 end
 
-@treelike GATConv
+children(g::GATConv) = (g.weight, g.bias, g.a)
 
 function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)
@@ -144,7 +144,7 @@ function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Intege
     GatedGraphConv(neighbors(adj), w, gru, out_ch, num_layers, aggr)
 end
 
-@treelike GatedGraphConv
+children(g::GatedGraphConv) = (g.weight, g.gru)
 
 message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
 update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
@@ -174,7 +174,7 @@ function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
     EdgeConv(neighbors(adj), nn, aggr)
 end
 
-@treelike EdgeConv
+children(e::EdgeConv) = (e.nn,)
 
 function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)

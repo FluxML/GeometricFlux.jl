@@ -20,6 +20,7 @@ import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatType
        atomic_max!, atomic_min!
 
 import Base.Sys: ARCH, WORD_SIZE
+import Flux: children
 
 export
 
