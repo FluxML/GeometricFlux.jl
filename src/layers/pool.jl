@@ -25,72 +25,75 @@ const INT2FLOAT = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Fl
 
 
 
-function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
-    Y = zeros(T, dims..., c)
-    scatter_add!(Y, X, cluster)
+function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                 c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
+    Y = zeros(T, dims.us_dims[1], c)
+    scatter_add!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
-    Y = zeros(T, dims..., c)
-    scatter_sub!(Y, X, cluster)
+function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                 c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
+    Y = zeros(T, dims.us_dims[1], c)
+    scatter_sub!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
-    Y = ones(T, dims..., c)
-    scatter_mul!(Y, X, cluster)
+function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                  c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
+    Y = ones(T, dims.us_dims[1], c)
+    scatter_mul!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
+function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                 c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
     FT = (T <: Integer) ? INT2FLOAT[T] : T
-    Y = ones(FT, dims..., c)
-    scatter_div!(Y, FT.(X), cluster)
+    Y = ones(FT, dims.us_dims[1], c)
+    scatter_div!(Y, FT.(X), cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
-    Y = fill(typemin(T), dims..., c)
-    scatter_max!(Y, X, cluster)
+function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                 c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
+    Y = fill(typemin(T), dims.us_dims[1], c)
+    scatter_max!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
-    Y = fill(typemax(T), dims..., c)
-    scatter_min!(Y, X, cluster)
+function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                 c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
+    Y = fill(typemax(T), dims.us_dims[1], c)
+    scatter_min!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dims = _pooling_dim_check(cluster, X)
-    c = length(Set(cluster))
+function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+                  c::Integer=length(Set(cluster))) where {T<:Real}
+    dims = pooling_dim_check(cluster, X)
     FT = (T <: Integer) ? INT2FLOAT[T] : T
-    Y = zeros(FT, dims..., c)
-    scatter_mean!(Y, FT.(X), cluster)
+    Y = zeros(FT, dims.us_dims[1], c)
+    scatter_mean!(Y, FT.(X), cluster, prod(dims.xs_dims), dims.us_dims[1])
     Y
 end
 
-function _pooling_dim_check(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    dim_c = size(cluster)
-    d = length(dim_c)
-    dim_X = size(X)
-    n = length(dim_X) - d
-    @assert n > 0 "X must have more dimensions than cluster."
-    @assert dim_c == dim_X[n+1:end] "X must have the same latter dimension with cluster."
-    dim_X[1:n]
+struct Dims
+    us_dims::Tuple
+    xs_dims::Tuple
+end
+
+Dims(xs::AbstractArray{Int}, us::AbstractArray) = Dims(size(us), size(xs))
+
+function pooling_dim_check(cluster::AbstractArray{Int}, X::AbstractArray)
+    dims = Dims(cluster, X)
+    @assert dims.xs_dims == dims.us_dims[2:end] "X must have the same latter dimension with cluster."
+    dims
 end
 
 function pool(op::Symbol, cluster::AbstractArray, X::AbstractArray)

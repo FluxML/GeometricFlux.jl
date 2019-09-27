@@ -80,10 +80,8 @@ for op in [:+, :-, :max, :min, :*, :/]
 end
 
 for op = [:add, :sub, :max, :min, :mul, :div]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::Matrix{T}, us::Array{T}, xs::Array{Int}) where T
-        l = length(xs)
-        s = size(ys, 1)
-
+    @eval function $(Symbol("scatter_", op, "!"))(ys::Matrix{T}, us::Array{T}, xs::Array{Int},
+                                                  l::Int=length(xs), s::Int=size(ys,1)) where T
         Threads.@threads for num = 1:l*s
             li = (num -1) ÷ s + 1
             i = (num - 1) % s + 1
@@ -95,14 +93,11 @@ for op = [:add, :sub, :max, :min, :mul, :div]
                 us[i, ind]
             )
         end
-
-        return ys
+        ys
     end
 
-    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple}) where T
-        l = length(xs)
-        s = size(ys, 1)
-
+    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple},
+                                                  l::Int=length(xs), s::Int=size(ys,1)) where T
         Threads.@threads for num = 1:l*s
             li = (num -1) ÷ s + 1
             i = (num - 1) % s + 1
@@ -114,20 +109,22 @@ for op = [:add, :sub, :max, :min, :mul, :div]
                 us[i, ind]
             )
         end
-
-        return ys
+        ys
     end
 end
 
-scatter_mean!(ys::Matrix{T}, us::Array{T}, xs::Array{Int}) where T = _scatter_mean!(ys, us, xs)
+scatter_mean!(ys::Matrix{T}, us::Array{T}, xs::Array{Int}, l::Int=length(xs),
+              s::Int=size(ys,1)) where T = _scatter_mean!(ys, us, xs)
 
-scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple}) where T = _scatter_mean!(ys, us, xs)
+scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple}, l::Int=length(xs),
+              s::Int=size(ys,1)) where T = _scatter_mean!(ys, us, xs)
 
-function _scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array) where T
+function _scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array, l::Int=length(xs),
+                        s::Int=size(ys,1)) where T
     Ns = zero(ys)
     ys_ = zero(ys)
-    scatter_add!(Ns, one.(us), xs)
-    scatter_add!(ys_, us, xs)
+    scatter_add!(Ns, one.(us), xs, l, s)
+    scatter_add!(ys_, us, xs, l, s)
     ys .+= map((x,y) -> ifelse(iszero(y), x, x/y), ys_, Ns)
     return ys
 end
