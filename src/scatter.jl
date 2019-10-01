@@ -129,30 +129,47 @@ function _scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array, l::Int=length(xs)
     return ys
 end
 
-@adjoint scatter_add!(ys, us, xs) = scatter_add!(data(ys), data(us), xs), Δ -> (Δ, gather(Δ, xs), nothing)
-@adjoint scatter_sub!(ys, us, xs) = scatter_sub!(data(ys), data(us), xs), Δ -> (Δ, -gather(Δ, xs), nothing)
+@adjoint function scatter_add!(ys, us, xs)
+    ys_ = copy(ys)
+    scatter_add!(ys_, us, xs)
+    ys_, Δ -> (Δ, gather(Δ, xs), nothing)
+end
+
+@adjoint function scatter_sub!(ys, us, xs)
+    ys_ = copy(ys)
+    scatter_sub!(ys_, us, xs)
+    ys_, Δ -> (Δ, -gather(Δ, xs), nothing)
+end
 
 @adjoint function scatter_mul!(ys, us, xs)
-    scatter_mul!(data(ys), data(us), xs), function (Δ)
+    ys_ = copy(ys)
+    scatter_mul!(ys_, us, xs)
+    ys_, function (Δ)
         rev_xs = gather_indices(xs)
         ∇us = gather(ys, xs) .* gather(Δ, xs)
         @inbounds for ind = CartesianIndices(xs)
             inds = filter(x -> x != ind, rev_xs[xs[ind]])
-            ∇us[:, ind] *= prod(data(us)[:, inds])
+            for i = 1:size(us, 1)
+                ∇us[i, ind] *= prod(j -> us[i, j], inds)
+            end
         end
-        (scatter_mul!(Δ, data(us), xs), ∇us, nothing)
+        (scatter_mul!(Δ, us, xs), ∇us, nothing)
     end
 end
 
 @adjoint function scatter_div!(ys, us, xs)
-    scatter_div!(data(ys), data(us), xs), function (Δ)
+    ys_ = copy(ys)
+    scatter_div!(ys_, us, xs)
+    ys_, function (Δ)
         rev_xs = gather_indices(xs)
-        ∇us = - gather(ys, xs) .* gather(Δ, xs) ./ data(us).^2
+        ∇us = - gather(ys, xs) .* gather(Δ, xs) ./ us.^2
         @inbounds for ind = CartesianIndices(xs)
             inds = filter(x -> x != ind, rev_xs[xs[ind]])
-            ∇us[:, ind] /= prod(data(us)[:, inds])
+            for i = 1:size(us, 1)
+                ∇us[i, ind] /= prod(j -> us[i, j], inds)
+            end
         end
-        (scatter_div!(Δ, data(us), xs), ∇us, nothing)
+        (scatter_div!(Δ, us, xs), ∇us, nothing)
     end
 end
 
@@ -165,21 +182,39 @@ function gather_indices(X::Array{T}) where T
 end
 
 @adjoint function scatter_max!(ys, us, xs)
-   max = scatter_max!(data(ys), data(us), xs)
-   max, function (Δ)
-       Δy′ = (data(ys) .== max) .* data(Δ)
-       Δu′ = (data(us) .== gather(max, xs)) .* gather(data(Δ), xs)
-       return (Δy′, Δu′, nothing)
-   end
+    max = copy(ys)
+    scatter_max!(max, us, xs)
+    max, function (Δ)
+       Δy = (ys .== max) .* Δ
+       Δu = (us .== gather(max, xs)) .* gather(Δ, xs)
+       (Δy, Δu, nothing)
+    end
 end
 
 @adjoint function scatter_min!(ys, us, xs)
-   min = scatter_min!(data(ys), data(us), xs)
-   min, function (Δ)
-       Δy′ = (data(ys) .== min) .* data(Δ)
-       Δu′ = (data(us) .== gather(min, xs)) .* gather(data(Δ), xs)
-       return (Δy′, Δu′, nothing)
-   end
+    min = copy(ys)
+    scatter_min!(min, us, xs)
+    min, function (Δ)
+       Δy = (ys .== min) .* Δ
+       Δu = (us .== gather(min, xs)) .* gather(Δ, xs)
+       (Δy, Δu, nothing)
+    end
+end
+
+@adjoint function scatter_mean!(ys, us, xs)
+    ys_ = copy(ys)
+    scatter_mean!(ys_, us, xs)
+    ys_, function (Δ)
+        Δu = gather(Δ, xs)
+        counts = zero.(xs)
+        @inbounds for i = 1:size(ys, 2)
+            counts += sum(xs.==i) * (xs.==i)
+        end
+        @inbounds for ind = CartesianIndices(counts)
+            Δu[:, ind] ./= counts[ind]
+        end
+        (Δ, Δu, nothing)
+    end
 end
 
 function scatter!(op::Symbol, ys::AbstractArray, us::AbstractArray, xs::AbstractArray)

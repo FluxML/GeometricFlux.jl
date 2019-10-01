@@ -3,12 +3,14 @@ using GeometricFlux: neighbors, laplacian_matrix
 using LightGraphs
 using LightGraphs: neighbors, laplacian_matrix
 using SimpleWeightedGraphs
+using Zygote
 using Test
 
 tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
+    "grad",
     "models",
     "linalg",
     "scatter",

@@ -7,9 +7,11 @@ using Statistics: mean
 using Flux
 using Flux: param, glorot_uniform, leakyrelu, GRUCell
 using Flux: @treelike
+using Zygote: @adjoint
 using ZygoteRules
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
+using DataStructures: DefaultDict
 
 import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
        atomic_cas!,
