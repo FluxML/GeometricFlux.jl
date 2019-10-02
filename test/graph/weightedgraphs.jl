@@ -1,6 +1,3 @@
-using SimpleWeightedGraphs
-using LightGraphs: add_edge!
-
 in_channel = 3
 out_channel = 5
 N = 6

@@ -27,11 +27,12 @@ end
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
-    GCNConv(param(init(ch[2], ch[1])), b, normalized_laplacian(adj+I, T), σ)
+    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    GCNConv(init(ch[2], ch[1]), b, normalized_laplacian(adj+I, T), σ)
 end
 
-@treelike GCNConv
+@functor GCNConv
+trainable(g::GCNConv) = [g.weight, g.bias]
 
 (g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm + g.bias)
 
@@ -70,12 +71,13 @@ end
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
+    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
     L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
-    ChebConv(param(init(ch[2], ch[1], k)), b, L̃, k, ch[1], ch[2])
+    ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
 end
 
-@treelike ChebConv
+@functor ChebConv
+trainable(c::ChebConv) = [c.weight, c.bias]
 
 function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     fin = c.in_channel
@@ -133,18 +135,19 @@ function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(el, 1)
-    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
-    GraphConv(el, param(init(ch[2], ch[1])), param(init(ch[2], ch[1])), b, aggr)
+    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    GraphConv(el, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
-    GraphConv(neighbors(adj), param(init(ch[2], ch[1])), param(init(ch[2], ch[1])), b, aggr)
+    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    GraphConv(neighbors(adj), init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
-@treelike GraphConv
+@functor GraphConv
+trainable(g::GraphConv) = [g.weight1, g.weight2, g.bias]
 
 message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
 update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M + g.bias
@@ -184,11 +187,12 @@ end
 function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
                  concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? param(init(ch[2], N)) : zeros(T, ch[2], N)
-    GATConv(neighbors(adj), param(init(ch[2], ch[1])), b, param(init(2 * ch[2])), negative_slope)
+    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    GATConv(neighbors(adj), init(ch[2], ch[1]), b, init(2 * ch[2]), negative_slope)
 end
 
-@treelike GATConv
+@functor GATConv
+trainable(g::GATConv) = [g.weight, g.bias, g.a]
 
 function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)
@@ -240,12 +244,13 @@ end
 function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer;
                         aggr=:add, init=glorot_uniform)
     N = size(adj, 1)
-    w = param(init(out_ch, out_ch, num_layers))
+    w = init(out_ch, out_ch, num_layers)
     gru = GRUCell(out_ch, out_ch)
     GatedGraphConv(neighbors(adj), w, gru, out_ch, num_layers, aggr)
 end
 
-@treelike GatedGraphConv
+@functor GatedGraphConv
+trainable(g::GatedGraphConv) = [g.weight, g.gru]
 
 message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
 update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
@@ -294,7 +299,8 @@ function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
     EdgeConv(neighbors(adj), nn, aggr)
 end
 
-@treelike EdgeConv
+@functor EdgeConv
+trainable(e::EdgeConv) = [e.nn]
 
 function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)

@@ -5,8 +5,8 @@ using Core.Intrinsics: llvmcall
 using Base.Threads
 using Statistics: mean
 using Flux
-using Flux: param, glorot_uniform, leakyrelu, GRUCell
-using Flux: @treelike
+using Flux: glorot_uniform, leakyrelu, GRUCell
+using Flux: @functor
 using Zygote: @adjoint
 using ZygoteRules
 using SparseArrays: SparseMatrixCSC
@@ -94,7 +94,6 @@ function __init__()
         include("graph/weightedgraphs.jl")
         include("graph/utils.jl")
     end
-    @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" include("metagraphs.jl")
 end
 
 end
