@@ -81,50 +81,43 @@ end
 
 for op = [:add, :sub, :max, :min, :mul, :div]
     @eval function $(Symbol("scatter_", op, "!"))(ys::Matrix{T}, us::Array{T}, xs::Array{Int},
-                                                  l::Int=length(xs), s::Int=size(ys,1)) where T
-        Threads.@threads for num = 1:l*s
-            li = (num -1) ÷ s + 1
-            i = (num - 1) % s + 1
-            @inbounds ind = CartesianIndices(xs)[li]
-            @inbounds $(Symbol("atomic_", op, "!"))(
-                pointer(ys,
-                        Base._to_linear_index(ys, i, xs[li])
-                        ),
-                us[i, ind]
-            )
+                                                  s::Int=size(ys,1)) where T
+        Threads.@threads for i = 1:s
+            @inbounds for ind = CartesianIndices(xs)
+                $(Symbol("atomic_", op, "!"))(
+                    pointer(ys, Base._to_linear_index(ys, i, xs[ind])),
+                    us[i, ind]
+                )
+            end
         end
         ys
     end
 
     @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple},
-                                                  l::Int=length(xs), s::Int=size(ys,1)) where T
-        Threads.@threads for num = 1:l*s
-            li = (num -1) ÷ s + 1
-            i = (num - 1) % s + 1
-            @inbounds ind = CartesianIndices(xs)[li]
-            @inbounds $(Symbol("atomic_", op, "!"))(
-                pointer(ys,
-                        Base._to_linear_index(ys, i, xs[li]...)
-                        ),
-                us[i, ind]
-            )
+                                                  s::Int=size(ys,1)) where T
+        Threads.@threads for i = 1:s
+            @inbounds for ind = CartesianIndices(xs)
+                $(Symbol("atomic_", op, "!"))(
+                    pointer(ys, Base._to_linear_index(ys, i, xs[ind]...)),
+                    us[i, ind]
+                )
+            end
         end
         ys
     end
 end
 
-scatter_mean!(ys::Matrix{T}, us::Array{T}, xs::Array{Int}, l::Int=length(xs),
-              s::Int=size(ys,1)) where T = _scatter_mean!(ys, us, xs)
+scatter_mean!(ys::Matrix{T}, us::Array{T}, xs::Array{Int}, s::Int=size(ys,1)) where T =
+    _scatter_mean!(ys, us, xs, s)
 
-scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple}, l::Int=length(xs),
-              s::Int=size(ys,1)) where T = _scatter_mean!(ys, us, xs)
+scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple}, s::Int=size(ys,1)) where T =
+    _scatter_mean!(ys, us, xs, s)
 
-function _scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array, l::Int=length(xs),
-                        s::Int=size(ys,1)) where T
+function _scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array, s::Int=size(ys,1)) where T
     Ns = zero(ys)
     ys_ = zero(ys)
-    scatter_add!(Ns, one.(us), xs, l, s)
-    scatter_add!(ys_, us, xs, l, s)
+    scatter_add!(Ns, one.(us), xs, s)
+    scatter_add!(ys_, us, xs, s)
     ys .+= map((x,y) -> ifelse(iszero(y), x, x/y), ys_, Ns)
     return ys
 end

@@ -29,7 +29,7 @@ function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = pooling_dim_check(cluster, X)
     Y = zeros(T, dims.us_dims[1], c)
-    scatter_add!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_add!(Y, X, cluster, dims.us_dims[1])
     Y
 end
 
@@ -37,7 +37,7 @@ function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = pooling_dim_check(cluster, X)
     Y = zeros(T, dims.us_dims[1], c)
-    scatter_sub!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_sub!(Y, X, cluster, dims.us_dims[1])
     Y
 end
 
@@ -45,7 +45,7 @@ function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = pooling_dim_check(cluster, X)
     Y = ones(T, dims.us_dims[1], c)
-    scatter_mul!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_mul!(Y, X, cluster, dims.us_dims[1])
     Y
 end
 
@@ -54,7 +54,7 @@ function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     dims = pooling_dim_check(cluster, X)
     FT = (T <: Integer) ? INT2FLOAT[T] : T
     Y = ones(FT, dims.us_dims[1], c)
-    scatter_div!(Y, FT.(X), cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_div!(Y, FT.(X), cluster, dims.us_dims[1])
     Y
 end
 
@@ -62,7 +62,7 @@ function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = pooling_dim_check(cluster, X)
     Y = fill(typemin(T), dims.us_dims[1], c)
-    scatter_max!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_max!(Y, X, cluster, dims.us_dims[1])
     Y
 end
 
@@ -70,7 +70,7 @@ function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = pooling_dim_check(cluster, X)
     Y = fill(typemax(T), dims.us_dims[1], c)
-    scatter_min!(Y, X, cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_min!(Y, X, cluster, dims.us_dims[1])
     Y
 end
 
@@ -79,7 +79,7 @@ function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     dims = pooling_dim_check(cluster, X)
     FT = (T <: Integer) ? INT2FLOAT[T] : T
     Y = zeros(FT, dims.us_dims[1], c)
-    scatter_mean!(Y, FT.(X), cluster, prod(dims.xs_dims), dims.us_dims[1])
+    scatter_mean!(Y, FT.(X), cluster, dims.us_dims[1])
     Y
 end
 
