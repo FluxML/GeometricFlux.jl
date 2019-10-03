@@ -1,5 +1,6 @@
 # from https://github.com/chengchingwen/Transformers.jl/tree/master/src/fix
 
+const IntOrTuple = Union{Integer,Tuple}
 
 for typ ∈ atomictypes
     lt = llvmtypes[typ]
@@ -80,20 +81,7 @@ for op in [:+, :-, :max, :min, :*, :/]
 end
 
 for op = [:add, :sub, :max, :min, :mul, :div]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::Matrix{T}, us::Array{T}, xs::Array{Int},
-                                                  s::Int=size(ys,1)) where T
-        Threads.@threads for i = 1:s
-            @inbounds for ind = CartesianIndices(xs)
-                $(Symbol("atomic_", op, "!"))(
-                    pointer(ys, Base._to_linear_index(ys, i, xs[ind])),
-                    us[i, ind]
-                )
-            end
-        end
-        ys
-    end
-
-    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple},
+    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple},
                                                   s::Int=size(ys,1)) where T
         Threads.@threads for i = 1:s
             @inbounds for ind = CartesianIndices(xs)
@@ -107,13 +95,8 @@ for op = [:add, :sub, :max, :min, :mul, :div]
     end
 end
 
-scatter_mean!(ys::Matrix{T}, us::Array{T}, xs::Array{Int}, s::Int=size(ys,1)) where T =
-    _scatter_mean!(ys, us, xs, s)
-
-scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:Tuple}, s::Int=size(ys,1)) where T =
-    _scatter_mean!(ys, us, xs, s)
-
-function _scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array, s::Int=size(ys,1)) where T
+function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple},
+                       s::Int=size(ys,1)) where T
     Ns = zero(ys)
     ys_ = zero(ys)
     scatter_add!(Ns, one.(us), xs, s)
