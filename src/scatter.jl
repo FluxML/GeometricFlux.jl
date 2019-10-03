@@ -121,15 +121,17 @@ end
     ys_ = copy(ys)
     scatter_mul!(ys_, us, xs)
     ys_, function (Δ)
+        Δy = Δ .+ zero(ys)
+        scatter_mul!(Δy, us, xs)
         rev_xs = gather_indices(xs)
-        ∇us = gather(ys, xs) .* gather(Δ, xs)
+        Δu = gather(ys, xs) .* gather(Δ, xs)
         @inbounds for ind = CartesianIndices(xs)
             inds = filter(x -> x != ind, rev_xs[xs[ind]])
             for i = 1:size(us, 1)
-                ∇us[i, ind] *= prod(j -> us[i, j], inds)
+                Δu[i, ind] *= prod(j -> us[i, j], inds)
             end
         end
-        (scatter_mul!(Δ, us, xs), ∇us, nothing)
+        (Δy, Δu, nothing)
     end
 end
 
@@ -137,15 +139,17 @@ end
     ys_ = copy(ys)
     scatter_div!(ys_, us, xs)
     ys_, function (Δ)
+        Δy = Δ .+ zero(ys)
+        scatter_div!(Δy, us, xs)
         rev_xs = gather_indices(xs)
-        ∇us = - gather(ys, xs) .* gather(Δ, xs) ./ us.^2
+        Δu = - gather(ys, xs) .* gather(Δ, xs) ./ us.^2
         @inbounds for ind = CartesianIndices(xs)
             inds = filter(x -> x != ind, rev_xs[xs[ind]])
             for i = 1:size(us, 1)
-                ∇us[i, ind] /= prod(j -> us[i, j], inds)
+                Δu[i, ind] /= prod(j -> us[i, j], inds)
             end
         end
-        (scatter_div!(Δ, us, xs), ∇us, nothing)
+        (Δy, Δu, nothing)
     end
 end
 

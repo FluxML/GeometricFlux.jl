@@ -1,37 +1,43 @@
-using Random
+ys = [3. 3. 4. 4. 5.;
+      5. 5. 6. 6. 7.]
+us = 2*ones(2, 3, 4)
+xs = [1 2 3 4;
+      4 2 1 3;
+      3 5 5 3]
 
-rng, M, N, P, Q = MersenneTwister(1234567), 2, 3, 4, 5
-ys = randn(rng, M, Q)
-us = randn(rng, M, N, P)
-xs = rand(1:Q, N, P)
-
-function ngradient(f, xs::AbstractArray...)
-    grads = zero.(xs[1:end-1])
-    for (x, Δ) in zip(xs[1:end-1], grads), i in 1:length(x)
-        δ = sqrt(eps())
-        tmp = x[i]
-        x[i] = tmp - δ/2
-        y1 = f(xs...)
-        x[i] = tmp + δ/2
-        y2 = f(xs...)
-        x[i] = tmp
-        Δ[i] = (y2-y1)/δ
-    end
-    return grads
-end
-
-gradcheck(f, xs...) = (all(isapprox.(ngradient(f, xs...),
-                gradient(f, xs...)[1:end-1], rtol = 1e-5, atol = 1e-5)))
-
-gradtest(f, xs::AbstractArray...) = gradcheck((xs...) -> sum(sin.(f(xs...))), xs...)
-
+∇y_mul = [4. 4. 16. 4. 4.; 4. 4. 16. 4. 4.]
+∇y_div = [.25 .25 .0625 .25 .25; .25 .25 .0625 .25 .25]
+∇u_mean = cat([.5 .5 .25; .5 .5 .25], [.5 .5 .5; .5 .5 .5],
+              [.25 .5 .5; .25 .5 .5], [.5 .25 .25; .5 .25 .25], dims=3)
 
 @testset "gradtest" begin
-    @test gradtest(scatter_add!, copy(ys), us, xs)
-    @test gradtest(scatter_sub!, copy(ys), us, xs)
-    @test gradtest(scatter_max!, copy(ys), us, xs)
-    @test gradtest(scatter_min!, copy(ys), us, xs)
-    @test gradtest(scatter_mul!, copy(ys), us, xs)
-    @test gradtest(scatter_div!, copy(ys), us, xs)
-    @test gradtest(scatter_mean!, copy(ys), us, xs)
+    @testset "scatter" begin
+        @test Zygote.gradient(x -> sum(scatter_add!(x, us, xs)), ys) == (ones(2, 5),)
+        @test Zygote.gradient(x -> sum(scatter_add!(copy(ys), x, xs)), us) == (ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(scatter_add!(copy(ys), us, x)), xs) == (nothing,)
+
+        @test Zygote.gradient(x -> sum(scatter_sub!(x, us, xs)), ys) == (ones(2, 5),)
+        @test Zygote.gradient(x -> sum(scatter_sub!(copy(ys), x, xs)), us) == (-ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(scatter_sub!(copy(ys), us, x)), xs) == (nothing,)
+
+        @test Zygote.gradient(x -> sum(scatter_max!(x, us, xs)), ys) == (ones(2, 5),)
+        @test Zygote.gradient(x -> sum(scatter_max!(copy(ys), x, xs)), us) == (zeros(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(scatter_max!(copy(ys), us, x)), xs) == (nothing,)
+
+        @test Zygote.gradient(x -> sum(scatter_min!(x, us, xs)), ys) == (zeros(2, 5),)
+        @test Zygote.gradient(x -> sum(scatter_min!(copy(ys), x, xs)), us) == (ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(scatter_min!(copy(ys), us, x)), xs) == (nothing,)
+
+        @test Zygote.gradient(x -> sum(scatter_mul!(x, us, xs)), ys) == (∇y_mul,)
+        @test Zygote.gradient(x -> sum(scatter_mul!(copy(ys), x, xs)), us) == (2048*gather(ys, xs),)
+        @test Zygote.gradient(x -> sum(scatter_mul!(copy(ys), us, x)), xs) == (nothing,)
+
+        @test Zygote.gradient(x -> sum(scatter_div!(x, us, xs)), ys) == (∇y_div,)
+        @test Zygote.gradient(x -> sum(scatter_div!(copy(ys), x, xs)), us) == (-gather(ys, xs)/8192,)
+        @test Zygote.gradient(x -> sum(scatter_div!(copy(ys), us, x)), xs) == (nothing,)
+
+        @test Zygote.gradient(x -> sum(scatter_mean!(x, us, xs)), ys) == (ones(2, 5),)
+        @test Zygote.gradient(x -> sum(scatter_mean!(copy(ys), x, xs)), us) == (∇u_mean,)
+        @test Zygote.gradient(x -> sum(scatter_mean!(copy(ys), us, x)), xs) == (nothing,)
+    end
 end
