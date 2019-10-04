@@ -1,7 +1,5 @@
 # from https://github.com/chengchingwen/Transformers.jl/tree/master/src/fix
 
-const IntOrTuple = Union{Integer,Tuple}
-
 for typ ∈ atomictypes
     lt = llvmtypes[typ]
     ilt = llvmtypes[inttype(typ)]

@@ -92,6 +92,8 @@ else
     has_cuarrays() = false
 end
 
+const IntOrTuple = Union{Integer,Tuple}
+
 include("scatter.jl")
 include("layers/msgpass.jl")
 include("layers/conv.jl")
