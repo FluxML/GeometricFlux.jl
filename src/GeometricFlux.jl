@@ -79,6 +79,19 @@ export
     # utils
     gather
 
+using CUDAapi
+if has_cuda()
+    try
+        using CuArrays
+        @eval has_cuarrays() = true
+    catch ex
+        @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex,catch_backtrace())
+        @eval has_cuarrays() = false
+    end
+else
+    has_cuarrays() = false
+end
+
 include("scatter.jl")
 include("layers/msgpass.jl")
 include("layers/conv.jl")

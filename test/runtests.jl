@@ -5,9 +5,27 @@ using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge
 using Zygote
 using Test
 
-tests = [
+using CUDAapi
+if has_cuda()
+    try
+        using CuArrays
+        @eval has_cuarrays() = true
+    catch ex
+        @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex,catch_backtrace())
+        @eval has_cuarrays() = false
+    end
+else
+    has_cuarrays() = false
+end
+
+cuda_tests = [
     "cuda/scatter",
     "cuda/pool",
+    # "cuda/grad",
+    # "cuda/conv",
+]
+
+tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
@@ -20,6 +38,10 @@ tests = [
     "graph/utils",
     "utils",
 ]
+
+if has_cuarrays()
+    append!(tests, cuda_tests)
+end
 
 @testset "GeometricFlux" begin
     for t in tests
