@@ -96,6 +96,68 @@ function pooling_dim_check(cluster::AbstractArray{Int}, X::AbstractArray)
     dims
 end
 
+@adjoint sumpool(cluster, X) = sumpool(cluster, X), Δ -> (nothing, gather(Δ, cluster))
+@adjoint subpool(cluster, X) = subpool(cluster, X), Δ -> (nothing, -gather(Δ, cluster))
+
+@adjoint function prodpool(cluster, X)
+    prodpool(cluster, X), function (Δ)
+        rev_cluster = gather_indices(cluster)
+        ∇X = gather(Δ, cluster)
+        @inbounds for ind = CartesianIndices(cluster)
+            inds = filter(x -> x != ind, rev_cluster[cluster[ind]])
+            for i = 1:size(X, 1)
+                ∇X[i, ind] *= prod(j -> X[i, j], inds)
+            end
+        end
+        (nothing, ∇X)
+    end
+end
+
+@adjoint function divpool(cluster, X)
+    divpool(cluster, X), function (Δ)
+        rev_cluster = gather_indices(cluster)
+        ∇X = -gather(Δ, cluster) ./ X.^2
+        @inbounds for ind = CartesianIndices(cluster)
+            inds = filter(x -> x != ind, rev_cluster[cluster[ind]])
+            for i = 1:size(X, 1)
+                ∇X[i, ind] /= prod(j -> X[i, j], inds)
+            end
+        end
+        (nothing, ∇X)
+    end
+end
+
+@adjoint function maxpool(cluster, X)
+    max = maxpool(cluster, X)
+    max, function (Δ)
+       Δu = (X .== gather(max, cluster)) .* gather(Δ, cluster)
+       (nothing, Δu)
+    end
+end
+
+@adjoint function minpool(cluster, X)
+    min = minpool(cluster, X)
+    min, function (Δ)
+       Δu = (X .== gather(min, cluster)) .* gather(Δ, cluster)
+       (nothing, Δu)
+    end
+end
+
+@adjoint function meanpool(cluster, X)
+    m = meanpool(cluster, X)
+    m, function (Δ)
+        ΔX = gather(Δ, cluster)
+        counts = zero.(cluster)
+        @inbounds for i = 1:size(m, 2)
+            counts += sum(cluster.==i) * (cluster.==i)
+        end
+        @inbounds for ind = CartesianIndices(counts)
+            ΔX[:, ind] ./= counts[ind]
+        end
+        (nothing, ΔX)
+    end
+end
+
 function pool(op::Symbol, cluster::AbstractArray, X::AbstractArray)
     if op == :add
         return sumpool(cluster, X)

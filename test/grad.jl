@@ -40,4 +40,27 @@ xs = [1 2 3 4;
         @test Zygote.gradient(x -> sum(scatter_mean!(copy(ys), x, xs)), us) == (∇u_mean,)
         @test Zygote.gradient(x -> sum(scatter_mean!(copy(ys), us, x)), xs) == (nothing,)
     end
+
+    @testset "pool" begin
+        @test Zygote.gradient(x -> sum(sumpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(sumpool(xs, x)), us) == (ones(2, 3, 4),)
+
+        @test Zygote.gradient(x -> sum(subpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(subpool(xs, x)), us) == (-ones(2, 3, 4),)
+
+        @test Zygote.gradient(x -> sum(maxpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(maxpool(xs, x)), us) == (ones(2, 3, 4),)
+
+        @test Zygote.gradient(x -> sum(minpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(minpool(xs, x)), us) == (ones(2, 3, 4),)
+
+        @test Zygote.gradient(x -> sum(prodpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(prodpool(xs, x)), us) == (2048*ones(2, 3, 4),)
+
+        @test Zygote.gradient(x -> sum(divpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(divpool(xs, x)), us) == (-ones(2, 3, 4)/8192,)
+
+        @test Zygote.gradient(x -> sum(meanpool(x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(meanpool(xs, x)), us) == (∇u_mean,)
+    end
 end
