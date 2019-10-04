@@ -5,7 +5,7 @@ end
 
 GAE(enc, σ::Function=identity) = GAE(enc, InnerProductDecoder(σ))
 
-@treelike GAE
+@functor GAE
 
 function (g::GAE)(X::AbstractMatrix)
     Z = g.encoder(X)
@@ -24,7 +24,7 @@ function VGAE(enc, h_dim::Integer, z_dim::Integer, σ::Function=identity)
     VGAE(VariationalEncoder(enc, h_dim, z_dim), InnerProductDecoder(σ))
 end
 
-@treelike VGAE
+@functor VGAE
 
 function (g::VGAE)(X::AbstractMatrix)
     Z = g.encoder(X)
@@ -38,7 +38,7 @@ struct InnerProductDecoder
     σ
 end
 
-@treelike InnerProductDecoder
+@functor InnerProductDecoder
 
 (i::InnerProductDecoder)(Z::AbstractArray) = i.σ(Z'*Z)
 
@@ -55,7 +55,7 @@ struct VariationalEncoder
     end
 end
 
-@treelike VariationalEncoder
+@functor VariationalEncoder
 
 function (ve::VariationalEncoder)(X::AbstractMatrix)
     h = ve.nn(X)

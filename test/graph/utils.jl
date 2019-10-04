@@ -1,6 +1,3 @@
-using SimpleWeightedGraphs
-using SimpleWeightedGraphs: add_edge!
-
 el_ug = Vector{Int64}[[3, 6], [3, 5], [1, 2, 4, 5], [3], [2, 3], [1]]
 el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
 

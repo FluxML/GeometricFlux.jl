@@ -1,5 +1,9 @@
 # GeometricFlux.jl
 
+<p align="center">
+<img width="400px" src="https://github.com/yuehhua/GeometricFlux.jl/raw/master/logos/logo.png"/>
+</p>
+
 [![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=master)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
 [![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
 
@@ -47,7 +51,8 @@ Labels or features for output of classification or regression are part of traini
     * [ ] VGAE
     * [x] GAE
 * Internals
-    * [ ] use Zygote
+    * [x] use Zygote
+    * [x] compatible with layers in Flux
     * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
 * Datasets
     * Benchmark JLD2, BSON

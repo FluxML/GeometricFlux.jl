@@ -1,8 +1,8 @@
 using GeometricFlux
 using GeometricFlux: neighbors, laplacian_matrix
-using LightGraphs
-using LightGraphs: neighbors, laplacian_matrix
-using SimpleWeightedGraphs
+using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
+using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
+using Zygote
 using Test
 
 tests = [
@@ -11,6 +11,7 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
+    "grad",
     "models",
     "linalg",
     "scatter",

@@ -6,11 +6,13 @@ using Base.Threads
 using Statistics: mean
 using DataStructures: DefaultDict
 using Flux
-using Flux: param, glorot_uniform, leakyrelu, GRUCell
-using Flux: @treelike
-using Flux.Tracker: TrackedArray, track, data, @grad
+using Flux: glorot_uniform, leakyrelu, GRUCell
+using Flux: @functor
+using Zygote: @adjoint
+using ZygoteRules
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
+using DataStructures: DefaultDict
 
 import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
        atomic_cas!,
