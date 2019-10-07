@@ -105,19 +105,19 @@ function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple},
     return ys
 end
 
-@adjoint function scatter_add!(ys, us, xs)
+@adjoint function scatter_add!(ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     ys_ = copy(ys)
     scatter_add!(ys_, us, xs)
     ys_, Δ -> (Δ, gather(Δ, xs), nothing)
 end
 
-@adjoint function scatter_sub!(ys, us, xs)
+@adjoint function scatter_sub!(ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     ys_ = copy(ys)
     scatter_sub!(ys_, us, xs)
     ys_, Δ -> (Δ, -gather(Δ, xs), nothing)
 end
 
-@adjoint function scatter_mul!(ys, us, xs)
+@adjoint function scatter_mul!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
     ys_ = copy(ys)
     scatter_mul!(ys_, us, xs)
     ys_, function (Δ)
@@ -135,7 +135,7 @@ end
     end
 end
 
-@adjoint function scatter_div!(ys, us, xs)
+@adjoint function scatter_div!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
     ys_ = copy(ys)
     scatter_div!(ys_, us, xs)
     ys_, function (Δ)
@@ -161,7 +161,7 @@ function gather_indices(X::Array{T}) where T
     Y
 end
 
-@adjoint function scatter_max!(ys, us, xs)
+@adjoint function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
     max = copy(ys)
     scatter_max!(max, us, xs)
     max, function (Δ)
@@ -171,7 +171,7 @@ end
     end
 end
 
-@adjoint function scatter_min!(ys, us, xs)
+@adjoint function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
     min = copy(ys)
     scatter_min!(min, us, xs)
     min, function (Δ)
@@ -181,7 +181,7 @@ end
     end
 end
 
-@adjoint function scatter_mean!(ys, us, xs)
+@adjoint function scatter_mean!(ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     ys_ = copy(ys)
     scatter_mean!(ys_, us, xs)
     ys_, function (Δ)

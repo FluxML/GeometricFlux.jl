@@ -96,10 +96,12 @@ function pooling_dim_check(cluster::AbstractArray{Int}, X::AbstractArray)
     dims
 end
 
-@adjoint sumpool(cluster, X) = sumpool(cluster, X), Δ -> (nothing, gather(Δ, cluster))
-@adjoint subpool(cluster, X) = subpool(cluster, X), Δ -> (nothing, -gather(Δ, cluster))
+@adjoint sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
+    sumpool(cluster, X), Δ -> (nothing, gather(Δ, cluster))
+@adjoint subpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
+    subpool(cluster, X), Δ -> (nothing, -gather(Δ, cluster))
 
-@adjoint function prodpool(cluster, X)
+@adjoint function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     prodpool(cluster, X), function (Δ)
         rev_cluster = gather_indices(cluster)
         ∇X = gather(Δ, cluster)
@@ -113,7 +115,7 @@ end
     end
 end
 
-@adjoint function divpool(cluster, X)
+@adjoint function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     divpool(cluster, X), function (Δ)
         rev_cluster = gather_indices(cluster)
         ∇X = -gather(Δ, cluster) ./ X.^2
@@ -127,7 +129,7 @@ end
     end
 end
 
-@adjoint function maxpool(cluster, X)
+@adjoint function maxpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     max = maxpool(cluster, X)
     max, function (Δ)
        Δu = (X .== gather(max, cluster)) .* gather(Δ, cluster)
@@ -135,7 +137,7 @@ end
     end
 end
 
-@adjoint function minpool(cluster, X)
+@adjoint function minpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     min = minpool(cluster, X)
     min, function (Δ)
        Δu = (X .== gather(min, cluster)) .* gather(Δ, cluster)
@@ -143,7 +145,7 @@ end
     end
 end
 
-@adjoint function meanpool(cluster, X)
+@adjoint function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     m = meanpool(cluster, X)
     m, function (Δ)
         ΔX = gather(Δ, cluster)
