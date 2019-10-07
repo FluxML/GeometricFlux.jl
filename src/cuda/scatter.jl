@@ -112,3 +112,49 @@ function scatter_mean!(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where 
     ys .+= pdiv.(yt, ot)
     return ys
 end
+
+@adjoint function scatter_mul!(ys::CuArray{T}, us::CuArray{T}, xs::CuArray) where {T<:AbstractFloat}
+    ys_ = copy(ys)
+    scatter_mul!(ys_, us, xs)
+    ys_, function (Δ)
+        Δy = Δ .+ zero(ys)
+        scatter_mul!(Δy, us, xs)
+        rev_xs = gather_indices(xs)
+        Δu = gather(ys, xs) .* gather(Δ, xs)
+        @inbounds for ind = CartesianIndices(xs)
+            ind = Tuple(ind)
+            inds = filter(x -> x != ind, rev_xs[xs[ind...]])
+            for i = 1:size(us, 1)
+                Δu[i, ind...] *= mapreduce(j -> us[i, j...], *, inds; init=one(T))
+            end
+        end
+        (Δy, Δu, nothing)
+    end
+end
+
+@adjoint function scatter_div!(ys::CuArray{T}, us::CuArray{T}, xs::CuArray) where {T<:AbstractFloat}
+    ys_ = copy(ys)
+    scatter_div!(ys_, us, xs)
+    ys_, function (Δ)
+        Δy = Δ .+ zero(ys)
+        scatter_div!(Δy, us, xs)
+        rev_xs = gather_indices(xs)
+        Δu = - gather(ys, xs)
+        Δu .*= gather(Δ, xs)
+        Δu ./= us.^2
+        @inbounds for ind = CartesianIndices(xs)
+            ind = Tuple(ind)
+            inds = filter(x -> x != ind, rev_xs[xs[ind...]])
+            for i = 1:size(us, 1)
+                Δu[i, ind...] /= mapreduce(j -> us[i, j...], *, inds; init=one(T))
+            end
+        end
+        (Δy, Δu, nothing)
+    end
+end
+
+function gather_indices(X::CuArray{T}) where T
+    Y = gather_indices(Array(X))
+    cuY = Dict{T,CuVector}(k => cu(Tuple.(v)) for (k, v) in Y)
+    cuY
+end

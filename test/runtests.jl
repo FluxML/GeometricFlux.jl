@@ -21,7 +21,7 @@ end
 cuda_tests = [
     "cuda/scatter",
     "cuda/pool",
-    # "cuda/grad",
+    "cuda/grad",
     # "cuda/conv",
 ]
 
