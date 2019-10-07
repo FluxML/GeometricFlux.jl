@@ -76,3 +76,34 @@ end
 
 meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
     meanpool(CuArray{Int64}(cluster), X, c)
+
+@adjoint function prodpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    prodpool(cluster, X), function (Δ)
+        rev_cluster = gather_indices(cluster)
+        ∇X = gather(Δ, cluster)
+        @inbounds for ind = CartesianIndices(cluster)
+            ind = Tuple(ind)
+            inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
+            for i = 1:size(X, 1)
+                ∇X[i, ind...] *= mapreduce(j -> X[i, j...], *, inds; init=one(T))
+            end
+        end
+        (nothing, ∇X)
+    end
+end
+
+@adjoint function divpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    divpool(cluster, X), function (Δ)
+        rev_cluster = gather_indices(cluster)
+        ∇X = -gather(Δ, cluster)
+        ∇X ./= X.^2
+        @inbounds for ind = CartesianIndices(cluster)
+            ind = Tuple(ind)
+            inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
+            for i = 1:size(X, 1)
+                ∇X[i, ind...] /= mapreduce(j -> X[i, j...], *, inds; init=one(T))
+            end
+        end
+        (nothing, ∇X)
+    end
+end
