@@ -80,7 +80,7 @@ meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
 @adjoint function prodpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
     prodpool(cluster, X), function (Δ)
         rev_cluster = gather_indices(cluster)
-        ∇X = gather(Δ, cluster)
+        ∇X = gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
             ind = Tuple(ind)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
@@ -95,7 +95,7 @@ end
 @adjoint function divpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
     divpool(cluster, X), function (Δ)
         rev_cluster = gather_indices(cluster)
-        ∇X = -gather(Δ, cluster)
+        ∇X = -gather(zero(Δ)+Δ, cluster)
         ∇X ./= X.^2
         @inbounds for ind = CartesianIndices(cluster)
             ind = Tuple(ind)
@@ -105,5 +105,23 @@ end
             end
         end
         (nothing, ∇X)
+    end
+end
+
+@adjoint function maxpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    max = maxpool(cluster, X)
+    max, function (Δ)
+       Δu = (X .== gather(max, cluster))
+       Δu .*= gather(zero(Δ)+Δ, cluster)
+       (nothing, Δu)
+    end
+end
+
+@adjoint function minpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    min = minpool(cluster, X)
+    min, function (Δ)
+       Δu = (X .== gather(min, cluster))
+       Δu .*= gather(zero(Δ)+Δ, cluster)
+       (nothing, Δu)
     end
 end

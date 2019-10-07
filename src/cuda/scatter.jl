@@ -117,10 +117,10 @@ end
     ys_ = copy(ys)
     scatter_mul!(ys_, us, xs)
     ys_, function (Δ)
-        Δy = Δ .+ zero(ys)
+        Δy = zero(ys) .+ Δ
         scatter_mul!(Δy, us, xs)
         rev_xs = gather_indices(xs)
-        Δu = gather(ys, xs) .* gather(Δ, xs)
+        Δu = gather(ys, xs) .* gather(zero(Δ)+Δ, xs)
         @inbounds for ind = CartesianIndices(xs)
             ind = Tuple(ind)
             inds = filter(x -> x != ind, rev_xs[xs[ind...]])
@@ -136,11 +136,11 @@ end
     ys_ = copy(ys)
     scatter_div!(ys_, us, xs)
     ys_, function (Δ)
-        Δy = Δ .+ zero(ys)
+        Δy = zero(ys) .+ Δ
         scatter_div!(Δy, us, xs)
         rev_xs = gather_indices(xs)
         Δu = - gather(ys, xs)
-        Δu .*= gather(Δ, xs)
+        Δu .*= gather(zero(Δ)+Δ, xs)
         Δu ./= us.^2
         @inbounds for ind = CartesianIndices(xs)
             ind = Tuple(ind)
@@ -157,4 +157,34 @@ function gather_indices(X::CuArray{T}) where T
     Y = gather_indices(Array(X))
     cuY = Dict{T,CuVector}(k => cu(Tuple.(v)) for (k, v) in Y)
     cuY
+end
+
+@adjoint function scatter_max!(ys::CuArray{T}, us::CuArray{T}, xs::CuArray) where {T<:AbstractFloat}
+    max = copy(ys)
+    scatter_max!(max, us, xs)
+    max, function (Δ)
+       Δy = numerical_cmp(ys, max) .* Δ
+       Δu = gather(max, xs)
+       Δu = numerical_cmp(us, Δu)
+       Δu .*= gather(zero(Δ)+Δ, xs)
+       (Δy, Δu, nothing)
+    end
+end
+
+@adjoint function scatter_min!(ys::CuArray{T}, us::CuArray{T}, xs::CuArray) where {T<:AbstractFloat}
+    min = copy(ys)
+    scatter_min!(min, us, xs)
+    min, function (Δ)
+       Δy = numerical_cmp(ys, min) .* Δ
+       Δu = gather(min, xs)
+       Δu = numerical_cmp(us, Δu)
+       Δu .*= gather(zero(Δ)+Δ, xs)
+       (Δy, Δu, nothing)
+    end
+end
+
+function numerical_cmp(X::CuArray{T}, Y::CuArray) where T
+    Z = map((x,y) -> sign(x - y)^2, X, Y)
+    Z = map(x -> (one(T) - x)^2, Z)
+    Z
 end
