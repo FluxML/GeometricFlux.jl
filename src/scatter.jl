@@ -108,13 +108,13 @@ end
 @adjoint function scatter_add!(ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     ys_ = copy(ys)
     scatter_add!(ys_, us, xs)
-    ys_, Δ -> (Δ, gather(Δ, xs), nothing)
+    ys_, Δ -> (Δ, gather(zero(Δ)+Δ, xs), nothing)
 end
 
 @adjoint function scatter_sub!(ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     ys_ = copy(ys)
     scatter_sub!(ys_, us, xs)
-    ys_, Δ -> (Δ, -gather(Δ, xs), nothing)
+    ys_, Δ -> (Δ, -gather(zero(Δ)+Δ, xs), nothing)
 end
 
 @adjoint function scatter_mul!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
@@ -124,7 +124,7 @@ end
         Δy = Δ .+ zero(ys)
         scatter_mul!(Δy, us, xs)
         rev_xs = gather_indices(xs)
-        Δu = gather(ys, xs) .* gather(Δ, xs)
+        Δu = gather(ys, xs) .* gather(zero(Δ)+Δ, xs)
         @inbounds for ind = CartesianIndices(xs)
             inds = filter(x -> x != ind, rev_xs[xs[ind]])
             for i = 1:size(us, 1)
@@ -142,7 +142,7 @@ end
         Δy = Δ .+ zero(ys)
         scatter_div!(Δy, us, xs)
         rev_xs = gather_indices(xs)
-        Δu = - gather(ys, xs) .* gather(Δ, xs) ./ us.^2
+        Δu = - gather(ys, xs) .* gather(zero(Δ)+Δ, xs) ./ us.^2
         @inbounds for ind = CartesianIndices(xs)
             inds = filter(x -> x != ind, rev_xs[xs[ind]])
             for i = 1:size(us, 1)
@@ -166,7 +166,7 @@ end
     scatter_max!(max, us, xs)
     max, function (Δ)
        Δy = (ys .== max) .* Δ
-       Δu = (us .== gather(max, xs)) .* gather(Δ, xs)
+       Δu = (us .== gather(max, xs)) .* gather(zero(Δ)+Δ, xs)
        (Δy, Δu, nothing)
     end
 end
@@ -176,7 +176,7 @@ end
     scatter_min!(min, us, xs)
     min, function (Δ)
        Δy = (ys .== min) .* Δ
-       Δu = (us .== gather(min, xs)) .* gather(Δ, xs)
+       Δu = (us .== gather(min, xs)) .* gather(zero(Δ)+Δ, xs)
        (Δy, Δu, nothing)
     end
 end
@@ -185,7 +185,7 @@ end
     ys_ = copy(ys)
     scatter_mean!(ys_, us, xs)
     ys_, function (Δ)
-        Δu = gather(Δ, xs)
+        Δu = gather(zero(Δ)+Δ, xs)
         counts = zero.(xs)
         @inbounds for i = 1:size(ys, 2)
             counts += sum(xs.==i) * (xs.==i)

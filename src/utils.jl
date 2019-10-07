@@ -11,11 +11,10 @@ function gather(input::AbstractArray{T,N}, index::AbstractArray{<:Integer,N}, di
 end
 
 
-function gather(input::AbstractMatrix{T}, index::AbstractArray{Int}) where T
+function gather(input::Matrix{T}, index::Array{Int}) where T
     out = Array{T}(undef, size(input,1), size(index)...)
-    for ind = CartesianIndices(index)
-        k = index[ind]
-        out[:, ind] = input[:, k]
+    @inbounds for ind = CartesianIndices(index)
+        out[:, ind] = input[:, index[ind]]
     end
     return out
 end

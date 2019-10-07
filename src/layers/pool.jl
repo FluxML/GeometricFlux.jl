@@ -97,14 +97,14 @@ function pooling_dim_check(cluster::AbstractArray{Int}, X::AbstractArray)
 end
 
 @adjoint sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
-    sumpool(cluster, X), Δ -> (nothing, gather(Δ, cluster))
+    sumpool(cluster, X), Δ -> (nothing, gather(zero(Δ)+Δ, cluster))
 @adjoint subpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
-    subpool(cluster, X), Δ -> (nothing, -gather(Δ, cluster))
+    subpool(cluster, X), Δ -> (nothing, -gather(zero(Δ)+Δ, cluster))
 
 @adjoint function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     prodpool(cluster, X), function (Δ)
         rev_cluster = gather_indices(cluster)
-        ∇X = gather(Δ, cluster)
+        ∇X = gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind]])
             for i = 1:size(X, 1)
@@ -118,7 +118,7 @@ end
 @adjoint function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     divpool(cluster, X), function (Δ)
         rev_cluster = gather_indices(cluster)
-        ∇X = -gather(Δ, cluster) ./ X.^2
+        ∇X = -gather(zero(Δ)+Δ, cluster) ./ X.^2
         @inbounds for ind = CartesianIndices(cluster)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind]])
             for i = 1:size(X, 1)
@@ -132,7 +132,7 @@ end
 @adjoint function maxpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     max = maxpool(cluster, X)
     max, function (Δ)
-       Δu = (X .== gather(max, cluster)) .* gather(Δ, cluster)
+       Δu = (X .== gather(max, cluster)) .* gather(zero(Δ)+Δ, cluster)
        (nothing, Δu)
     end
 end
@@ -140,7 +140,7 @@ end
 @adjoint function minpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     min = minpool(cluster, X)
     min, function (Δ)
-       Δu = (X .== gather(min, cluster)) .* gather(Δ, cluster)
+       Δu = (X .== gather(min, cluster)) .* gather(zero(Δ)+Δ, cluster)
        (nothing, Δu)
     end
 end
@@ -148,7 +148,7 @@ end
 @adjoint function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
     m = meanpool(cluster, X)
     m, function (Δ)
-        ΔX = gather(Δ, cluster)
+        ΔX = gather(zero(Δ)+Δ, cluster)
         counts = zero.(cluster)
         @inbounds for i = 1:size(m, 2)
             counts += sum(cluster.==i) * (cluster.==i)

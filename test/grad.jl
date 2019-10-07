@@ -10,7 +10,7 @@ xs = [1 2 3 4;
 ∇u_mean = cat([.5 .5 .25; .5 .5 .25], [.5 .5 .5; .5 .5 .5],
               [.25 .5 .5; .25 .5 .5], [.5 .25 .25; .5 .25 .25], dims=3)
 
-@testset "gradtest" begin
+@testset "grad" begin
     @testset "scatter" begin
         @test Zygote.gradient(x -> sum(scatter_add!(x, us, xs)), ys) == (ones(2, 5),)
         @test Zygote.gradient(x -> sum(scatter_add!(copy(ys), x, xs)), us) == (ones(2, 3, 4),)
