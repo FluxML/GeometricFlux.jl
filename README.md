@@ -16,6 +16,8 @@ GeometricFlux is a geometric deep learning library for [Flux](https://github.com
 
 This repository is a work-in-progress project. Suggestions, issues and pull requsts are welcome.
 
+Note: Flux, Zygote, ZygoteRules, IRTools, CuArrays should use master branch.
+
 ## Roadmap
 
 Construct layers from adjacency matrix or graph (maybe extend to other structures).
