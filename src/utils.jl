@@ -18,3 +18,5 @@ function gather(input::Matrix{T}, index::Array{Int}) where T
     end
     return out
 end
+
+identity(; kwargs...) = kwargs.data
