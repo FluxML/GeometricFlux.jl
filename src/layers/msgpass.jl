@@ -12,20 +12,21 @@ aggregate_e2v(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     neighboring(m, aggr; kwargs...)
 
 function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
-    M, cluster = neighboring(mp; kwargs...)
-    M = pool(aggr, cluster, M)
-    upd_args = Dict{Symbol,AbstractArray}(:M=>M)
-    haskey(kwargs, :X) && (upd_args[:X] = kwargs[:X])
+    adj = adjlist(mp)
+    msg_args = getdata(kwargs, 1, adj[1])
+
+    M = message(mp; msg_args...)
+    M, cluster = apply_messages(mp, M, adj; kwargs...)
+
+    M = neighboring(mp, aggr; M=M, cluster=cluster)
+
+    upd_args = haskey(kwargs, :X) ? (M=M, X=kwargs[:X]) : (M=M, )
     Y = update(mp; upd_args...)
     return Y
 end
 
-function neighboring(mp::T; kwargs...) where {T<:MessagePassing}
-    adj = adjlist(mp)
-    msg_args = getdata(kwargs, 1, adj[1])
-    M = message(mp; msg_args...)
-    apply_messages(mp, M, adj; kwargs...)
-end
+neighboring(mp::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
+    pool(aggr, kwargs[:cluster], kwargs[:M])
 
 function getdata(d, i::Integer, ne)
     result = Dict{Symbol,AbstractArray}()

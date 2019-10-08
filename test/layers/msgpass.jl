@@ -26,15 +26,6 @@ update(::NewLayer; X=zeros(0), M=zeros(0)) = M
 X = Array(reshape(1:N*in_channel, in_channel, N))
 l = NewLayer(adj, in_channel, out_channel)
 
-@testset "Test neighboring" begin
-    Y, clst = neighboring(l; X=X)
-    @test adjlist(l) == ne
-    @test size(Y) == (in_channel, 14)
-    @test Y[1, :] == [11, 1, 31, 41, 51, 51, 11, 41, 11, 31, 51, 11, 21, 41]
-    @test clst == [1, 2, 2, 2, 2, 3, 4, 4, 5, 5, 5, 6 ,6, 6]
-end
-
-
 message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = n.weight' * x_j
 
 @testset "Test MessagePassing layer" begin
