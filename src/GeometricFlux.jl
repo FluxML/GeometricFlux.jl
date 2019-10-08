@@ -14,6 +14,7 @@ using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
 using DataStructures: DefaultDict
 
+import Base: identity
 import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
        atomic_cas!,
        atomic_xchg!,
@@ -25,6 +26,9 @@ import Base.Sys: ARCH, WORD_SIZE
 import Flux: children
 
 export
+
+    # layers/meta
+    Meta,
 
     # layers/msgpass
     MessagePassing,
@@ -77,7 +81,8 @@ export
     adjlist,
 
     # utils
-    gather
+    gather,
+    identity
 
 using CUDAapi
 if has_cuda()
@@ -95,6 +100,7 @@ end
 const IntOrTuple = Union{Integer,Tuple}
 
 include("scatter.jl")
+include("layers/meta.jl")
 include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")

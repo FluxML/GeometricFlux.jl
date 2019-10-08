@@ -1,8 +1,15 @@
-abstract type MessagePassing end
+abstract type MessagePassing <: Meta end
 
 adjlist(m::T) where {T<:MessagePassing} = m.adjlist
-message(m::T) where {T<:MessagePassing} = error("not implement")
-update(m::T) where {T<:MessagePassing} = error("not implement")
+message(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
+update(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
+
+update_edge(m::T; kwargs...) where {T<:MessagePassing} = message(m; kwargs...)
+update_vertex(m::T; kwargs...) where {T<:MessagePassing} = update(m; kwargs...)
+update_global(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
+
+aggregate_e2v(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
+    neighboring(m, aggr; kwargs...)
 
 function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
     M, cluster = neighboring(mp; kwargs...)
