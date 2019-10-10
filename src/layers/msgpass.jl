@@ -11,14 +11,31 @@ update_global(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
 aggregate_e2v(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     neighboring(m, aggr; kwargs...)
 
+
+struct GraphInfo
+    adj::AbstractVector{<:AbstractVector}
+    edge_idx::AbstractVector{<:Integer}
+    V::Integer
+    E::Integer
+
+    function GraphInfo(adj)
+        edge_idx = edge_index_table(adj)
+        V = length(adj)
+        E = edge_idx[end]
+        new(adj, edge_idx, V, E)
+    end
+end
+
+edge_index_table(adj) = append!([0], cumsum(map(length, adj)))
+
+
 function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
-    adj = adjlist(mp)
-    msg_args = getdata(kwargs, 1, adj[1])
+    gi = GraphInfo(adjlist(mp))
 
-    M = message(mp; msg_args...)
-    M, cluster = apply_messages(mp, M, adj; kwargs...)
+    M = message(mp; getdata(kwargs, 1, gi.adj[1])...)
+    M = apply_messages(mp, M, gi; kwargs...)
 
-    M = neighboring(mp, aggr; M=M, cluster=cluster)
+    M = neighboring(mp, aggr; M=M, cluster=cluster_table(M, gi))
 
     upd_args = haskey(kwargs, :X) ? (M=M, X=kwargs[:X]) : (M=M, )
     Y = update(mp; upd_args...)
@@ -40,45 +57,25 @@ function getdata(d, i::Integer, ne)
     result
 end
 
-function apply_messages(mp, M::AbstractMatrix{T}, adj::AbstractVector{<:AbstractVector},
-                        F::Integer=size(M,1), N::Integer=length(adj), n::Integer=length(adj[1]);
-                        kwargs...) where {T<:Real}
-    if F > 50
-        # TODO: Benchmark how many N or F need to switch from sequential to milti-thread version.
-        return thread_apply_messages(mp, M, adj, F, N, n; kwargs...)
-    else
-        ne_N = mapreduce(length, +, adj)
-        Y = M
-        cluster = Vector{Int}(undef, ne_N)
-        cluster[1:n] .= 1
-        j = n
-        @inbounds for i = 2:N
-            ne = adj[i]
-            n = length(ne)
-            msg_args = getdata(kwargs, i, ne)
-            Y = hcat(Y, message(mp; msg_args...))
-            cluster[j+1:j+n] .= i
-            j += n
-        end
-        return Y, cluster
-    end
-end
-
-function thread_apply_messages(mp, M::AbstractMatrix{T}, adj::AbstractVector{<:AbstractVector},
-                               F::Integer=size(M,1), N::Integer=length(adj), n::Integer=length(adj[1]);
-                               kwargs...) where {T<:Real}
-    starts = cumsum(map(length, adj))
-    ne_N = starts[end]
-    Y = Matrix{T}(undef, F, ne_N)
-    Y[:, 1:n] = M
-    cluster = Vector{Int}(undef, ne_N)
-    cluster[1:n] .= 1
-    @inbounds Threads.@threads for i = 2:N
-        j = starts[i-1]
-        k = starts[i]
-        msg_args = getdata(kwargs, i, adj[i])
-        Y[:, j+1:k] = message(mp; msg_args...)
+function cluster_table(M::AbstractMatrix, gi::GraphInfo)
+    cluster = similar(M, Int, gi.E)
+    @inbounds for i = 1:gi.V
+        j = gi.edge_idx[i]
+        k = gi.edge_idx[i+1]
         cluster[j+1:k] .= i
     end
-    Y, cluster
+    cluster
+end
+
+function apply_messages(mp, M::AbstractMatrix, gi::GraphInfo, F::Integer=size(M,1);
+                        kwargs...)
+    adj = gi.adj
+    Y = similar(M, F, gi.E)
+    @inbounds Threads.@threads for i = 1:gi.V
+        j = gi.edge_idx[i]
+        k = gi.edge_idx[i+1]
+        msg_args = getdata(kwargs, i, adj[i])
+        Y[:, j+1:k] = message(mp; msg_args...)
+    end
+    Y
 end
