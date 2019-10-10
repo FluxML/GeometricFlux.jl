@@ -82,7 +82,9 @@ export
 
     # utils
     gather,
-    identity
+    identity,
+    GraphInfo,
+    edge_index_table
 
 using CUDAapi
 if has_cuda()
@@ -100,13 +102,13 @@ end
 const IntOrTuple = Union{Integer,Tuple}
 
 include("scatter.jl")
+include("linalg.jl")
+include("utils.jl")
 include("layers/meta.jl")
 include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
-include("linalg.jl")
-include("utils.jl")
 
 
 function __init__()
