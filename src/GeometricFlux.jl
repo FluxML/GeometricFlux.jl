@@ -32,7 +32,7 @@ export
 
     # layers/msgpass
     MessagePassing,
-    neighboring,
+    aggregate_neighbors,
 
     # layers/conv
     GCNConv,

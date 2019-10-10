@@ -5,9 +5,9 @@ update_edge(m::T; kwargs...) where {T<:Meta} = identity(; kwargs...)
 update_vertex(m::T; kwargs...) where {T<:Meta} = identity(; kwargs...)
 update_global(m::T; kwargs...) where {T<:Meta} = identity(; kwargs...)
 
-aggregate_e2v(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
-aggregate_e2g(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
-aggregate_v2g(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
+aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
+aggregate_edges(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
+aggregate_vertices(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
 
 # function propagate(meta::T; kwargs...) where {T<:Meta}
 #     row, col = edge_index
@@ -16,12 +16,12 @@ aggregate_v2g(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implem
 #     end
 #     for i ∈ vertices()
 #         E' = get_neighbors(i)
-#         aggregate_e2v(meta, E', aggr)
+#         aggregate_neighbors(meta, E', naggr)
 #         update_vertex(meta, i, x, edge_index, edge_attr, u, batch)
 #     end
 #     get_vertices()
 #     get_edges()
-#     aggregate_e2g(meta, aggr)
-#     aggregate_v2g(meta, aggr)
+#     aggregate_edges(meta, eaggr)
+#     aggregate_vertices(meta, vaggr)
 #     update_global(meta, x, edge_index, edge_attr, u, batch)
 # end

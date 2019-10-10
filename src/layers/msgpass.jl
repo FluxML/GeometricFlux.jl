@@ -8,8 +8,8 @@ update_edge(m::T; kwargs...) where {T<:MessagePassing} = message(m; kwargs...)
 update_vertex(m::T; kwargs...) where {T<:MessagePassing} = update(m; kwargs...)
 update_global(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
 
-aggregate_e2v(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
-    neighboring(m, aggr; kwargs...)
+aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
+    pool(aggr, kwargs[:cluster], kwargs[:M])
 
 
 struct GraphInfo
@@ -32,20 +32,20 @@ edge_index_table(adj) = append!([0], cumsum(map(length, adj)))
 function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
     gi = GraphInfo(adjlist(mp))
 
-    M = message(mp; getdata(kwargs, 1, gi.adj[1])...)
+    # message function
+    M = message(mp; neighbor_data(kwargs, 1, gi.adj[1])...)
     M = apply_messages(mp, M, gi; kwargs...)
 
-    M = neighboring(mp, aggr; M=M, cluster=cluster_table(M, gi))
+    # aggregate function
+    M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster_table(M, gi))
 
+    # update function
     upd_args = haskey(kwargs, :X) ? (M=M, X=kwargs[:X]) : (M=M, )
     Y = update(mp; upd_args...)
     return Y
 end
 
-neighboring(mp::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
-    pool(aggr, kwargs[:cluster], kwargs[:M])
-
-function getdata(d, i::Integer, ne)
+function neighbor_data(d, i::Integer, ne)
     result = Dict{Symbol,AbstractArray}()
     if haskey(d, :X)
         result[:x_i] = view(d[:X], :, i)
@@ -74,7 +74,7 @@ function apply_messages(mp, M::AbstractMatrix, gi::GraphInfo, F::Integer=size(M,
     @inbounds Threads.@threads for i = 1:gi.V
         j = gi.edge_idx[i]
         k = gi.edge_idx[i+1]
-        msg_args = getdata(kwargs, i, adj[i])
+        msg_args = neighbor_data(kwargs, i, adj[i])
         Y[:, j+1:k] = message(mp; msg_args...)
     end
     Y
