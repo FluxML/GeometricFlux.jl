@@ -40,8 +40,7 @@ function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing
     M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster_table(M, gi))
 
     # update function
-    upd_args = haskey(kwargs, :X) ? (M=M, X=kwargs[:X]) : (M=M, )
-    Y = update(mp; upd_args...)
+    Y = update_vertex(mp; M=M, kwargs...)
     return Y
 end
 
