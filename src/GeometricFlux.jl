@@ -29,10 +29,20 @@ export
 
     # layers/meta
     Meta,
+    adjlist,
+    update_edge,
+    update_vertex,
+    update_global,
+    aggregate_neighbors,
+    aggregate_edges,
+    aggregate_vertices,
+    get_vertices,
+    get_edges,
+    get_neighbors,
+    propagate,
 
     # layers/msgpass
     MessagePassing,
-    aggregate_neighbors,
 
     # layers/conv
     GCNConv,
