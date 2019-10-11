@@ -9,37 +9,40 @@ aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not 
 aggregate_edges(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
 aggregate_vertices(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
 
-get_vertices(x) = haskey(x, :X) && (return x[:X])
-get_edges(x) = haskey(x, :E) && (return x[:E])
+all_vertices_data(x) = ifelse(haskey(x, :X), (X=x[:X],), NamedTuple())
+all_edges_data(x) = ifelse(haskey(x, :E), (E=x[:E],), NamedTuple())
 
-function get_neighbors(d, i::Integer, ne)
-    result = Dict{Symbol,AbstractArray}()
-    if haskey(d, :X)
-        result[:x_i] = view(d[:X], :, i)
-        result[:x_j] = view(d[:X], :, ne)
+function adjacent_vertices_data(x, i::Integer, ne)
+    if haskey(x, :X)
+        return (x_i=view(x[:X],:,i), x_j=view(x[:X],:,ne))
+    else
+        return NamedTuple()
     end
-    if haskey(d, :E)
-        result[:e_ij] = view(d[:E], :, i, ne)
+end
+
+function incident_edges_data(x, i::Integer, ne)
+    if haskey(x, :E)
+        return (e_ij=view(x[:E],:,i,ne), )
+    else
+        return NamedTuple()
     end
-    result
 end
 
 function propagate(meta::T; kwargs...) where {T<:Meta}
-    arg_names = keys(kwargs)
     gi = GraphInfo(adjlist(meta))
 
-    newE = update_edge(meta; gi=gi, kwargs...)  # x[row], x[col], edge_attr, u, batch[row]
+    newE = update_edge(meta; gi=gi, kwargs...)  # x[row], x[col], edge_attr, u
 
-    if :naggr in arg_names
+    if haskey(kwargs, :naggr)
         Ē = aggregate_neighbors(meta, kwargs[:naggr]; E=newE, cluster=generate_cluster(newE, gi))
     end
 
-    newV = update_vertex(meta; Ē=Ē, kwargs...)  # x, edge_index, edge_attr, u, batch
+    newV = update_vertex(meta; Ē=Ē, kwargs...)  # x, edge_index, edge_attr, u
 
-    if :eaggr in arg_names
+    if haskey(kwargs, :eaggr)
         Ē = aggregate_edges(meta, kwargs[:eaggr]; kwargs...)
     end
-    if :vaggr in arg_names
+    if haskey(kwargs, :vaggr)
         V̄ = aggregate_vertices(meta, kwargs[:vaggr]; kwargs...)
     end
 

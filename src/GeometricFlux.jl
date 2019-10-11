@@ -36,9 +36,10 @@ export
     aggregate_neighbors,
     aggregate_edges,
     aggregate_vertices,
-    get_vertices,
-    get_edges,
-    get_neighbors,
+    all_vertices_data,
+    all_edges_data,
+    adjacent_vertices_data,
+    incident_edges_data,
     propagate,
 
     # layers/msgpass
