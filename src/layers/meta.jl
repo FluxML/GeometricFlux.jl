@@ -1,9 +1,9 @@
 abstract type Meta end
 
 adjlist(m::T) where {T<:Meta} = m.adjlist
-update_edge(m::T; kwargs...) where {T<:Meta} = identity(; kwargs...)
-update_vertex(m::T; kwargs...) where {T<:Meta} = identity(; kwargs...)
-update_global(m::T; kwargs...) where {T<:Meta} = identity(; kwargs...)
+update_edge(m::T; kwargs...) where {T<:Meta} = ifelse(haskey(kwargs, :E), kwargs[:E], nothing)
+update_vertex(m::T; kwargs...) where {T<:Meta} = ifelse(haskey(kwargs, :X), kwargs[:X], nothing)
+update_global(m::T; kwargs...) where {T<:Meta} = ifelse(haskey(kwargs, :u), kwargs[:u], nothing)
 
 aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
 aggregate_edges(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not implement")
@@ -31,22 +31,25 @@ end
 function propagate(meta::T; kwargs...) where {T<:Meta}
     gi = GraphInfo(adjlist(meta))
 
-    newE = update_edge(meta; gi=gi, kwargs...)  # x[row], x[col], edge_attr, u
+    newE = update_edge(meta; gi=gi, kwargs...)
 
     if haskey(kwargs, :naggr)
         Ē = aggregate_neighbors(meta, kwargs[:naggr]; E=newE, cluster=generate_cluster(newE, gi))
+        kwargs = (kwargs..., Ē=Ē)
     end
 
-    newV = update_vertex(meta; Ē=Ē, kwargs...)  # x, edge_index, edge_attr, u
+    newV = update_vertex(meta; kwargs...)
 
     if haskey(kwargs, :eaggr)
         Ē = aggregate_edges(meta, kwargs[:eaggr]; kwargs...)
+        kwargs = (kwargs..., Ē=Ē)
     end
     if haskey(kwargs, :vaggr)
         V̄ = aggregate_vertices(meta, kwargs[:vaggr]; kwargs...)
+        kwargs = (kwargs..., V̄=V̄)
     end
 
-    new_u = update_global(meta; Ē=Ē, V̄=V̄, u=kwargs[:u])
+    new_u = update_global(meta; kwargs...)
 
     (newE, newV, new_u)
 end
