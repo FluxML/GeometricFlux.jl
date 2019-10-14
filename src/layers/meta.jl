@@ -53,3 +53,13 @@ function propagate(meta::T; kwargs...) where {T<:Meta}
 
     (newE, newV, new_u)
 end
+
+function generate_cluster(M::AbstractMatrix, gi::GraphInfo)
+    cluster = similar(M, Int, gi.E)
+    @inbounds for i = 1:gi.V
+        j = gi.edge_idx[i]
+        k = gi.edge_idx[i+1]
+        cluster[j+1:k] .= i
+    end
+    cluster
+end

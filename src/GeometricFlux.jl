@@ -41,6 +41,7 @@ export
     adjacent_vertices_data,
     incident_edges_data,
     propagate,
+    generate_cluster,
 
     # layers/msgpass
     MessagePassing,
