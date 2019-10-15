@@ -26,7 +26,8 @@ aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     pool(aggr, kwargs[:cluster], kwargs[:M])
 
 function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
-    gi = GraphInfo(adjlist(mp))
+    adjl = ifelse(haskey(kwargs, :adjlist), kwargs[:adjlist], adjlist(mp))
+    gi = GraphInfo(adjl)
 
     # message function
     M = update_edge(mp; gi=gi, kwargs...)
