@@ -25,8 +25,7 @@ update_vertex(m::T; kwargs...) where {T<:MessagePassing} = update(m; kwargs...)
 aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     pool(aggr, kwargs[:cluster], kwargs[:M])
 
-function propagate(mp::T; aggr::Symbol=:add, kwargs...) where {T<:MessagePassing}
-    adjl = ifelse(haskey(kwargs, :adjlist), kwargs[:adjlist], adjlist(mp))
+function propagate(mp::T; aggr::Symbol=:add, adjl=adjlist(mp), kwargs...) where {T<:MessagePassing}
     gi = GraphInfo(adjl)
 
     # message function

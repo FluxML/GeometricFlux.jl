@@ -28,8 +28,7 @@ function incident_edges_data(x, i::Integer, ne)
     end
 end
 
-function propagate(meta::T; kwargs...) where {T<:Meta}
-    adjl = ifelse(haskey(kwargs, :adjlist), kwargs[:adjlist], adjlist(meta))
+function propagate(meta::T; adjl=adjlist(meta), kwargs...) where {T<:Meta}
     gi = GraphInfo(adjl)
 
     newE = update_edge(meta; gi=gi, kwargs...)
