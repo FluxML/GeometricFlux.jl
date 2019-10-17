@@ -1,0 +1,44 @@
+variables:
+  CI_IMAGE_TAG: 'cuda'
+
+include:
+  - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v5/test.yml'
+
+.cuda:
+  extends: .test
+  before_script:
+    - julia -e 'using InteractiveUtils;
+                versioninfo()'
+    - mkdir $JULIA_DEPOT_PATH # Pkg.jl#325
+  script:
+    - julia --project -e 'using Pkg;
+                          Pkg.update();
+                          Pkg.instantiate();
+                          Pkg.build();
+                          Pkg.test(; coverage=true);'
+
+test:v1.0:
+  extends: .cuda
+  variables:
+    CI_VERSION_TAG: 'v1.0'
+
+test:v1.1:
+  extends: .cuda
+  variables:
+    CI_VERSION_TAG: 'v1.1'
+
+test:v1.2:
+  extends: .cuda
+  variables:
+    CI_VERSION_TAG: 'v1.2'
+
+test:v1.3:
+  extends: .cuda
+  variables:
+    CI_VERSION_TAG: 'v1.3'
+
+test:dev:
+  extends: .cuda
+  allow_failure: true
+  variables:
+    CI_VERSION_TAG: 'v1.0'
