@@ -21,18 +21,23 @@ end
 
 identity(; kwargs...) = kwargs.data
 
-struct GraphInfo
-    adj::AbstractVector{<:AbstractVector}
-    edge_idx::AbstractVector{<:Integer}
-    V::Integer
-    E::Integer
+struct GraphInfo{A,T<:Integer}
+    adj::AbstractVector{A}
+    edge_idx::A
+    V::T
+    E::T
 
-    function GraphInfo(adj)
-        edge_idx = edge_index_table(adj)
+    function GraphInfo(adj::AbstractVector{<:AbstractVector{<:Integer}})
         V = length(adj)
+        edge_idx = edge_index_table(adj, V)
         E = edge_idx[end]
-        new(adj, edge_idx, V, E)
+        new{typeof(edge_idx),typeof(V)}(adj, edge_idx, V, E)
     end
 end
 
-edge_index_table(adj::AbstractVector{<:AbstractVector}) = append!([0], cumsum(map(length, adj)))
+function edge_index_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
+                          N::Integer=size(adj,1))
+    y = similar(adj[1], N+1)
+    y .= 0, cumsum(map(length, adj))...
+    y
+end
