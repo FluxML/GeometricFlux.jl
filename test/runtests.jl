@@ -22,7 +22,7 @@ cuda_tests = [
     "cuda/scatter",
     "cuda/pool",
     "cuda/grad",
-    # "cuda/conv",
+    "cuda/conv",
 ]
 
 tests = [

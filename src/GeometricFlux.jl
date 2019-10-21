@@ -23,7 +23,6 @@ import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatType
        atomic_max!, atomic_min!
 
 import Base.Sys: ARCH, WORD_SIZE
-import Flux: children
 
 export
 
@@ -128,9 +127,11 @@ function __init__()
     @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
         using CUDAnative
         using CuArrays
+        import CuArrays: cu
         include("cuda/scatter.jl")
         include("cuda/pool.jl")
         include("cuda/utils.jl")
+        CuArrays.cu(x::Array{<:Integer}) = CuArray(x)
     end
     @require LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d" begin
         include("graph/simplegraphs.jl")

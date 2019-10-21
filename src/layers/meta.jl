@@ -12,7 +12,7 @@ aggregate_vertices(m::T, aggr::Symbol; kwargs...) where {T<:Meta} = error("not i
 all_vertices_data(x) = ifelse(haskey(x, :X), (X=x[:X],), NamedTuple())
 all_edges_data(x) = ifelse(haskey(x, :E), (E=x[:E],), NamedTuple())
 
-function adjacent_vertices_data(x, i::Integer, ne)
+function adjacent_vertices_data(x, i::Integer, ne::AbstractArray{<:Integer})
     if haskey(x, :X)
         return (x_i=view(x[:X],:,i), x_j=view(x[:X],:,ne))
     else
@@ -20,7 +20,7 @@ function adjacent_vertices_data(x, i::Integer, ne)
     end
 end
 
-function incident_edges_data(x, i::Integer, ne)
+function incident_edges_data(x, i::Integer, ne::AbstractArray{<:Integer})
     if haskey(x, :E)
         return (e_ij=view(x[:E],:,i,ne), )
     else

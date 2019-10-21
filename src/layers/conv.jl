@@ -86,7 +86,7 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
     fout = c.out_channel
 
-    Z = Array{T}(undef, fin, N, c.k)
+    Z = similar(X, fin, N, c.k)
     Z[:,:,1] = X
     Z[:,:,2] = X * c.L̃
     for k = 3:c.k
@@ -205,9 +205,9 @@ update(g::GATConv; X=zeros(0), M=zeros(0)) = M + g.bias
 
 
 function asoftmax(xs)
-    xs = [exp.(x) for x in xs]
+    xs = exp.(xs)
     s = sum(xs)
-    return [x ./ s for x in xs]
+    return xs ./ s
 end
 
 function Base.show(io::IO, l::GATConv)
