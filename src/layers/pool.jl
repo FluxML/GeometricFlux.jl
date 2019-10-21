@@ -1,8 +1,17 @@
 const INT2FLOAT = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Float16,
                        Int32=>Float32, UInt32=>Float32, Int64=>Float64, UInt64=>Float64)
 
-# GlobalPool(x, aggr, batch, size=nothing) # aggr=sum, mean, max
-#
+struct GlobalPool{A}
+    aggr::Symbol
+    cluster::A
+    function GlobalPool(aggr::Symbol, dim...)
+        cluster = ones(Int64, dim)
+        new{typeof(cluster)}(aggr, cluster)
+    end
+end
+
+(g::GlobalPool)(X::AbstractArray) = pool(g.aggr, g.cluster, X)
+
 # TopKPool()
 
 # struct MaxPool

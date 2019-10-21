@@ -2,6 +2,12 @@ cluster = [1 1 1 1; 2 2 3 3; 4 4 5 5]
 X = Array(reshape(1:24, 2, 3, 4))
 
 @testset "pool" begin
+    @testset "GlobalPool" begin
+        glb_cltr = [1 1 1 1; 1 1 1 1; 1 1 1 1]
+        p = GlobalPool(:add, 3, 4)
+        @test p(X) == sumpool(glb_cltr, X)
+    end
+
     for T = [UInt32, UInt64]
         @testset "$(T)" begin
             @testset "sumpool" begin

@@ -58,6 +58,7 @@ export
     propagate,
 
     # layer/pool
+    GlobalPool,
     sumpool,
     subpool,
     prodpool,
