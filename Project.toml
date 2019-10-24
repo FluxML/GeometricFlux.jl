@@ -1,7 +1,7 @@
 name = "GeometricFlux"
 uuid = "7e08b658-56d3-11e9-2997-919d5b31e4ea"
 authors = ["Yueh-Hua Tu <a504082002@gmail.com>"]
-version = "0.1.1"
+version = "0.2.0"
 
 [deps]
 CUDAapi = "3895d2a7-ec45-59b8-82bb-cfc6a382f9b3"

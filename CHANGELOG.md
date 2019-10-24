@@ -2,10 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.2.0]
 
  - Available on Julia v1.2 and v1.3
- - GCNConv layer works with CUDA
+ - Convolution layers works with CUDA
  - Provide scatter add, sub, mul, div, max, min, mean for CPU and CUDA
  - Provide pool add, sub, mul, div, max, min, mean for CPU and CUDA
  - Provide gradient of scatter add, sub, mul, div, max, min, mean for CPU and CUDA
@@ -16,3 +16,5 @@ All notable changes to this project will be documented in this file.
  - Add logo
  - Add docs
  - Add layer docs and Base.show
+ - Provide dynamically change graph in runtime
+ - Provide GlobalPool layer

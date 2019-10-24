@@ -7,30 +7,29 @@
 [![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=master)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
 [![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
 
-GeometricFlux is a geometric deep learning library for [Flux](https://github.com/FluxML/Flux.jl). This library aims to be compatible with packages from [JuliaGraphs](https://github.com/JuliaGraphs) ecosystem and have support of CUDA GPU acceleration with [CuArrays](https://github.com/JuliaGPU/CuArrays.jl).
+GeometricFlux is a geometric deep learning library for [Flux](https://github.com/FluxML/Flux.jl). This library aims to be compatible with packages from [JuliaGraphs](https://github.com/JuliaGraphs) ecosystem and have support of CUDA GPU acceleration with [CuArrays](https://github.com/JuliaGPU/CuArrays.jl). Message passing scheme is implemented as a flexbile framework and fused with Graph Network block scheme. GeometricFlux is compatible with other packages that are composable with Flux.
 
-## Development
-
-[![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=develop)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
-[![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/develop/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
-
-This repository is a work-in-progress project. Suggestions, issues and pull requsts are welcome.
+Suggestions, issues and pull requsts are welcome.
 
 Note: Flux, Zygote, ZygoteRules, IRTools, CuArrays should use master branch.
 
-## Roadmap
+## Installation
+
+```
+]add GeometricFlux
+```
+
+## Features
 
 Construct layers from adjacency matrix or graph (maybe extend to other structures).
 Input features (including vertex, edge or graph features) of neural network may not need a structure or type.
 Labels or features for output of classification or regression are part of training data, they may not need a specific structure or type, too.
 
-* Start
-    * [x] Establish a simple example of GNN
 * Integration of JuliaGraphs
     * [x] Construct layer from SimpleGraph
     * [x] Construct layer from SimpleWeightedGraph
     * [x] Construct layer from Matrix
-    * Support vertex/edge/graph features from MetaGraphs
+    * [ ] Support vertex/edge/graph features from MetaGraphs
 * Layers
     * Convolution layers
         * [x] MessagePassing
@@ -40,15 +39,14 @@ Labels or features for output of classification or regression are part of traini
         * [x] GatedGraphConv
         * [x] GATConv
         * [x] EdgeConv
-        * [ ] Meta
+        * [x] Meta
     * Pooling layers
-        * [ ] GlobalPool
+        * [x] GlobalPool
         * [ ] TopKPool
-        * [ ] MaxPool
-        * [ ] MeanPool
+        * [ ] LocalPool
         * [x] sum/sub/prod/div/max/min/mean pool
     * Embedding layers
-        * [ ] InnerProductDecoder
+        * [x] InnerProductDecoder
 * Models
     * [ ] VGAE
     * [x] GAE
@@ -57,4 +55,5 @@ Labels or features for output of classification or regression are part of traini
     * [x] compatible with layers in Flux
     * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
 * Datasets
-    * Benchmark JLD2, BSON
+* Storage
+    * [ ] Benchmark JLD2, BSON
