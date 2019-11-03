@@ -12,25 +12,18 @@ end
 
 (g::GlobalPool)(X::AbstractArray) = pool(g.aggr, g.cluster, X)
 
-# TopKPool()
+struct LocalPool{A}
+    aggr::Symbol
+    cluster::A
+end
 
-# struct MaxPool
-#
-# end
-#
-# function MaxPool(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity)
-#     MaxPool()
-# end
-#
-# (m::MaxPool)(X::AbstractMatrix) = maxpool(m.cluster, X)
-#
-#
-#
-# struct MeanPool
-#
-# end
-#
-# (m::MeanPool)(X::AbstractMatrix) = meanpool(m.cluster, X)
+function LocalPool(aggr::Symbol, cluster::AbstractArray)
+    LocalPool{typeof(cluster)}(aggr, cluster)
+end
+
+(l::LocalPool)(X::AbstractArray) = pool(l.aggr, l.cluster, X)
+
+# TopKPool()
 
 
 

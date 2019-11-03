@@ -8,6 +8,11 @@ X = Array(reshape(1:24, 2, 3, 4))
         @test p(X) == sumpool(glb_cltr, X)
     end
 
+    @testset "LocalPool" begin
+        p = LocalPool(:add, cluster)
+        @test p(X) == sumpool(cluster, X)
+    end
+
     for T = [UInt32, UInt64]
         @testset "$(T)" begin
             @testset "sumpool" begin
