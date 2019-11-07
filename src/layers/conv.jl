@@ -32,7 +32,6 @@ function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identi
 end
 
 @functor GCNConv
-trainable(g::GCNConv) = [g.weight, g.bias]
 
 (g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm + g.bias)
 
@@ -77,7 +76,6 @@ function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer
 end
 
 @functor ChebConv
-trainable(c::ChebConv) = [c.weight, c.bias]
 
 function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     fin = c.in_channel
@@ -147,7 +145,6 @@ function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add
 end
 
 @functor GraphConv
-trainable(g::GraphConv) = [g.weight1, g.weight2, g.bias]
 
 message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
 update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M + g.bias
@@ -192,7 +189,6 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
 end
 
 @functor GATConv
-trainable(g::GATConv) = [g.weight, g.bias, g.a]
 
 function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)
@@ -250,7 +246,6 @@ function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Intege
 end
 
 @functor GatedGraphConv
-trainable(g::GatedGraphConv) = [g.weight, g.gru]
 
 message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
 update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
@@ -300,7 +295,6 @@ function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
 end
 
 @functor EdgeConv
-trainable(e::EdgeConv) = [e.nn]
 
 function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)
