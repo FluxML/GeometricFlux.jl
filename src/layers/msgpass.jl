@@ -11,7 +11,11 @@ function update_edge(m::T; gi::GraphInfo, kwargs...) where {T<:MessagePassing}
                    incident_edges_data(kwargs, 1, adj[1])...)
     Y = similar(M, size(M, 1), gi.E)
     Y[:, 1:edge_idx[2]] = M
-    @inbounds Threads.@threads for i = 2:gi.V
+    _apply_msg!(m, Y, gi.V, edge_idx, adj; kwargs...)
+end
+
+function _apply_msg!(m, Y::Array, V, edge_idx, adj; kwargs...)
+    @inbounds Threads.@threads for i = 2:V
         j = edge_idx[i]
         k = edge_idx[i+1]
         Y[:, j+1:k] = message(m; adjacent_vertices_data(kwargs, i, adj[i])...,

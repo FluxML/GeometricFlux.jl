@@ -23,6 +23,7 @@ cuda_tests = [
     "cuda/pool",
     "cuda/grad",
     "cuda/conv",
+    "cuda/msgpass",
 ]
 
 tests = [
@@ -40,6 +41,7 @@ tests = [
 ]
 
 if has_cuarrays()
+    using Flux: gpu
     append!(tests, cuda_tests)
 end
 
