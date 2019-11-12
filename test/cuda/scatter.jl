@@ -42,7 +42,7 @@ xs = CuArray{Int64}([1 2 3 4;
     end
 
 
-    for T = [Float16, Float32, Float64]
+    for T = [Float32, Float64]
         @testset "$(T)" begin
             @testset "add" begin
                 ys_ = cu([5 5 8 6 7;
