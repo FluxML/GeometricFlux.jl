@@ -2,6 +2,7 @@ using GeometricFlux
 using GeometricFlux: neighbors, laplacian_matrix
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
+using MetaGraphs: MetaGraph, MetaDiGraph
 using Zygote
 using Test
 
@@ -36,6 +37,7 @@ tests = [
     "scatter",
     "graph/simplegraphs",
     "graph/weightedgraphs",
+    "graph/metagraphs",
     "graph/utils",
     "utils",
 ]
