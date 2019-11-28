@@ -75,7 +75,7 @@ X = CuArray(reshape(1:24, 2, 3, 4))
         end
     end
 
-    for T = [Float16, Float32, Float64]
+    for T = [Float32, Float64]
         @testset "$(T)" begin
             @testset "sumpool" begin
                 y = [40, 44, 12, 14, 36, 38, 16, 18, 40, 42]

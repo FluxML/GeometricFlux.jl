@@ -141,6 +141,9 @@ function __init__()
         include("graph/weightedgraphs.jl")
         include("graph/utils.jl")
     end
+    @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" begin
+        include("graph/metagraphs.jl")
+    end
 end
 
 end
