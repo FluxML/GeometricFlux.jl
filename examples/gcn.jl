@@ -2,7 +2,7 @@ using GeometricFlux
 using Flux
 using Flux: onehotbatch, onecold, crossentropy, throttle
 using JLD2  # use v0.1.2
-using StatsBase
+using Statistics: mean
 using SparseArrays
 using LightGraphs.SimpleGraphs
 using CuArrays
