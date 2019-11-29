@@ -1,0 +1,12 @@
+# Ignore Travis CI and Appveyor so accurate GPU coverage is reported by GitLab.
+codecov:
+  ci:
+    - !appveyor
+    - !travis
+
+coverage:
+  status:
+    patch: false
+    project: false
+    changes: false
+comment: false
