@@ -49,10 +49,10 @@ struct VariationalEncoder
     μ
     logσ
     z_dim::Integer
+end
 
-    function VariationalEncoder(nn, h_dim::Integer, z_dim::Integer)
-        new(nn, Dense(h_dim, z_dim), Dense(h_dim, z_dim), z_dim)
-    end
+function VariationalEncoder(nn, h_dim::Integer, z_dim::Integer)
+    VariationalEncoder(nn, Dense(h_dim, z_dim), Dense(h_dim, z_dim), z_dim)
 end
 
 @functor VariationalEncoder
@@ -65,4 +65,4 @@ function (ve::VariationalEncoder)(X::AbstractMatrix)
 end
 
 summarize(ve::VariationalEncoder, h::AbstractMatrix) = (ve.μ(h), ve.logσ(h))
-sampling(::VariationalEncoder, μ, logσ) = μ .+ exp.(logσ) .* randn(size(logσ))
+sampling(::VariationalEncoder, μ, logσ) = μ .+ exp.(logσ) .* randn(size(logσ)) # TODO: gradient
