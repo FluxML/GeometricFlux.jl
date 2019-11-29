@@ -12,7 +12,7 @@ GeometricFlux is a geometric deep learning library for [Flux](https://github.com
 
 Suggestions, issues and pull requsts are welcome.
 
-Note: Flux, Zygote, ZygoteRules, IRTools, CuArrays should use master branch.
+Note: Flux should use master branch.
 
 ## Installation
 

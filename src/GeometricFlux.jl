@@ -1,18 +1,18 @@
 module GeometricFlux
-using Requires
 
 using Core.Intrinsics: llvmcall
 using Base.Threads
 using Statistics: mean
+using SparseArrays: SparseMatrixCSC
+using LinearAlgebra: I, issymmetric, diagm, eigmax
+
+using Requires
 using DataStructures: DefaultDict
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
 using Zygote: @adjoint
 using ZygoteRules
-using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax
-using DataStructures: DefaultDict
 
 import Base: identity
 import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
@@ -21,7 +21,6 @@ import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatType
        atomic_add!, atomic_sub!,
        atomic_and!, atomic_nand!, atomic_or!, atomic_xor!,
        atomic_max!, atomic_min!
-
 import Base.Sys: ARCH, WORD_SIZE
 
 export
