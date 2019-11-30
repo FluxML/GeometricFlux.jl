@@ -5,6 +5,8 @@ variables:
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
+image: juliagpu/cuda:10.1-cudnn7-cutensor1-devel-ubuntu18.04
+
 test:v1.0:
   extends:
     - .julia:1.0
