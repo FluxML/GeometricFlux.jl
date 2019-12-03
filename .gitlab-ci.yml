@@ -44,6 +44,24 @@ test:dev:
     CI_VERSION_TAG: 'v1.4'
 
 coverage:
+  stage: post
   extends:
     - .julia:1.2
-    - .coverage
+  script:
+    - julia -e 'using Pkg;
+                Pkg.instantiate();
+                Pkg.add("Coverage")'
+    - julia -e 'using Coverage;
+                cl, tl = get_summary(process_folder());
+                println("(", cl/tl*100, "%) covered")'
+  coverage: '/\(\d+.\d+\%\) covered/'
+
+# pages:
+#   stage: deploy
+#   script:
+#     - mv docs/build public
+#   artifacts:
+#     paths:
+#     - public
+#   only:
+#     - master
