@@ -2,7 +2,7 @@ using GeometricFlux
 using Flux
 using Flux: onehotbatch, onecold, crossentropy, throttle
 using JLD2  # use v0.1.2
-using StatsBase
+using Statistics: mean
 using SparseArrays
 using LightGraphs.SimpleGraphs
 using CuArrays
@@ -13,6 +13,7 @@ using CuArrays
 
 num_nodes = 2708
 num_features = 1433
+hidden = 16
 target_catg = 7
 epochs = 10
 
@@ -21,9 +22,9 @@ train_X = features |> gpu  # dim: num_features * num_nodes
 train_y = labels |> gpu  # dim: target_catg * num_nodes
 
 ## Model
-model = Chain(GCNConv(g, num_features=>1000, relu),
-              GCNConv(g, 1000=>500, relu),
-              Dense(500, 7),
+model = Chain(GCNConv(g, num_features=>hidden, relu),
+              Dropout(0.5),
+              GCNConv(g, hidden=>target_catg),
               softmax) |> gpu
 # test model
 # model(train_X)
