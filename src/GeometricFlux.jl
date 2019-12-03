@@ -1,27 +1,23 @@
 module GeometricFlux
-using Requires
 
 using Core.Intrinsics: llvmcall
 using Base.Threads
 using Statistics: mean
+using SparseArrays: SparseMatrixCSC
+using LinearAlgebra: I, issymmetric, diagm, eigmax
+
+using Requires
 using DataStructures: DefaultDict
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
-using Zygote: @adjoint
 using ZygoteRules
-using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax
-using DataStructures: DefaultDict
 
 import Base: identity
 import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
-       atomic_cas!,
-       atomic_xchg!,
-       atomic_add!, atomic_sub!,
-       atomic_and!, atomic_nand!, atomic_or!, atomic_xor!,
-       atomic_max!, atomic_min!
-
+       atomic_cas!, atomic_xchg!,
+       atomic_add!, atomic_sub!, atomic_max!, atomic_min!,
+       atomic_and!, atomic_nand!, atomic_or!, atomic_xor!
 import Base.Sys: ARCH, WORD_SIZE
 
 export
@@ -126,7 +122,7 @@ include("models.jl")
 function __init__()
     @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
         using CUDAnative
-        using CuArrays
+        using CuArrays: CuArray, CuMatrix
         import CuArrays: cu
         include("cuda/scatter.jl")
         include("cuda/msgpass.jl")

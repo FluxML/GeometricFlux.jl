@@ -1,44 +1,67 @@
 variables:
   CI_IMAGE_TAG: 'cuda'
+  JULIA_NUM_THREADS: '4'
 
 include:
-  - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v5/test.yml'
+  - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
-.cuda:
-  extends: .test
-  before_script:
-    - julia -e 'using InteractiveUtils;
-                versioninfo()'
-    - mkdir $JULIA_DEPOT_PATH # Pkg.jl#325
-  script:
-    - julia --project -e 'using Pkg;
-                          Pkg.update();
-                          Pkg.instantiate();
-                          Pkg.build();
-                          Pkg.test(; coverage=true);'
+image: juliagpu/cuda:10.1-cudnn7-cutensor1-devel-ubuntu18.04
 
 test:v1.0:
-  extends: .cuda
+  extends:
+    - .julia:1.0
+    - .test
   variables:
     CI_VERSION_TAG: 'v1.0'
 
 test:v1.1:
-  extends: .cuda
+  extends:
+    - .julia:1.1
+    - .test
   variables:
     CI_VERSION_TAG: 'v1.1'
 
 test:v1.2:
-  extends: .cuda
+  extends:
+    - .julia:1.2
+    - .test
   variables:
     CI_VERSION_TAG: 'v1.2'
 
 test:v1.3:
-  extends: .cuda
+  extends:
+    - .julia:1.3
+    - .test
   variables:
     CI_VERSION_TAG: 'v1.3'
 
 test:dev:
-  extends: .cuda
+  extends:
+    - .julia:nightly
+    - .test
   allow_failure: true
   variables:
-    CI_VERSION_TAG: 'v1.0'
+    CI_VERSION_TAG: 'v1.4'
+
+coverage:
+  stage: post
+  extends:
+    - .julia:1.2
+  script:
+    - julia -e 'using Pkg;
+                Pkg.instantiate();
+                Pkg.add("Coverage")'
+    - julia -e 'using Coverage;
+                cl, tl = get_summary(process_folder());
+                println("(", cl/tl*100, "%) covered")'
+  coverage: '/\(\d+.\d+\%\) covered/'
+
+# pages:
+#   stage: deploy
+#   script:
+#     - mv docs/build public
+#   artifacts:
+#     paths:
+#     - public
+#   only:
+#     - master
