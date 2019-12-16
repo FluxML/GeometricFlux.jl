@@ -1,6 +1,6 @@
 function sumpool(cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     Y = CuArrays.zeros(T, dims.us_dims[1], c)
     scatter_add!(Y, X, cluster)
     Y
@@ -11,7 +11,7 @@ sumpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) whe
 
 function subpool(cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     Y = CuArrays.zeros(T, dims.us_dims[1], c)
     scatter_sub!(Y, X, cluster)
     Y
@@ -22,7 +22,7 @@ subpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) whe
 
 function prodpool(cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     Y = CuArrays.ones(T, dims.us_dims[1], c)
     scatter_mul!(Y, X, cluster)
     Y
@@ -33,7 +33,7 @@ prodpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
 
 function divpool(cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     FT = (T <: Integer) ? INT2FLOAT[T] : T
     Y = CuArrays.ones(FT, dims.us_dims[1], c)
     scatter_div!(Y, FT.(X), cluster)
@@ -45,7 +45,7 @@ divpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) whe
 
 function maxpool(cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     Y = CuArrays.fill(typemin(T), dims.us_dims[1], c)
     scatter_max!(Y, X, cluster)
     Y
@@ -56,7 +56,7 @@ maxpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) whe
 
 function minpool(cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     Y = CuArrays.fill(typemax(T), dims.us_dims[1], c)
     scatter_min!(Y, X, cluster)
     Y
@@ -67,7 +67,7 @@ minpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) whe
 
 function meanpool(cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
-    dims = pooling_dim_check(cluster, X)
+    dims = Dims(cluster, X)
     FT = (T <: Integer) ? INT2FLOAT[T] : T
     Y = CuArrays.zeros(FT, dims.us_dims[1], c)
     scatter_mean!(Y, FT.(X), cluster)

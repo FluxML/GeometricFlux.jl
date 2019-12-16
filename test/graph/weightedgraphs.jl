@@ -41,10 +41,15 @@ add_edge!(ug, 3, 4, 5); add_edge!(ug, 2, 5, 2); add_edge!(ug, 3, 6, 2)
     end
 
     @testset "GATConv" begin
-        gat = GATConv(ug, in_channel=>out_channel)
-        @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
-        @test size(gat.weight) == (out_channel, in_channel)
-        @test size(gat.bias) == (out_channel, N)
+        for heads = [1, 5]
+            for concat = [true, false]
+                gat = GATConv(ug, in_channel=>out_channel, heads=heads, concat=concat)
+                @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel * heads, N)
+                @test size(gat.a) == (2*out_channel, heads, 1)
+            end
+        end
     end
 
     @testset "GatedGraphConv" begin
