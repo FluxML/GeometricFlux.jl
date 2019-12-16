@@ -50,14 +50,19 @@ adj = [0. 1. 0. 1.;
     end
 
     @testset "GATConv" begin
-        gat = GATConv(adj, in_channel=>out_channel)
-        @test gat.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-        @test size(gat.weight) == (out_channel, in_channel)
-        @test size(gat.bias) == (out_channel, N)
+        for heads = [1, 6]
+            for concat = [true, false]
+                gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=concat)
+                @test gat.adjlist == [[2,4], [1,3], [2,4], [1,3]]
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel * heads, N)
+                @test size(gat.a) == (2*out_channel, heads, 1)
 
-        X = rand(in_channel, N)
-        Y = gat(X)
-        @test size(Y) == (out_channel, N)
+                X = rand(in_channel, N)
+                Y = gat(X)
+                @test size(Y) == (out_channel * heads, N)
+            end
+        end
     end
 
     @testset "GatedGraphConv" begin

@@ -138,7 +138,7 @@ function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
-                   init = glorot_uniform, bias::Bool=true)
+                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
     N = size(adj, 1)
     b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
     GraphConv(neighbors(adj), init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
@@ -177,32 +177,50 @@ struct GATConv{V,T} <: MessagePassing
     adjlist::V
     weight::AbstractMatrix{T}
     bias::AbstractMatrix{T}
-    a::AbstractArray
+    a::AbstractArray{T,3}
     negative_slope::Real
+    channel::Pair{<:Integer,<:Integer}
+    heads::Integer
+    concat::Bool
 end
 
-function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads=1,
-                 concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
+function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
+                 concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
+                 bias::Bool=true, T::DataType=Float32)
     N = size(adj, 1)
-    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
-    GATConv(neighbors(adj), init(ch[2], ch[1]), b, init(2 * ch[2]), negative_slope)
+    w = init(ch[2]*heads, ch[1])
+    b = bias ? init(ch[2]*heads, N) : zeros(T, ch[2]*heads, N)
+    a = init(2*ch[2], heads, 1)
+    GATConv(neighbors(adj), w, b, a, negative_slope, ch, heads, concat)
 end
 
 @functor GATConv
 
 function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
-    n = size(x_j, 2)
-    α = leakyrelu.(g.a' * vcat(repeat(x_i, outer=(1,n)), x_j), g.negative_slope)
-    α = asoftmax(α)
-    α .* x_j
+    x_i = reshape(x_i, g.channel[2], g.heads, :)
+    x_j = reshape(x_j, g.channel[2], g.heads, :)
+    n = size(x_j, 3)
+    α = cat(repeat(x_i, outer=(1,1,n)), x_j+zero(x_j), dims=1) .* g.a
+    α = reshape(sum(α, dims=1), g.heads, n)
+    α = leakyrelu.(α, g.negative_slope)
+    α = _softmax(α)
+    x_j .*= reshape(α, 1, g.heads, n)
+    reshape(x_j, g.channel[2]*g.heads, :)
 end
-update(g::GATConv; X=zeros(0), M=zeros(0)) = M + g.bias
+
+function update(g::GATConv; X=zeros(0), M=zeros(0))
+    if !g.concat
+        M = mean(M, dims=2)
+    end
+    return M .+ g.bias
+end
+
 (g::GATConv)(X::AbstractMatrix) = propagate(g, X=g.weight*X, aggr=:add)
 
 
-function asoftmax(xs)
+function _softmax(xs)
     xs = exp.(xs)
-    s = sum(xs)
+    s = sum(xs, dims=2)
     return xs ./ s
 end
 

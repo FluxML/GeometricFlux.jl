@@ -54,7 +54,7 @@ function propagate(meta::T; adjl=adjlist(meta), kwargs...) where {T<:Meta}
     (newE, newV, new_u)
 end
 
-function generate_cluster(M::AbstractMatrix, gi::GraphInfo)
+function generate_cluster(M::AbstractArray{T,N}, gi::GraphInfo) where {T,N}
     cluster = similar(M, Int, gi.E)
     @inbounds for i = 1:gi.V
         j = gi.edge_idx[i]

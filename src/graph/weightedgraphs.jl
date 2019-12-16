@@ -28,10 +28,13 @@ end
 
 
 function GATConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}; heads=1,
-                 concat=true, negative_slope=0.2, init=glorot_uniform, bias::Bool=true)
+                 concat::Bool=true, negative_slope=0.2, init=glorot_uniform,
+                 bias::Bool=true)
     N = nv(g)
-    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
-    GATConv(adjlist(g), init(ch[2], ch[1]), b, init(2 * ch[2]), negative_slope)
+    w = init(ch[2]*heads, ch[1])
+    b = bias ? init(ch[2]*heads, N) : zeros(T, ch[2]*heads, N)
+    a = init(2*ch[2], heads, 1)
+    GATConv(adjlist(g), w, b, a, negative_slope, ch, heads, concat)
 end
 
 
