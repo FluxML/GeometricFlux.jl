@@ -17,7 +17,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
-CUDAapi = "~2.0"
+CUDAapi = "≥2.0"
 CUDAnative = "^2.5, <2.7.0"
 CuArrays = "^1.4, <1.6.0"
 DataStructures = "~0.17"
