@@ -2,7 +2,7 @@ module GeometricFlux
 
 using Statistics: mean
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax
+using LinearAlgebra: I, issymmetric, diagm, eigmax, norm
 
 using Requires
 using DataStructures: DefaultDict
