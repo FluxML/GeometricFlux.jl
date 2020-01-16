@@ -7,11 +7,11 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
 
             @inbounds if li <= length(xs) && i <= size(ys, 1)
-                ind = Tuple(CartesianIndices(xs)[li])
+                ind = CartesianIndices(xs)[li]
                 CUDAnative.$(Symbol("atomic_", op, "!"))(
                     pointer(ys,
                             Base._to_linear_index(ys, i, xs[li])),
-                    us[i, ind...]
+                    us[i, ind]
                 )
             end
 
@@ -32,11 +32,11 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
 
             @inbounds if li <= length(xs) && i <= size(ys, 1)
-                ind = Tuple(CartesianIndices(xs)[li])
+                ind = CartesianIndices(xs)[li]
                 CUDAnative.$(Symbol("atomic_", op, "!"))(
                     pointer(ys,
                             Base._to_linear_index(ys, i, xs[li]...)),
-                    us[i, ind...]
+                    us[i, ind]
                 )
             end
 
@@ -62,8 +62,8 @@ for op = [:add, :sub, :mul, :div, :max, :min]
 
             @inbounds if xi <= size(ys, 1)
                 for i = 1:length(xs)
-                    ind = Tuple(CartesianIndices(xs)[i])
-                    y = $(op2func[op])(ys[xi, xs[i]], us[xi, ind...])
+                    ind = CartesianIndices(xs)[i]
+                    y = $(op2func[op])(ys[xi, xs[i]], us[xi, ind])
                     CUDAnative.sync_threads()
                     ys[xi, xs[i]] = y
                     CUDAnative.sync_threads()
@@ -84,8 +84,8 @@ for op = [:add, :sub, :mul, :div, :max, :min]
 
             @inbounds if xi <= size(ys, 1)
                 for i = 1:length(xs)
-                    ind = Tuple(CartesianIndices(xs)[i])
-                    y = $(op2func[op])(ys[xi, xs[i]...], us[xi, ind...])
+                    ind = CartesianIndices(xs)[i]
+                    y = $(op2func[op])(ys[xi, xs[i]...], us[xi, ind])
                     CUDAnative.sync_threads()
                     ys[xi, xs[i]...] = y
                     CUDAnative.sync_threads()
