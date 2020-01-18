@@ -59,10 +59,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
 
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
-                y = $(op2func[op])(ys[i, xs[j]], us[i, ind])
-                CUDAnative.sync_threads()
-                ys[i, xs[j]] = y
-                CUDAnative.sync_threads()
+                ys[i, xs[j]] = $(op2func[op])(ys[i, xs[j]], us[i, ind])
             end
 
             return
@@ -83,10 +80,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
 
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
-                y = $(op2func[op])(ys[i, xs[j]...], us[i, ind])
-                CUDAnative.sync_threads()
-                ys[i, xs[j]...] = y
-                CUDAnative.sync_threads()
+                ys[i, xs[j]...] = $(op2func[op])(ys[i, xs[j]...], us[i, ind])
             end
 
             return
