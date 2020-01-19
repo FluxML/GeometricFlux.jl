@@ -59,6 +59,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
 
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
+                # BUG: race condition
                 ys[i, xs[j]] = $(op2func[op])(ys[i, xs[j]], us[i, ind])
             end
 
@@ -80,6 +81,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
 
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
+                # BUG: race condition
                 ys[i, xs[j]...] = $(op2func[op])(ys[i, xs[j]...], us[i, ind])
             end
 
