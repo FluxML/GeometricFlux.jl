@@ -2,7 +2,9 @@ const MAX_THREADS = 512
 
 # Integer
 for op = [:add, :sub, :max, :min, :and, :or, :xor]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:Integer}
+    fn = Symbol("scatter_$(op)!")
+    atm_op = Symbol("atomic_$(op)!")
+    @eval function $fn(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:Integer}
         function kernel!(ys, us, xs)
             li = threadIdx().y + (blockIdx().y - 1) * blockDim().y
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
@@ -10,7 +12,7 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
             @inbounds if li <= length(xs) && i <= size(ys, 1)
                 ind = CartesianIndices(xs)[li]
                 j = Base._to_linear_index(ys, i, xs[li])
-                CUDAnative.$(Symbol("atomic_", op, "!"))(pointer(ys, j), us[i, ind])
+                CUDAnative.$atm_op(pointer(ys, j), us[i, ind])
             end
 
             return
@@ -24,7 +26,7 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
         return ys
     end
 
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:Integer}
+    @eval function $fn(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:Integer}
         function kernel!(ys, us, xs)
             li = threadIdx().y + (blockIdx().y - 1) * blockDim().y
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
@@ -32,7 +34,7 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
             @inbounds if li <= length(xs) && i <= size(ys, 1)
                 ind = CartesianIndices(xs)[li]
                 j = Base._to_linear_index(ys, i, xs[li]...)
-                CUDAnative.$(Symbol("atomic_", op, "!"))(pointer(ys, j), us[i, ind])
+                CUDAnative.$atm_op(pointer(ys, j), us[i, ind])
             end
 
             return
@@ -48,19 +50,19 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
 end
 
 
-op2func = Dict{Symbol, Function}(:add => +, :sub => -, :mul => *,:div => /, :max => max, :min => min)
-
 # Floating point
 for op = [:add, :sub, :mul, :div, :max, :min]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
+    fn = Symbol("scatter_$(op)!")
+    atm_op = Symbol("atomic_$(op)!")
+    @eval function $fn(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
         function kernel!(ys::CuDeviceArray{T}, us::CuDeviceArray{T}, xs)
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
             j = threadIdx().y + (blockIdx().y - 1) * blockDim().y
 
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
-                # BUG: race condition
-                ys[i, xs[j]] = $(op2func[op])(ys[i, xs[j]], us[i, ind])
+                k = Base._to_linear_index(ys, i, xs[j])
+                CUDAnative.$atm_op(pointer(ys, k), us[i, ind])
             end
 
             return
@@ -74,15 +76,15 @@ for op = [:add, :sub, :mul, :div, :max, :min]
         return ys
     end
 
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:AbstractFloat}
+    @eval function $fn(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:AbstractFloat}
         function kernel!(ys::CuDeviceArray{T}, us::CuDeviceArray{T}, xs)
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
             j = threadIdx().y + (blockIdx().y - 1) * blockDim().y
 
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
-                # BUG: race condition
-                ys[i, xs[j]...] = $(op2func[op])(ys[i, xs[j]...], us[i, ind])
+                k = Base._to_linear_index(ys, i, xs[j]...)
+                CUDAnative.$atm_op(pointer(ys, k), us[i, ind])
             end
 
             return
