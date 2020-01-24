@@ -1,4 +1,4 @@
-const MAX_THREADS = 512
+const MAX_THREADS = 1024
 
 # Integer
 for op = [:add, :sub, :max, :min, :and, :or, :xor]
