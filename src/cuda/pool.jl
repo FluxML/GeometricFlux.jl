@@ -34,7 +34,7 @@ prodpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
 function divpool(cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
-    FT = (T <: Integer) ? INT2FLOAT[T] : T
+    FT = floattype(T)
     Y = CuArrays.ones(FT, dims.us_dims[1], c)
     scatter_div!(Y, FT.(X), cluster)
     Y
@@ -68,7 +68,7 @@ minpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) whe
 function meanpool(cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
-    FT = (T <: Integer) ? INT2FLOAT[T] : T
+    FT = floattype(T)
     Y = CuArrays.zeros(FT, dims.us_dims[1], c)
     scatter_mean!(Y, FT.(X), cluster)
     Y
