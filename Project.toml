@@ -5,6 +5,8 @@ version = "0.2.0"
 
 [deps]
 CUDAapi = "3895d2a7-ec45-59b8-82bb-cfc6a382f9b3"
+CUDAnative = "be33ccc6-a3ff-5ff2-a52e-74243cff1e17"
+CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 IRTools = "7869d1d1-7146-5819-86e3-90919afe41df"
@@ -18,7 +20,7 @@ ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
 CUDAapi = "≥2.0"
-CUDAnative = "^2.5, <2.7.0"
+CUDAnative = "^2.8"
 CuArrays = "^1.4, <1.6.0"
 DataStructures = "~0.17"
 Flux = "~0.10"

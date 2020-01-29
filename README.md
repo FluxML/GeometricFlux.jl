@@ -25,35 +25,4 @@ Construct layers from adjacency matrix or graph (maybe extend to other structure
 Input features (including vertex, edge or graph features) of neural network may not need a structure or type.
 Labels or features for output of classification or regression are part of training data, they may not need a specific structure or type, too.
 
-* Integration of JuliaGraphs
-    * [x] Construct layer from SimpleGraph
-    * [x] Construct layer from SimpleWeightedGraph
-    * [x] Construct layer from Matrix
-    * [ ] Support vertex/edge/graph features from MetaGraphs
-* Layers
-    * Convolution layers
-        * [x] MessagePassing
-        * [x] GCNConv
-        * [x] GraphConv
-        * [x] ChebConv
-        * [x] GatedGraphConv
-        * [x] GATConv
-        * [x] EdgeConv
-        * [x] Meta
-    * Pooling layers
-        * [x] GlobalPool
-        * [ ] TopKPool
-        * [ ] LocalPool
-        * [x] sum/sub/prod/div/max/min/mean pool
-    * Embedding layers
-        * [x] InnerProductDecoder
-* Models
-    * [ ] VGAE
-    * [x] GAE
-* Internals
-    * [x] use Zygote
-    * [x] compatible with layers in Flux
-    * [x] multi-threading scatter (i.e. add/sub/prod/div/max/min/mean)
-* Datasets
-* Storage
-    * [ ] Benchmark JLD2, BSON
+* **NOTICE**: Scatter operations on CUDA are only supported in v1.3 (due to new feature in CUDAnative v2.8 which only supports julia v1.3). CPU version scatter operations are always available.
