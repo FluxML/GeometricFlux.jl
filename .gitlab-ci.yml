@@ -7,27 +7,6 @@ include:
 
 image: juliagpu/cuda:10.1-cudnn7-cutensor1-devel-ubuntu18.04
 
-test:v1.0:
-  extends:
-    - .julia:1.0
-    - .test
-  variables:
-    CI_VERSION_TAG: 'v1.0'
-
-test:v1.1:
-  extends:
-    - .julia:1.1
-    - .test
-  variables:
-    CI_VERSION_TAG: 'v1.1'
-
-test:v1.2:
-  extends:
-    - .julia:1.2
-    - .test
-  variables:
-    CI_VERSION_TAG: 'v1.2'
-
 test:v1.3:
   extends:
     - .julia:1.3

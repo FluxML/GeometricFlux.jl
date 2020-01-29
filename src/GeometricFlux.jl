@@ -123,7 +123,7 @@ include("models.jl")
 function __init__()
     @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
         using CUDAnative
-        using CuArrays: CuArray, CuMatrix
+        using CuArrays: CuArray, CuMatrix, CuVector
         import CuArrays: cu
         include("cuda/scatter.jl")
         include("cuda/msgpass.jl")

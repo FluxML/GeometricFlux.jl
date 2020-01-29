@@ -1,18 +1,18 @@
-const MAX_THREADS = 256
+const MAX_THREADS = 1024
 
+# Integer
 for op = [:add, :sub, :max, :min, :and, :or, :xor]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:Integer}
+    fn = Symbol("scatter_$(op)!")
+    atm_op = Symbol("atomic_$(op)!")
+    @eval function $fn(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:Integer}
         function kernel!(ys, us, xs)
             li = threadIdx().y + (blockIdx().y - 1) * blockDim().y
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
 
             @inbounds if li <= length(xs) && i <= size(ys, 1)
-                ind = Tuple(CartesianIndices(xs)[li])
-                CUDAnative.$(Symbol("atomic_", op, "!"))(
-                    pointer(ys,
-                            Base._to_linear_index(ys, i, xs[li])),
-                    us[i, ind...]
-                )
+                ind = CartesianIndices(xs)[li]
+                j = Base._to_linear_index(ys, i, xs[li])
+                CUDAnative.$atm_op(pointer(ys, j), us[i, ind])
             end
 
             return
@@ -26,18 +26,15 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
         return ys
     end
 
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:Integer}
+    @eval function $fn(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:Integer}
         function kernel!(ys, us, xs)
             li = threadIdx().y + (blockIdx().y - 1) * blockDim().y
             i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
 
             @inbounds if li <= length(xs) && i <= size(ys, 1)
-                ind = Tuple(CartesianIndices(xs)[li])
-                CUDAnative.$(Symbol("atomic_", op, "!"))(
-                    pointer(ys,
-                            Base._to_linear_index(ys, i, xs[li]...)),
-                    us[i, ind...]
-                )
+                ind = CartesianIndices(xs)[li]
+                j = Base._to_linear_index(ys, i, xs[li]...)
+                CUDAnative.$atm_op(pointer(ys, j), us[i, ind])
             end
 
             return
@@ -53,49 +50,50 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
 end
 
 
-op2func = Dict{Symbol, Function}(:add => +, :sub => -, :mul => *,:div => /, :max => max, :min => min)
-
+# Floating point
 for op = [:add, :sub, :mul, :div, :max, :min]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
+    fn = Symbol("scatter_$(op)!")
+    atm_op = Symbol("atomic_$(op)!")
+    @eval function $fn(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
         function kernel!(ys::CuDeviceArray{T}, us::CuDeviceArray{T}, xs)
-            xi = threadIdx().x + (blockIdx().x - 1) * blockDim().x
+            i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
+            j = threadIdx().y + (blockIdx().y - 1) * blockDim().y
 
-            @inbounds if xi <= size(ys, 1)
-                for i = 1:length(xs)
-                    ind = Tuple(CartesianIndices(xs)[i])
-                    y = $(op2func[op])(ys[xi, xs[i]], us[xi, ind...])
-                    CUDAnative.sync_threads()
-                    ys[xi, xs[i]] = y
-                    CUDAnative.sync_threads()
-                end
+            @inbounds if i <= size(ys, 1) && j <= length(xs)
+                ind = CartesianIndices(xs)[j]
+                k = Base._to_linear_index(ys, i, xs[j])
+                CUDAnative.$atm_op(pointer(ys, k), us[i, ind])
             end
 
             return
         end
-        threads = MAX_THREADS
-        blocks = ceil(Int, size(ys, 1) / threads)
+
+        thread_i = min(MAX_THREADS, size(ys, 1))
+        thread_j = min(MAX_THREADS ÷ thread_i, length(xs))
+        threads = (thread_i, thread_j)
+        blocks = ceil.(Int, (size(ys, 1), length(xs)) ./ threads)
         CuArrays.@cuda blocks=blocks threads=threads kernel!(ys, us, xs)
         return ys
     end
 
-    @eval function $(Symbol("scatter_", op, "!"))(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:AbstractFloat}
+    @eval function $fn(ys::CuArray{T}, us::CuArray{T}, xs::CuArray{<:Tuple}) where {T<:AbstractFloat}
         function kernel!(ys::CuDeviceArray{T}, us::CuDeviceArray{T}, xs)
-            xi = threadIdx().x + (blockIdx().x - 1) * blockDim().x
+            i = threadIdx().x + (blockIdx().x - 1) * blockDim().x
+            j = threadIdx().y + (blockIdx().y - 1) * blockDim().y
 
-            @inbounds if xi <= size(ys, 1)
-                for i = 1:length(xs)
-                    ind = Tuple(CartesianIndices(xs)[i])
-                    y = $(op2func[op])(ys[xi, xs[i]...], us[xi, ind...])
-                    CUDAnative.sync_threads()
-                    ys[xi, xs[i]...] = y
-                    CUDAnative.sync_threads()
-                end
+            @inbounds if i <= size(ys, 1) && j <= length(xs)
+                ind = CartesianIndices(xs)[j]
+                k = Base._to_linear_index(ys, i, xs[j]...)
+                CUDAnative.$atm_op(pointer(ys, k), us[i, ind])
             end
 
             return
         end
-        threads = MAX_THREADS
-        blocks = ceil(Int, size(ys, 1) / threads)
+
+        thread_i = min(MAX_THREADS, size(ys, 1))
+        thread_j = min(MAX_THREADS ÷ thread_i, length(xs))
+        threads = (thread_i, thread_j)
+        blocks = ceil.(Int, (size(ys, 1), length(xs)) ./ threads)
         CuArrays.@cuda blocks=blocks threads=threads kernel!(ys, us, xs)
         return ys
     end

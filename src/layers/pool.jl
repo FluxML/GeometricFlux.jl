@@ -1,5 +1,12 @@
-const INT2FLOAT = Dict(Int8=>Float16, UInt8=>Float16, Int16=>Float16, UInt16=>Float16,
-                       Int32=>Float32, UInt32=>Float32, Int64=>Float64, UInt64=>Float64)
+floattype(::Type{T}) where {T<:AbstractFloat} = T
+floattype(::Type{Int8}) = Float16
+floattype(::Type{UInt8}) = Float16
+floattype(::Type{Int16}) = Float16
+floattype(::Type{UInt16}) = Float16
+floattype(::Type{Int32}) = Float32
+floattype(::Type{UInt32}) = Float32
+floattype(::Type{Int64}) = Float64
+floattype(::Type{UInt64}) = Float64
 
 struct GlobalPool{A}
     aggr::Symbol
@@ -54,7 +61,7 @@ end
 function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
-    FT = (T <: Integer) ? INT2FLOAT[T] : T
+    FT = floattype(T)
     Y = ones(FT, dims.us_dims[1], c)
     scatter_div!(Y, FT.(X), cluster, dims.us_dims[1])
     Y
@@ -79,7 +86,7 @@ end
 function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
-    FT = (T <: Integer) ? INT2FLOAT[T] : T
+    FT = floattype(T)
     Y = zeros(FT, dims.us_dims[1], c)
     scatter_mean!(Y, FT.(X), cluster, dims.us_dims[1])
     Y
