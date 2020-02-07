@@ -31,10 +31,10 @@ Labels or features for output of classification or regression are part of traini
 
 Scatter operations are fundamental to GeometricFlux.jl and they are implemented in CPU and CUDA version. Benchmarks of scatter operations are done with scripts in benchmark folder. Statistics, includes max, min and mean, are shown in the following plots.
 
-![](benchmark/pics/gpu_scatter.png)
+![](benchmark/pics/gpu_scatter.svg)
 
 Performance of scatter add operations in GeometricFlux is better than pytorch_scatter on cuda.
 
-![](benchmark/pics/cpu_scatter.png)
+![](benchmark/pics/cpu_scatter.svg)
 
 However, performance in GeometricFlux is even worse than pytorch_scatter on cpu/threading.
