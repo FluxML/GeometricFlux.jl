@@ -26,3 +26,15 @@ Input features (including vertex, edge or graph features) of neural network may 
 Labels or features for output of classification or regression are part of training data, they may not need a specific structure or type, too.
 
 * **NOTICE**: Scatter operations on CUDA are only supported in v1.3 (due to new feature in CUDAnative v2.8 which only supports julia v1.3). CPU version scatter operations are always available.
+
+## Benchmark
+
+Scatter operations are fundamental to GeometricFlux.jl and they are implemented in CPU and CUDA version. Benchmarks of scatter operations are done with scripts in benchmark folder. Statistics, includes max, min and mean, are shown in the following plots.
+
+![](benchmark/pics/gpu_scatter.png)
+
+Performance of scatter add operations in GeometricFlux is better than pytorch_scatter on cuda.
+
+![](benchmark/pics/cpu_scatter.png)
+
+However, performance in GeometricFlux is even worse than pytorch_scatter on cpu/threading.
