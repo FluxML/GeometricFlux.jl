@@ -1,24 +1,36 @@
-for op = [:add, :sub, :max, :min, :mul, :div]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple},
-                                                  s::Int=size(ys,1)) where T
-        Threads.@threads for i = 1:s
-            @inbounds for ind = CartesianIndices(xs)
-                $(Symbol("atomic_", op, "!"))(
-                    pointer(ys, Base._to_linear_index(ys, i, xs[ind]...)),
-                    us[i, ind]
-                )
-            end
+const name2op = Dict(:add => :+, :sub => :-, :mul => :*, :div => :/)
+
+for op = [:add, :sub, :mul, :div]
+    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+        @inbounds for k = 1:length(xs)
+            k = CartesianIndices(xs)[k]
+            ys[:, xs[k]...] .= $(name2op[op]).(ys[:, xs[k]...], us[:, k])
         end
         ys
     end
 end
 
-function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple},
-                       s::Int=size(ys,1)) where T
+function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+    @inbounds for k = 1:length(xs)
+        k = CartesianIndices(xs)[k]
+        ys[:, xs[k]...] .= max.(ys[:, xs[k]...], us[:, k])
+    end
+    ys
+end
+
+function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+    @inbounds for k = 1:length(xs)
+        k = CartesianIndices(xs)[k]
+        ys[:, xs[k]...] .= min.(ys[:, xs[k]...], us[:, k])
+    end
+    ys
+end
+
+function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
     Ns = zero(ys)
     ys_ = zero(ys)
-    scatter_add!(Ns, one.(us), xs, s)
-    scatter_add!(ys_, us, xs, s)
+    scatter_add!(Ns, one.(us), xs)
+    scatter_add!(ys_, us, xs)
     ys .+= map((x,y) -> ifelse(iszero(y), x, x/y), ys_, Ns)
     return ys
 end
