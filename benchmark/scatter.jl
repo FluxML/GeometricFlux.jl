@@ -11,12 +11,10 @@ using BenchmarkTools: Trial, TrialEstimate, median, mean
 d = 50
 nbins = 20
 getinfo(te::TrialEstimate) = te.time, te.gctime, te.memory
-getstats(t::Trial) = [getinfo(minimum(t)), getinfo(median(t)), getinfo(mean(t)),
-                      getinfo(maximum(t))]
+getstats(t::Trial) = [getinfo(minimum(t)), getinfo(mean(t)), getinfo(maximum(t))]
 
 metadata = DataFrame(device=String[], dim=Int[], sample=Int[], bins=Int[])
 mintime = DataFrame(min_time=Float64[], min_gc=Float64[], min_mem=Int[])
-medtime = DataFrame(med_time=Float64[], med_gc=Float64[], med_mem=Int[])
 meantime = DataFrame(mean_time=Float64[], mean_gc=Float64[], mean_mem=Int[])
 maxtime = DataFrame(max_time=Float64[], max_gc=Float64[], max_mem=Int[])
 
@@ -39,19 +37,17 @@ for l = [2^5, 2^10, 2^15, 2^20]
 
     push!(metadata, ("cpu", d, l, nbins))
     push!(mintime, s_cpu[1])
-    push!(medtime, s_cpu[2])
-    push!(meantime, s_cpu[3])
-    push!(maxtime, s_cpu[4])
+    push!(meantime, s_cpu[2])
+    push!(maxtime, s_cpu[3])
 
     push!(metadata, ("gpu", d, l, nbins))
     push!(mintime, s_gpu[1])
-    push!(medtime, s_gpu[2])
-    push!(meantime, s_gpu[3])
-    push!(maxtime, s_gpu[4])
+    push!(meantime, s_gpu[2])
+    push!(maxtime, s_gpu[3])
 end
 
-data = hcat(metadata, mintime, medtime, meantime, maxtime)
-CSV.write("benchmark_scatter_julia.tsv", data; delim="\t")
+data = hcat(metadata, mintime, meantime, maxtime)
+CSV.write("benchmark/scatter_julia.tsv", data; delim="\t")
 
 
 ## Benchmark
@@ -59,8 +55,8 @@ CSV.write("benchmark_scatter_julia.tsv", data; delim="\t")
 # CuArrays.@time scatter_add!(hist_gpu, δ_gpu, idx_gpu)
 
 ## Profiling
-# sudo nvprof --profile-from-start off julia-1.3 benchmarks/scatter.jl
-# sudo nvprof --profile-from-start off --print-gpu-trace julia-1.3 --proj benchmarks/scatter.jl
+# sudo nvprof --profile-from-start off julia benchmark/scatter.jl
+# sudo nvprof --profile-from-start off --print-gpu-trace julia --proj benchmark/scatter.jl
 # sudo chown yuehhua -R /home/yuehhua/.julia/
 
 # @profview scatter_add!(hist, δ, idx)
