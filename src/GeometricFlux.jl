@@ -110,6 +110,7 @@ end
 
 const IntOrTuple = Union{Integer,Tuple}
 
+include("atomic.jl")
 include("scatter.jl")
 include("linalg.jl")
 include("utils.jl")
