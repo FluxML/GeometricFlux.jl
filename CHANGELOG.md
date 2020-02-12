@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0]
+
+- Improve performance of scatter operations in both CPU/CUDA version
+- Add benchmark result
+- Add multihead GAT on graph support
+- Move `pool_dim_check` to `Dims` constructor
+
 ## [0.2.0]
 
  - Available on Julia v1.2 and v1.3
