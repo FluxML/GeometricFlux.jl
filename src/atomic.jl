@@ -1,4 +1,5 @@
 # from https://github.com/chengchingwen/Transformers.jl/tree/master/src/fix
+using Core.Intrinsics: llvmcall
 import Base: identity
 import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
        atomic_cas!, atomic_xchg!,

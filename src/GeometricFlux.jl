@@ -1,7 +1,5 @@
 module GeometricFlux
 
-using Core.Intrinsics: llvmcall
-using Base.Threads
 using Statistics: mean
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
