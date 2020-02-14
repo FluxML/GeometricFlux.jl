@@ -1,7 +1,11 @@
+## Scatter operations
+
+const ops = [:add, :sub, :mul, :div, :max, :min, :mean]
 const name2op = Dict(:add => :+, :sub => :-, :mul => :*, :div => :/)
 
 for op = [:add, :sub, :mul, :div]
-    @eval function $(Symbol("scatter_", op, "!"))(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+    fn = Symbol("scatter_$(op)!")
+    @eval function $fn(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
         @simd for k = 1:length(xs)
             k = CartesianIndices(xs)[k]
             @inbounds ys[:, xs[k]...] .= $(name2op[op]).(ys[:, xs[k]...], us[:, k])
@@ -10,7 +14,7 @@ for op = [:add, :sub, :mul, :div]
     end
 end
 
-function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     @simd for k = 1:length(xs)
         k = CartesianIndices(xs)[k]
         @inbounds ys[:, xs[k]...] .= max.(ys[:, xs[k]...], us[:, k])
@@ -18,7 +22,7 @@ function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where
     ys
 end
 
-function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     @simd for k = 1:length(xs)
         k = CartesianIndices(xs)[k]
         @inbounds ys[:, xs[k]...] .= min.(ys[:, xs[k]...], us[:, k])
@@ -26,7 +30,7 @@ function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where
     ys
 end
 
-function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     Ns = zero(ys)
     ys_ = zero(ys)
     scatter_add!(Ns, one.(us), xs)
@@ -34,6 +38,10 @@ function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) wher
     ys .+= map((x,y) -> ifelse(iszero(y), x, x/y), ys_, Ns)
     return ys
 end
+
+
+
+## Derivatives of scatter operations
 
 @adjoint function scatter_add!(ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     ys_ = copy(ys)
@@ -47,7 +55,7 @@ end
     ys_, Δ -> (Δ, -gather(zero(Δ)+Δ, xs), nothing)
 end
 
-@adjoint function scatter_mul!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+@adjoint function scatter_mul!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     ys_ = copy(ys)
     scatter_mul!(ys_, us, xs)
     ys_, function (Δ)
@@ -65,7 +73,7 @@ end
     end
 end
 
-@adjoint function scatter_div!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+@adjoint function scatter_div!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     ys_ = copy(ys)
     scatter_div!(ys_, us, xs)
     ys_, function (Δ)
@@ -83,15 +91,7 @@ end
     end
 end
 
-function gather_indices(X::Array{T}) where T
-    Y = DefaultDict{T,Vector{CartesianIndex}}(CartesianIndex[])
-    @inbounds for (ind, val) = pairs(X)
-        push!(Y[val], ind)
-    end
-    Y
-end
-
-@adjoint function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+@adjoint function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     max = copy(ys)
     scatter_max!(max, us, xs)
     max, function (Δ)
@@ -101,7 +101,7 @@ end
     end
 end
 
-@adjoint function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
+@adjoint function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     min = copy(ys)
     scatter_min!(min, us, xs)
     min, function (Δ)
@@ -127,6 +127,18 @@ end
     end
 end
 
+
+
+## Bool
+
+function scatter_add!(ys::Array{Bool}, us::Array{Bool}, xs::Array{<:IntOrTuple})
+    scatter_add!(Int8.(ys), Int8.(us), xs)
+end
+
+
+
+## API
+
 function scatter!(op::Symbol, ys::AbstractArray, us::AbstractArray, xs::AbstractArray)
     if op == :add
         return scatter_add!(ys, us, xs)
@@ -142,5 +154,14 @@ function scatter!(op::Symbol, ys::AbstractArray, us::AbstractArray, xs::Abstract
         return scatter_min!(ys, us, xs)
     elseif op == :mean
         return scatter_mean!(ys, us, xs)
+    end
+end
+
+# Support different types of array
+for op = ops
+    fn = Symbol("scatter_$(op)!")
+    @eval function $fn(ys::Array{T}, us::Array{S}, xs::Array{<:IntOrTuple}) where {T<:Real,S<:Real}
+        PT = promote_type(T, S)
+        $fn(PT.(ys), PT.(us), xs)
     end
 end

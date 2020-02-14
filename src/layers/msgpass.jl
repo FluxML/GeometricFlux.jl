@@ -1,3 +1,5 @@
+using Base.Threads
+
 abstract type MessagePassing <: Meta end
 
 adjlist(m::T) where {T<:MessagePassing} = m.adjlist

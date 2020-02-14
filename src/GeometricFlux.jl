@@ -1,7 +1,5 @@
 module GeometricFlux
 
-using Core.Intrinsics: llvmcall
-using Base.Threads
 using Statistics: mean
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax
@@ -12,13 +10,6 @@ using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
 using ZygoteRules
-
-import Base: identity
-import Base.Threads: atomictypes, llvmtypes, inttype, ArithmeticTypes, FloatTypes,
-       atomic_cas!, atomic_xchg!,
-       atomic_add!, atomic_sub!, atomic_max!, atomic_min!,
-       atomic_and!, atomic_nand!, atomic_or!, atomic_xor!
-import Base.Sys: ARCH, WORD_SIZE
 
 export
 
