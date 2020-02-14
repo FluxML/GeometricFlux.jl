@@ -151,12 +151,6 @@ end
     end
 end
 
-function gather_indices(X::CuArray{T}) where T
-    Y = gather_indices(Array(X))
-    cuY = Dict{T,CuVector}(k => cu(Tuple.(v)) for (k, v) in Y)
-    cuY
-end
-
 @adjoint function scatter_max!(ys::CuArray{T}, us::CuArray{T}, xs::CuArray) where {T<:AbstractFloat}
     max = copy(ys)
     scatter_max!(max, us, xs)
@@ -179,10 +173,4 @@ end
        Δu .*= gather(zero(Δ)+Δ, xs)
        (Δy, Δu, nothing)
     end
-end
-
-function numerical_cmp(X::CuArray{T}, Y::CuArray) where T
-    Z = map((x,y) -> sign(x - y)^2, X, Y)
-    Z = map(x -> (one(T) - x)^2, Z)
-    Z
 end

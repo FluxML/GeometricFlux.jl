@@ -83,14 +83,6 @@ end
     end
 end
 
-function gather_indices(X::Array{T}) where T
-    Y = DefaultDict{T,Vector{CartesianIndex}}(CartesianIndex[])
-    @inbounds for (ind, val) = pairs(X)
-        push!(Y[val], ind)
-    end
-    Y
-end
-
 @adjoint function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where T
     max = copy(ys)
     scatter_max!(max, us, xs)
