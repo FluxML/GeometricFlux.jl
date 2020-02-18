@@ -1,3 +1,5 @@
+using DataStructures: nlargest
+
 struct GlobalPool{A}
     aggr::Symbol
     cluster::A
@@ -33,19 +35,10 @@ end
 
 function (t::TopKPool)(X::AbstractArray)
     y = t.p' * X / norm(t.p)
-    idx = topk(y, t.k)
-    t.Ã = view(t.A, idx, idx)
-    X_ = view(X, :, idx) .* σ(view(y, idx)')
+    idx = topk_index(y, t.k)
+    t.Ã .= view(t.A, idx, idx)
+    X_ = view(X, :, idx) .* σ.(view(y, idx)')
     return X_
-end
-
-function topk(y::AbstractVector, k::Integer)
-    h = BinaryMaxHeap(y)
-    v = top(h)
-    for i = 1:(k-1)
-        v = top(h)
-    end
-    return collect(1:length(y))[y .>= v]
 end
 
 function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
