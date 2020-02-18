@@ -84,7 +84,8 @@ export
     gather,
     identity,
     GraphInfo,
-    edge_index_table
+    edge_index_table,
+    topk_index
 
 using CUDAapi
 if has_cuda()

@@ -95,3 +95,12 @@ function assign!(A::AbstractArray, B::AbstractArray{T,N}; last_dim=1:size(B,N)) 
     end
     A
 end
+
+
+
+## Top-k pooling
+
+function topk_index(y::AbstractVector, k::Integer)
+    v = nlargest(k, y)
+    return collect(1:length(y))[y .>= v[end]]
+end
