@@ -1,3 +1,5 @@
+using DataStructures: nlargest
+
 struct GlobalPool{A}
     aggr::Symbol
     cluster::A
@@ -20,9 +22,24 @@ end
 
 (l::LocalPool)(X::AbstractArray) = pool(l.aggr, l.cluster, X)
 
-# TopKPool()
+struct TopKPool{T,S}
+    A::AbstractMatrix{T}
+    k::Int
+    p::AbstractVector{S}
+    Ã::AbstractMatrix{T}
+end
 
+function TopKPool(adj::AbstractMatrix, k::Int, in_channel::Integer; init=glorot_uniform)
+    TopKPool(adj, k, init(in_channel), similar(adj, k, k))
+end
 
+function (t::TopKPool)(X::AbstractArray)
+    y = t.p' * X / norm(t.p)
+    idx = topk_index(y, t.k)
+    t.Ã .= view(t.A, idx, idx)
+    X_ = view(X, :, idx) .* σ.(view(y, idx)')
+    return X_
+end
 
 function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}

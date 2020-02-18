@@ -2,7 +2,7 @@ module GeometricFlux
 
 using Statistics: mean
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax
+using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint
 
 using Requires
 using DataStructures: DefaultDict
@@ -46,6 +46,7 @@ export
     # layer/pool
     GlobalPool,
     LocalPool,
+    TopKPool,
     sumpool,
     subpool,
     prodpool,
@@ -84,7 +85,8 @@ export
     gather,
     identity,
     GraphInfo,
-    edge_index_table
+    edge_index_table,
+    topk_index
 
 using CUDAapi
 if has_cuda()
