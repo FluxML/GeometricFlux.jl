@@ -44,6 +44,10 @@ end
 
 identity(; kwargs...) = kwargs.data
 
+"""
+Savely divde `x` by `y`. If `y` is zero, return `x` directly.
+"""
+save_div(x, y) = ifelse(iszero(y), x, x/y)
 
 
 ## Graph related utility functions
