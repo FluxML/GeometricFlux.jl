@@ -5,7 +5,7 @@ variables:
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
-image: nvidia/cuda:latest
+image: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
 
 test:v1.3:
   extends:
