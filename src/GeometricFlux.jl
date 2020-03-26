@@ -10,6 +10,7 @@ using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
 using ZygoteRules
+using FillArrays: Fill
 
 export
 
