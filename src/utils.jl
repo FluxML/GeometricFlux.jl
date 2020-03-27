@@ -34,6 +34,8 @@ function gather(input::Matrix{T}, index::Array{Int}) where T
     return out
 end
 
+gather(input::Fill{T,2,<:Any}, index::Array{Int}) where T = gather(Matrix(input), index)
+
 function gather_indices(X::Array{T}) where T
     Y = DefaultDict{T,Vector{CartesianIndex}}(CartesianIndex[])
     @inbounds for (ind, val) = pairs(X)
