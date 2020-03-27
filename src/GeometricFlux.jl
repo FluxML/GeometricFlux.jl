@@ -1,6 +1,7 @@
 module GeometricFlux
 
 using Statistics: mean
+using StaticArrays: StaticArray
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint
 

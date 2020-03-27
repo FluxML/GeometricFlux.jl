@@ -40,6 +40,48 @@ function scatter_mean!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) wher
 end
 
 
+## Scatter operations on StaticArray
+
+for op = [:add, :sub, :mul, :div]
+    fn = Symbol("scatter_$(op)!")
+    @eval function $fn(ys::StaticArray{T}, us::StaticArray{T},
+                       xs::StaticArray{<:IntOrTuple}) where {T<:Real}
+        @simd for k = 1:length(xs)
+            k = CartesianIndices(xs)[k]
+            @inbounds ys[:, xs[k]...] .= $(name2op[op]).(view(ys, :, xs[k]...), view(us, :, k))
+        end
+        ys
+    end
+end
+
+function scatter_max!(ys::StaticArray{T}, us::StaticArray{T},
+                      xs::StaticArray{<:IntOrTuple}) where {T<:Real}
+    @simd for k = 1:length(xs)
+        k = CartesianIndices(xs)[k]
+        @inbounds ys[:, xs[k]...] .= max.(view(ys, :, xs[k]...), view(us, :, k))
+    end
+    ys
+end
+
+function scatter_min!(ys::StaticArray{T}, us::StaticArray{T},
+                      xs::StaticArray{<:IntOrTuple}) where {T<:Real}
+    @simd for k = 1:length(xs)
+        k = CartesianIndices(xs)[k]
+        @inbounds ys[:, xs[k]...] .= min.(view(ys, :, xs[k]...), view(us, :, k))
+    end
+    ys
+end
+
+function scatter_mean!(ys::StaticArray{T}, us::StaticArray{T},
+                       xs::StaticArray{<:IntOrTuple}) where {T<:Real}
+    Ns = zero(ys)
+    ys_ = zero(ys)
+    scatter_add!(Ns, one.(us), xs)
+    scatter_add!(ys_, us, xs)
+    ys .+= save_div.(ys_, Ns)
+    return ys
+end
+
 
 ## Derivatives of scatter operations
 
