@@ -101,13 +101,12 @@ end
 
 
 function scatter_mean!(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
-    pdiv(x, y) = ifelse(iszero(y), x, x/y)
     yt = CuArrays.zero(ys)
     ot = CuArrays.zero(ys)
     os = CuArrays.one.(us)
     scatter_add!(ot, os, xs)
     scatter_add!(yt, us, xs)
-    ys .+= pdiv.(yt, ot)
+    ys .+= save_div.(yt, ot)
     return ys
 end
 
