@@ -34,6 +34,8 @@ end
 @functor GCNConv
 
 (g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm + g.bias)
+(g::GCNConv)(X::AbstractMatrix{T}, A::AbstractMatrix) where T =
+    g.σ.(g.weight * X * normalized_laplacian(A+I, T) + g.bias)
 
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))
