@@ -1,3 +1,5 @@
+import Base: identity
+
 ## Type transformation
 
 floattype(::Type{T}) where {T<:AbstractFloat} = T
