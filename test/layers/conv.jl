@@ -19,6 +19,9 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = gc(X)
         @test size(Y) == (out_channel, N)
+
+        Y = gc(X, adj)
+        @test size(Y) == (out_channel, N)
     end
 
 
