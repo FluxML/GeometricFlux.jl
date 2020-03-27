@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0]
+
+- Compatible with Julia v1.4 while not support before v1.3
+- Not support old version CuArrays, CUDAnative and CUDAapi
+- Improve performance of scatter operations for CPU and new benchmark (#29)
+- Scatters support almost all Real numbers except Bool on CPU
+- Add benchmark for scatter operations
+- Implement TopKPool layer (#22)
+
 ## [0.3.0]
 
 - Improve performance of scatter operations in both CPU/CUDA version
