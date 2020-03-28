@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0]
+
+- Support scatter operations for MArray (#32)
+- Support GCNConv layer accepting graph input (#31)
+
 ## [0.4.0]
 
 - Compatible with Julia v1.4 while not support before v1.3
