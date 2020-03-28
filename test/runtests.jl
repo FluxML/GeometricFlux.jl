@@ -1,5 +1,6 @@
 using GeometricFlux
 using GeometricFlux: neighbors, laplacian_matrix
+using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using MetaGraphs: MetaGraph, MetaDiGraph
