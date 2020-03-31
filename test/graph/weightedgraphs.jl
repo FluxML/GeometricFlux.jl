@@ -17,7 +17,7 @@ add_edge!(ug, 3, 4, 5); add_edge!(ug, 2, 5, 2); add_edge!(ug, 3, 6, 2)
     @testset "GCNConv" begin
         gc = GCNConv(ug, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
-        @test size(gc.bias) == (out_channel, N)
+        @test size(gc.bias) == (out_channel,)
         @test size(gc.norm) == (N, N)
     end
 
@@ -25,7 +25,7 @@ add_edge!(ug, 3, 4, 5); add_edge!(ug, 2, 5, 2); add_edge!(ug, 3, 6, 2)
         k = 4
         cc = ChebConv(ug, in_channel=>out_channel, k)
         @test size(cc.weight) == (out_channel, in_channel, k)
-        @test size(cc.bias) == (out_channel, N)
+        @test size(cc.bias) == (out_channel,)
         @test size(cc.L̃) == (N, N)
         @test cc.k == k
         @test cc.in_channel == in_channel
@@ -37,7 +37,7 @@ add_edge!(ug, 3, 4, 5); add_edge!(ug, 2, 5, 2); add_edge!(ug, 3, 6, 2)
         @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
-        @test size(gc.bias) == (out_channel, N)
+        @test size(gc.bias) == (out_channel,)
     end
 
     @testset "GATConv" begin
@@ -46,7 +46,7 @@ add_edge!(ug, 3, 4, 5); add_edge!(ug, 2, 5, 2); add_edge!(ug, 3, 6, 2)
                 gat = GATConv(ug, in_channel=>out_channel, heads=heads, concat=concat)
                 @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
                 @test size(gat.weight) == (out_channel * heads, in_channel)
-                @test size(gat.bias) == (out_channel * heads, N)
+                @test size(gat.bias) == (out_channel * heads,)
                 @test size(gat.a) == (2*out_channel, heads, 1)
             end
         end
