@@ -1,5 +1,31 @@
 using SimpleWeightedGraphs: AbstractSimpleWeightedGraph, nv
 
+
+## Linear algebra API for AbstractSimpleWeightedGraph
+
+function degrees(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
+    degrees(adjacency_matrix(wg, T; dir), T; dir)
+end
+
+function degree_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
+    degree_matrix(adjacency_matrix(wg, T; dir), T; dir)
+end
+
+function inv_sqrt_degree_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
+    inv_sqrt_degree_matrix(adjacency_matrix(wg, T; dir), T; dir)
+end
+
+function laplacian_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
+    laplacian_matrix(adjacency_matrix(wg, T; dir), T; dir)
+end
+
+function normalized_laplacian(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg))
+    normalized_laplacian(adjacency_matrix(wg, T), T)
+end
+
+
+## Convolution layers accepting AbstractSimpleWeightedGraph
+
 function GCNConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = nv(g)

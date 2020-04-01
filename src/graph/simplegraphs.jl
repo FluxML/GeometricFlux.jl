@@ -1,5 +1,31 @@
 using LightGraphs: AbstractSimpleGraph, nv, adjacency_matrix
 
+
+## Linear algebra API for AbstractSimpleGraph
+
+function degrees(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
+    degrees(adjacency_matrix(sg, T; dir), T; dir)
+end
+
+function degree_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
+    degree_matrix(adjacency_matrix(sg, T; dir), T; dir)
+end
+
+function inv_sqrt_degree_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
+    inv_sqrt_degree_matrix(adjacency_matrix(sg, T; dir), T; dir)
+end
+
+function laplacian_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
+    laplacian_matrix(adjacency_matrix(sg, T; dir), T; dir)
+end
+
+function normalized_laplacian(sg::AbstractSimpleGraph, T::DataType=eltype(sg))
+    normalized_laplacian(adjacency_matrix(sg, T), T)
+end
+
+
+## Convolution layers accepting AbstractSimpleGraph
+
 function GCNConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = nv(g)

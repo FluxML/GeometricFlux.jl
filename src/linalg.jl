@@ -1,3 +1,5 @@
+## Linear algebra API for adjacency matrix
+
 function degrees(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
     if issymmetric(adj)
         d = vec(sum(adj, dims=1))
