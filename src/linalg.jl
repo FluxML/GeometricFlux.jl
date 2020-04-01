@@ -1,5 +1,21 @@
 ## Linear algebra API for adjacency matrix
 
+"""
+    GCNConv(graph, in=>out)
+    GCNConv(graph, in=>out, σ)
+
+Graph convolutional layer.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `in`: the dimension of input features.
+- `out`: the dimension of output features.
+- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+
+Data should be stored in (# features, # nodes) order.
+For example, a 1000-node graph each node of which poses 100 feautres is constructed.
+The input data would be a `1000×100` array.
+"""
 function degrees(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
     if issymmetric(adj)
         d = vec(sum(adj, dims=1))

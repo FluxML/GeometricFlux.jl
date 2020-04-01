@@ -2,8 +2,8 @@ const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏
                                      :max => "max", :min => "min", :mean => "𝔼[]")
 
 """
-    GCNConv(graph, in=>out)
-    GCNConv(graph, in=>out, σ)
+    GCNConv([graph, ]in=>out)
+    GCNConv([graph, ]in=>out, σ)
 
 Graph convolutional layer.
 
@@ -17,25 +17,30 @@ Data should be stored in (# features, # nodes) order.
 For example, a 1000-node graph each node of which poses 100 feautres is constructed.
 The input data would be a `1000×100` array.
 """
-struct GCNConv{T,F}
+struct GCNConv{T,F,S<:AbstractFeaturedGraph}
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
-    norm::AbstractMatrix{T}
     σ::F
+    graph::S
+end
+
+function GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity;
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    graph = cache ? FeaturedGraph(nothing, nothing) : NullGraph()
+    GCNConv(init(ch[2], ch[1]), b, σ, graph)
 end
 
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    N = size(adj, 1)
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    GCNConv(init(ch[2], ch[1]), b, normalized_laplacian(adj+I, T), σ)
+    graph = cache ? FeaturedGraph(adj, nothing) : NullGraph()
+    GCNConv(init(ch[2], ch[1]), b, σ, graph)
 end
 
 @functor GCNConv
 
-(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm .+ g.bias)
-(g::GCNConv)(X::AbstractMatrix{T}, A::AbstractMatrix) where T =
-    g.σ.(g.weight * X * normalized_laplacian(A+I, T) .+ g.bias)
+(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * normalized_laplacian(graph(g.graph)+I) .+ g.bias)
 
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))

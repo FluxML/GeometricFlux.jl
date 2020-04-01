@@ -4,19 +4,19 @@ using SimpleWeightedGraphs: AbstractSimpleWeightedGraph, nv
 ## Linear algebra API for AbstractSimpleWeightedGraph
 
 function degrees(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
-    degrees(adjacency_matrix(wg, T; dir), T; dir)
+    degrees(adjacency_matrix(wg, T; dir=dir), T; dir=dir)
 end
 
 function degree_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
-    degree_matrix(adjacency_matrix(wg, T; dir), T; dir)
+    degree_matrix(adjacency_matrix(wg, T; dir=dir), T; dir=dir)
 end
 
 function inv_sqrt_degree_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
-    inv_sqrt_degree_matrix(adjacency_matrix(wg, T; dir), T; dir)
+    inv_sqrt_degree_matrix(adjacency_matrix(wg, T; dir=dir), T; dir=dir)
 end
 
 function laplacian_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); dir::Symbol=:out)
-    laplacian_matrix(adjacency_matrix(wg, T; dir), T; dir)
+    laplacian_matrix(adjacency_matrix(wg, T; dir=dir), T; dir=dir)
 end
 
 function normalized_laplacian(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg))
@@ -28,10 +28,9 @@ end
 
 function GCNConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    N = nv(g)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    adj = adjacency_matrix(g)
-    GCNConv(init(ch[2], ch[1]), b, normalized_laplacian(adj+I, T), σ)
+    fg = FeaturedGraph(Ref(g), Ref(nothing))
+    GCNConv(init(ch[2], ch[1]), b, σ, fg)
 end
 
 

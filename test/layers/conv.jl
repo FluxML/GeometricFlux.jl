@@ -14,13 +14,10 @@ adj = [0. 1. 0. 1.;
         gc = GCNConv(adj, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test size(gc.norm) == (N, N)
+        @test graph(gc.graph) === adj
 
         X = rand(in_channel, N)
         Y = gc(X)
-        @test size(Y) == (out_channel, N)
-
-        Y = gc(X, adj)
         @test size(Y) == (out_channel, N)
     end
 

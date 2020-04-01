@@ -4,19 +4,19 @@ using LightGraphs: AbstractSimpleGraph, nv, adjacency_matrix
 ## Linear algebra API for AbstractSimpleGraph
 
 function degrees(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    degrees(adjacency_matrix(sg, T; dir), T; dir)
+    degrees(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
 end
 
 function degree_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    degree_matrix(adjacency_matrix(sg, T; dir), T; dir)
+    degree_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
 end
 
 function inv_sqrt_degree_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    inv_sqrt_degree_matrix(adjacency_matrix(sg, T; dir), T; dir)
+    inv_sqrt_degree_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
 end
 
 function laplacian_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    laplacian_matrix(adjacency_matrix(sg, T; dir), T; dir)
+    laplacian_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
 end
 
 function normalized_laplacian(sg::AbstractSimpleGraph, T::DataType=eltype(sg))
@@ -28,10 +28,9 @@ end
 
 function GCNConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    N = nv(g)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    adj = adjacency_matrix(g)
-    GCNConv(init(ch[2], ch[1]), b, normalized_laplacian(adj+I, T), σ)
+    fg = FeaturedGraph(Ref(g), Ref(nothing))
+    GCNConv(init(ch[2], ch[1]), b, σ, fg)
 end
 
 

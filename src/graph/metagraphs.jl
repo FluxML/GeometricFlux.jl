@@ -4,19 +4,19 @@ using MetaGraphs: AbstractMetaGraph
 ## Linear algebra API for AbstractMetaGraph
 
 function degrees(mg::AbstractMetaGraph, T::DataType=eltype(mg); dir::Symbol=:out)
-    degrees(adjacency_matrix(mg.graph, T; dir), T; dir)
+    degrees(adjacency_matrix(mg.graph, T; dir=dir), T; dir=dir)
 end
 
 function degree_matrix(mg::AbstractMetaGraph, T::DataType=eltype(mg); dir::Symbol=:out)
-    degree_matrix(adjacency_matrix(mg.graph, T; dir), T; dir)
+    degree_matrix(adjacency_matrix(mg.graph, T; dir=dir), T; dir=dir)
 end
 
 function inv_sqrt_degree_matrix(mg::AbstractMetaGraph, T::DataType=eltype(mg); dir::Symbol=:out)
-    inv_sqrt_degree_matrix(adjacency_matrix(mg.graph, T; dir), T; dir)
+    inv_sqrt_degree_matrix(adjacency_matrix(mg.graph, T; dir=dir), T; dir=dir)
 end
 
 function laplacian_matrix(mg::AbstractMetaGraph, T::DataType=eltype(mg); dir::Symbol=:out)
-    laplacian_matrix(adjacency_matrix(mg.graph, T; dir), T; dir)
+    laplacian_matrix(adjacency_matrix(mg.graph, T; dir=dir), T; dir=dir)
 end
 
 function normalized_laplacian(mg::AbstractMetaGraph, T::DataType=eltype(mg))
