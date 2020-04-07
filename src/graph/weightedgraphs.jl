@@ -19,8 +19,10 @@ function laplacian_matrix(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg
     laplacian_matrix(adjacency_matrix(wg, T; dir=dir), T; dir=dir)
 end
 
-function normalized_laplacian(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg))
-    normalized_laplacian(adjacency_matrix(wg, T), T)
+function normalized_laplacian(wg::AbstractSimpleWeightedGraph, T::DataType=eltype(wg); selfloop::Bool=false)
+    adj = adjacency_matrix(wg, T)
+    selfloop && (adj += I)
+    normalized_laplacian(adj, T)
 end
 
 

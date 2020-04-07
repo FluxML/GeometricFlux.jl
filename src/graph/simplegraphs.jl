@@ -19,8 +19,10 @@ function laplacian_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::
     laplacian_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
 end
 
-function normalized_laplacian(sg::AbstractSimpleGraph, T::DataType=eltype(sg))
-    normalized_laplacian(adjacency_matrix(sg, T), T)
+function normalized_laplacian(sg::AbstractSimpleGraph, T::DataType=eltype(sg); selfloop::Bool=false)
+    adj = adjacency_matrix(sg, T)
+    selfloop && (adj += I)
+    normalized_laplacian(adj, T)
 end
 
 

@@ -19,8 +19,10 @@ function laplacian_matrix(mg::AbstractMetaGraph, T::DataType=eltype(mg); dir::Sy
     laplacian_matrix(adjacency_matrix(mg.graph, T; dir=dir), T; dir=dir)
 end
 
-function normalized_laplacian(mg::AbstractMetaGraph, T::DataType=eltype(mg))
-    normalized_laplacian(adjacency_matrix(mg.graph, T), T)
+function normalized_laplacian(mg::AbstractMetaGraph, T::DataType=eltype(mg); selfloop::Bool=false)
+    adj = adjacency_matrix(mg.graph, T)
+    selfloop && (adj += I)
+    normalized_laplacian(adj, T)
 end
 
 

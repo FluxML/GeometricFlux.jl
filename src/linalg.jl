@@ -1,20 +1,26 @@
 ## Linear algebra API for adjacency matrix
 
 """
-    GCNConv(graph, in=>out)
-    GCNConv(graph, in=>out, σ)
+    degrees(g[, T; dir=:out])
 
-Graph convolutional layer.
+Degree of each vertex. Return a vector which contains the degree of each vertex in graph `g`.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
-- `in`: the dimension of input features.
-- `out`: the dimension of output features.
-- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+- `g`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `T`: result element type of degree vector; default is the element type of `g` (optional).
+- `dir`: direction of degree; should be `:in`, `:out`, or `:both` (optional).
 
-Data should be stored in (# features, # nodes) order.
-For example, a 1000-node graph each node of which poses 100 feautres is constructed.
-The input data would be a `1000×100` array.
+# Examples
+```jldoctest
+julia> m = [0 1 1; 1 0 0; 1 0 0];
+
+julia> GeometricFlux.degrees(m)
+3-element Array{Int64,1}:
+ 2
+ 1
+ 1
+
+```
 """
 function degrees(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
     if issymmetric(adj)
@@ -47,7 +53,8 @@ function laplacian_matrix(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Sym
     degree_matrix(adj, T, dir=dir) - SparseMatrixCSC(T.(adj))
 end
 
-function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
+function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
+    selfloop && (adj += I)
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
     I - inv_sqrtD * SparseMatrixCSC(T.(adj)) * inv_sqrtD
 end
