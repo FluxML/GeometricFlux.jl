@@ -36,12 +36,3 @@ end
 function normalized_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]))
     normalized_laplacian(fg.graph[], T)
 end
-
-
-## Convolution layers accepting AbstractFeaturedGraph
-
-# function (g::GCNConv)(gr::FeaturedGraph)
-#     X = gr.feature[]
-#     A = gr.graph[]
-#     g.σ.(g.weight * X * normalized_laplacian(A+I) .+ g.bias)
-# end

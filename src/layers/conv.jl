@@ -40,7 +40,15 @@ end
 
 @functor GCNConv
 
-(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * normalized_laplacian(graph(g.graph)+I) .+ g.bias)
+function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
+    g.σ.(g.weight * X * normalized_laplacian(graph(g.graph), T; selfloop=true) .+ g.bias)
+end
+
+function (g::GCNConv)(gr::FeaturedGraph)
+    X = feature(gr)
+    A = graph(gr)
+    g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+end
 
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))
