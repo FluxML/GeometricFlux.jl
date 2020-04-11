@@ -4,6 +4,8 @@
 <img width="400px" src="https://github.com/yuehhua/GeometricFlux.jl/raw/master/logos/logo.png"/>
 </p>
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://yuehhua.github.io/GeometricFlux.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://yuehhua.github.io/GeometricFlux.jl/dev)
 [![Build Status](https://travis-ci.org/yuehhua/GeometricFlux.jl.svg?branch=master)](https://travis-ci.org/yuehhua/GeometricFlux.jl)
 [![codecov](https://codecov.io/gh/yuehhua/GeometricFlux.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/yuehhua/GeometricFlux.jl)
 [![pipeline status](https://gitlab.com/JuliaGPU/GeometricFlux-jl/badges/master/pipeline.svg)](https://gitlab.com/JuliaGPU/GeometricFlux-jl/commits/master)

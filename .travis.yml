@@ -5,6 +5,7 @@ language: julia
 os:
   - linux
   - osx
+  - windows
 
 julia:
   - 1.4
@@ -27,21 +28,16 @@ git:
 env:
   - JULIA_CUDA_SILENT=true
 
-## uncomment the following lines to allow failures on nightly julia
-## (tests will run but not make your overall status red)
-matrix:
- allow_failures:
- - julia: nightly
-
-## uncomment and modify the following lines to manually install system packages
-#addons:
-#  apt: # apt-get for linux
-#    packages:
-#    - gfortran
-#before_script: # homebrew for mac
-#  - if [ $TRAVIS_OS_NAME = osx ]; then brew install gcc; fi
-
-# uncomment the following lines to override the default test script
-# script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia -e 'using Pkg; Pkg.add(PackageSpec(url=pwd())); Pkg.build("GeometricFlux"); Pkg.test("GeometricFlux"; coverage=true)'
+jobs:
+  allow_failures:
+    - julia: nightly
+  fast_finish: true
+  include:
+    - stage: Documentation
+      julia: 1.4
+      script: julia --project=docs -e '
+          using Pkg;
+          Pkg.develop(PackageSpec(path=pwd()));
+          Pkg.instantiate();
+          include("docs/make.jl");'
+      after_success: skip
