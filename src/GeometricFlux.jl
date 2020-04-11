@@ -80,6 +80,13 @@ export
     scatter_mean!,
     scatter!,
 
+    # graph/featuredgraphs
+    AbstractFeaturedGraph,
+    NullGraph,
+    FeaturedGraph,
+    graph,
+    feature,
+
     # graph/utils
     adjlist,
 
@@ -107,6 +114,7 @@ const IntOrTuple = Union{Integer,Tuple}
 
 include("scatter.jl")
 include("linalg.jl")
+include("graph/featuredgraphs.jl")
 include("utils.jl")
 include("layers/meta.jl")
 include("layers/msgpass.jl")

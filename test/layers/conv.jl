@@ -13,14 +13,11 @@ adj = [0. 1. 0. 1.;
     @testset "GCNConv" begin
         gc = GCNConv(adj, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
-        @test size(gc.bias) == (out_channel, N)
-        @test size(gc.norm) == (N, N)
+        @test size(gc.bias) == (out_channel,)
+        @test graph(gc.graph) === adj
 
         X = rand(in_channel, N)
         Y = gc(X)
-        @test size(Y) == (out_channel, N)
-
-        Y = gc(X, adj)
         @test size(Y) == (out_channel, N)
     end
 
@@ -29,7 +26,7 @@ adj = [0. 1. 0. 1.;
         k = 6
         cc = ChebConv(adj, in_channel=>out_channel, k)
         @test size(cc.weight) == (out_channel, in_channel, k)
-        @test size(cc.bias) == (out_channel, N)
+        @test size(cc.bias) == (out_channel,)
         @test size(cc.L̃) == (N, N)
         @test cc.k == k
         @test cc.in_channel == in_channel
@@ -45,7 +42,7 @@ adj = [0. 1. 0. 1.;
         @test gc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
-        @test size(gc.bias) == (out_channel, N)
+        @test size(gc.bias) == (out_channel,)
 
         X = rand(in_channel, N)
         Y = gc(X)
@@ -58,12 +55,16 @@ adj = [0. 1. 0. 1.;
                 gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=concat)
                 @test gat.adjlist == [[2,4], [1,3], [2,4], [1,3]]
                 @test size(gat.weight) == (out_channel * heads, in_channel)
-                @test size(gat.bias) == (out_channel * heads, N)
+                @test size(gat.bias) == (out_channel * heads,)
                 @test size(gat.a) == (2*out_channel, heads, 1)
 
                 X = rand(in_channel, N)
                 Y = gat(X)
-                @test size(Y) == (out_channel * heads, N)
+                if concat
+                    @test size(Y) == (out_channel * heads, N)
+                else
+                    @test size(Y) == (out_channel * heads, 1)
+                end
             end
         end
     end

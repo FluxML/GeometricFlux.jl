@@ -36,6 +36,7 @@ tests = [
     "models",
     "linalg",
     "scatter",
+    "graph/featuredgraphs",
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/metagraphs",

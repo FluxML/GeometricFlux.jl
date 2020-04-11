@@ -2,8 +2,8 @@ const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏
                                      :max => "max", :min => "min", :mean => "𝔼[]")
 
 """
-    GCNConv(graph, in=>out)
-    GCNConv(graph, in=>out, σ)
+    GCNConv([graph, ]in=>out)
+    GCNConv([graph, ]in=>out, σ)
 
 Graph convolutional layer.
 
@@ -17,25 +17,38 @@ Data should be stored in (# features, # nodes) order.
 For example, a 1000-node graph each node of which poses 100 feautres is constructed.
 The input data would be a `1000×100` array.
 """
-struct GCNConv{T,F}
+struct GCNConv{T,F,S<:AbstractFeaturedGraph}
     weight::AbstractMatrix{T}
-    bias::AbstractMatrix{T}
-    norm::AbstractMatrix{T}
+    bias::AbstractVector{T}
     σ::F
+    graph::S
+end
+
+function GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity;
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    graph = cache ? FeaturedGraph(nothing, nothing) : NullGraph()
+    GCNConv(init(ch[2], ch[1]), b, σ, graph)
 end
 
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    N = size(adj, 1)
-    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
-    GCNConv(init(ch[2], ch[1]), b, normalized_laplacian(adj+I, T), σ)
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    graph = cache ? FeaturedGraph(adj, nothing) : NullGraph()
+    GCNConv(init(ch[2], ch[1]), b, σ, graph)
 end
 
 @functor GCNConv
 
-(g::GCNConv)(X::AbstractMatrix) = g.σ.(g.weight * X * g.norm + g.bias)
-(g::GCNConv)(X::AbstractMatrix{T}, A::AbstractMatrix) where T =
-    g.σ.(g.weight * X * normalized_laplacian(A+I, T) + g.bias)
+function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
+    g.σ.(g.weight * X * normalized_laplacian(graph(g.graph), T; selfloop=true) .+ g.bias)
+end
+
+function (g::GCNConv)(gr::FeaturedGraph)
+    X = feature(gr)
+    A = graph(gr)
+    g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+end
 
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -62,7 +75,7 @@ Chebyshev spectral graph convolutional layer.
 """
 struct ChebConv{T}
     weight::AbstractArray{T,3}
-    bias::AbstractMatrix{T}
+    bias::AbstractVector{T}
     L̃::AbstractMatrix{T}
     k::Integer
     in_channel::Integer
@@ -72,7 +85,7 @@ end
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     N = size(adj, 1)
-    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
     L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
     ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
 end
@@ -97,7 +110,7 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     for k = 2:c.k
         Y += view(c.weight, :, :, k) * view(Z, :, :, k)
     end
-    Y += c.bias
+    Y .+= c.bias
     return Y
 end
 
@@ -127,7 +140,7 @@ struct GraphConv{V,T} <: MessagePassing
     adjlist::V
     weight1::AbstractMatrix{T}
     weight2::AbstractMatrix{T}
-    bias::AbstractMatrix{T}
+    bias::AbstractVector{T}
     aggr::Symbol
 end
 
@@ -135,21 +148,21 @@ function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
     N = size(el, 1)
-    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
     GraphConv(el, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
     N = size(adj, 1)
-    b = bias ? init(ch[2], N) : zeros(T, ch[2], N)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
     GraphConv(neighbors(adj), init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 @functor GraphConv
 
 message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
-update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M + g.bias
+update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M .+ g.bias
 (g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
 
 function Base.show(io::IO, l::GraphConv)
@@ -178,7 +191,7 @@ Graph attentional layer.
 struct GATConv{V,T} <: MessagePassing
     adjlist::V
     weight::AbstractMatrix{T}
-    bias::AbstractMatrix{T}
+    bias::AbstractVector{T}
     a::AbstractArray{T,3}
     negative_slope::Real
     channel::Pair{<:Integer,<:Integer}
@@ -191,7 +204,7 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
                  bias::Bool=true, T::DataType=Float32)
     N = size(adj, 1)
     w = init(ch[2]*heads, ch[1])
-    b = bias ? init(ch[2]*heads, N) : zeros(T, ch[2]*heads, N)
+    b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
     a = init(2*ch[2], heads, 1)
     GATConv(neighbors(adj), w, b, a, negative_slope, ch, heads, concat)
 end
