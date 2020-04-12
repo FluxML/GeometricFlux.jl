@@ -12,6 +12,8 @@ Degree of each vertex. Return a vector which contains the degree of each vertex 
 
 # Examples
 ```jldoctest
+julia> using GeometricFlux
+
 julia> m = [0 1 1; 1 0 0; 1 0 0];
 
 julia> GeometricFlux.degrees(m)
