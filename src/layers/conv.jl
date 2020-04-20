@@ -44,17 +44,19 @@ function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
     g.σ.(g.weight * X * normalized_laplacian(graph(g.graph), T; selfloop=true) .+ g.bias)
 end
 
-function (g::GCNConv)(gr::FeaturedGraph)
+function (g::GCNConv)(gr::FeaturedGraph{T,S})
     X = feature(gr)
     A = graph(gr)
-    g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    out_mat = g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    FeaturedGraph{T,S}(A, out_mat)
 end
 
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))
     out_channel = size(l.weight, ndims(l.weight)-1)
-    print(io, "GCNConv(G(V=", size(l.norm, 1))
-    print(io, ", E), ", in_channel, "=>", out_channel)
+    #print(io, "GCNConv(G(V=", size(l.norm, 1))
+    #print(io, ", E), ", in_channel, "=>", out_channel)
+    print(io, "GCNConv(" in_channel, "=>", out_channel)
     l.σ == identity || print(io, ", ", l.σ)
     print(io, ")")
 end
