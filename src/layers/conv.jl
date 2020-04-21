@@ -47,14 +47,16 @@ end
 function (g::GCNConv)(gr::FeaturedGraph)
     X = feature(gr)
     A = graph(gr)
-    g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    X_ = g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    FeaturedGraph(A, X_)
 end
 
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))
     out_channel = size(l.weight, ndims(l.weight)-1)
-    print(io, "GCNConv(G(V=", size(l.norm, 1))
+    print(io, "GCNConv(G(V=", nv(l.graph))
     print(io, ", E), ", in_channel, "=>", out_channel)
+    print(io, "GCNConv(", in_channel, "=>", out_channel)
     l.σ == identity || print(io, ", ", l.σ)
     print(io, ")")
 end

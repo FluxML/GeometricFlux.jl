@@ -86,6 +86,7 @@ export
     FeaturedGraph,
     graph,
     feature,
+    nv,
 
     # graph/utils
     adjlist,

@@ -19,6 +19,7 @@ norm_lap = [1. -.5 0. -.5;
     fg = FeaturedGraph(adj, nothing)
     @test graph(fg) === adj
     @test isnothing(feature(fg))
+    @test nv(fg) == 4
 
     for T in [Int8, Int16, Int32, Int64, Int128]
         @test degree_matrix(fg, T; dir=:out) == T.(deg)
