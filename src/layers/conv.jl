@@ -47,7 +47,8 @@ end
 function (g::GCNConv)(gr::FeaturedGraph)
     X = feature(gr)
     A = graph(gr)
-    g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    X_ = g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    FeaturedGraph(A, X_)
 end
 
 function Base.show(io::IO, l::GCNConv)
