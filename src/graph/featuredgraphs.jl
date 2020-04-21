@@ -1,3 +1,5 @@
+import LightGraphs: nv
+
 abstract type AbstractFeaturedGraph end
 
 struct NullGraph <: AbstractFeaturedGraph end
@@ -13,6 +15,10 @@ graph(fg::FeaturedGraph) = fg.graph[]
 
 feature(::NullGraph) = nothing
 feature(fg::FeaturedGraph) = fg.feature[]
+
+nv(::NullGraph) = 0
+nv(fg::FeaturedGraph) = nv(fg.graph[])
+nv(fg::FeaturedGraph{T}) where {T<:AbstractMatrix} = size(fg.graph[], 1)
 
 
 ## Linear algebra API for AbstractFeaturedGraph
