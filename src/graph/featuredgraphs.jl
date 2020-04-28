@@ -39,6 +39,6 @@ function laplacian_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); dir
     laplacian_matrix(fg.graph[], T; dir=dir)
 end
 
-function normalized_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]))
-    normalized_laplacian(fg.graph[], T)
+function normalized_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); selfloop::Bool=false)
+    normalized_laplacian(fg.graph[], T; selfloop=selfloop)
 end
