@@ -22,12 +22,11 @@ train_X = features |> gpu  # dim: num_features * num_nodes
 train_y = labels |> gpu  # dim: target_catg * num_nodes
 
 ## Model
-model = Chain(GCNConv(g, num_features=>hidden, relu),
-              Dropout(0.5),
-              GCNConv(g, hidden=>target_catg),
-              softmax) |> gpu
-# test model
-# model(train_X)
+#model = Chain(GCNConv(g, num_features=>hidden, relu),
+#              Dropout(0.5),
+#              GCNConv(g, hidden=>target_catg),
+#              softmax) |> gpu
+model = GCNConv(g, num_features=>target_catg, softmax) |> gpu
 
 ## Loss
 loss(x, y) = crossentropy(model(x), y)

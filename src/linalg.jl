@@ -83,7 +83,8 @@ The values other than diagonal are zeros.
 """
 function inv_sqrt_degree_matrix(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
     d = degrees(adj, T, dir=dir).^(-0.5)
-    return SparseMatrixCSC(T.(diagm(0=>d)))
+    sm = SparseMatrixCSC{T, Int}(T.(diagm(0=>d)))
+    return sm
 end
 
 """
@@ -110,10 +111,17 @@ Normalized Laplacian matrix of graph `g`.
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 - `selfloop`: adding self loop while calculating the matrix (optional).
 """
+function normalized_laplacian(sg, T::DataType=eltype(sg); selfloop::Bool=false)
+    adj = adjacency_matrix(sg, T)
+    selfloop && (adj += I)
+    normalized_laplacian(adj, T)
+end
+
 function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
     selfloop && (adj += I)
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
-    I - inv_sqrtD * SparseMatrixCSC(T.(adj)) * inv_sqrtD
+    invs = inv_sqrtD * convert(SparseMatrixCSC{T, Int}, adj) * inv_sqrtD
+    I - invs
 end
 
 function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
