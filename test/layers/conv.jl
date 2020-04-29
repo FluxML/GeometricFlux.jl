@@ -23,7 +23,7 @@ adj = [0. 1. 0. 1.;
         gc = GCNConv(in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === adj
+        @test graph(gc.graph) === nothing
 
         fg = FeaturedGraph(adj, X)
         fg_ = gc(fg)
