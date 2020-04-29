@@ -19,6 +19,15 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = gc(X)
         @test size(Y) == (out_channel, N)
+
+        gc = GCNConv(in_channel=>out_channel)
+        @test size(gc.weight) == (out_channel, in_channel)
+        @test size(gc.bias) == (out_channel,)
+        @test graph(gc.graph) === nothing
+
+        fg = FeaturedGraph(adj, X)
+        fg_ = gc(fg)
+        @test size(Y) == (out_channel, N)
     end
 
 
