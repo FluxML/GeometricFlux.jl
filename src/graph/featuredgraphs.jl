@@ -2,17 +2,42 @@ import LightGraphs: nv
 
 abstract type AbstractFeaturedGraph end
 
+"""
+    NullGraph()
+
+Null object for `FeaturedGraph`.
+"""
 struct NullGraph <: AbstractFeaturedGraph end
 
+"""
+    FeaturedGraph(graph, feature)
+
+A feature-equipped graph structure for passing graph to layer in order to provide graph dynamically.
+References to graph or feature are hold in this type. `graph` and `feature` are provided to fetch data.
+
+# Arguments
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `feature`: features attached to graph.
+"""
 struct FeaturedGraph{T,S} <: AbstractFeaturedGraph
     graph::Ref{T}
     feature::Ref{S}
     FeaturedGraph(graph::T, feature::S) where {T,S} = new{T,S}(Ref(graph), Ref(feature))
 end
 
+"""
+    graph(::AbstractFeaturedGraph)
+
+Get referenced graph.
+"""
 graph(::NullGraph) = nothing
 graph(fg::FeaturedGraph) = fg.graph[]
 
+"""
+    feature(::AbstractFeaturedGraph)
+
+Get feature attached to graph.
+"""
 feature(::NullGraph) = nothing
 feature(fg::FeaturedGraph) = fg.feature[]
 
