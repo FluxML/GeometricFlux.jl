@@ -26,22 +26,25 @@ end
 
 function GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
     graph = cache ? FeaturedGraph(nothing, nothing) : NullGraph()
-    GCNConv(init(ch[2], ch[1]), b, σ, graph)
+    GCNConv(T.(init(ch[2], ch[1])), b, σ, graph)
 end
 
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
     graph = cache ? FeaturedGraph(adj, nothing) : NullGraph()
-    GCNConv(init(ch[2], ch[1]), b, σ, graph)
+    GCNConv(T.(init(ch[2], ch[1])), b, σ, graph)
 end
 
 @functor GCNConv
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
-    g.σ.(g.weight * X * normalized_laplacian(graph(g.graph), T; selfloop=true) .+ g.bias)
+    nl = normalized_laplacian(graph(g.graph), float(T); selfloop=true)
+    W, b, σ = g.weight, g.bias, g.σ
+    wX = W * X
+    σ.(wX * nl .+ b)
 end
 
 function (g::GCNConv)(fg::FeaturedGraph)
