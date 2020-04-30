@@ -1,4 +1,5 @@
 ## Linear algebra API for adjacency matrix
+using LinearAlgebra
 
 """
     degrees(g[, T; dir=:out])
@@ -82,9 +83,8 @@ The values other than diagonal are zeros.
 - `dir`: direction of degree; should be `:in`, `:out`, or `:both` (optional).
 """
 function inv_sqrt_degree_matrix(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
-    d = degrees(adj, T, dir=dir).^(-0.5)
-    sm = SparseMatrixCSC{T, Int}(T.(diagm(0=>d)))
-    return sm
+    d  = inv.(sqrt.(degrees(adj, T, dir=dir)))
+    return Diagonal(d)
 end
 
 """
@@ -120,8 +120,7 @@ end
 function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
     selfloop && (adj += I)
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
-    invs = inv_sqrtD * convert(SparseMatrixCSC{T, Int}, adj) * inv_sqrtD
-    I - invs
+    I - inv_sqrtD * adj * inv_sqrtD
 end
 
 function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
