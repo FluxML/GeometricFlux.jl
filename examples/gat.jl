@@ -5,7 +5,6 @@ using JLD2  # use v0.1.2
 using Statistics: mean
 using SparseArrays
 using LightGraphs.SimpleGraphs
-using LightGraphs: adjacency_matrix
 using CuArrays
 
 @load "data/cora_features.jld2" features
@@ -14,21 +13,23 @@ using CuArrays
 
 num_nodes = 2708
 num_features = 1433
-hidden = 16
+
+heads  = 8
+hidden = 8
 target_catg = 7
-epochs = 20
+epochs = 10
 
 ## Preprocessing data
-train_X = Float32.(features) |> gpu  # dim: num_features * num_nodes
-train_y = Float32.(labels) |> gpu  # dim: target_catg * num_nodes
-
-adj_mat = Matrix{Float32}(adjacency_matrix(g)) |> gpu
+train_X = features |> gpu  # dim: num_features * num_nodes
+train_y = labels |> gpu  # dim: target_catg * num_nodes
 
 ## Model
-model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
-              Dropout(0.5),
-              GCNConv(adj_mat, hidden=>target_catg),
+model = Chain(GATConv(g, num_features=>hidden, heads=heads),
+              Dropout(0.6),
+              GATConv(g, hidden=>target_catg, heads=heads),
               softmax) |> gpu
+# test model
+# model(train_X)
 
 ## Loss
 loss(x, y) = crossentropy(model(x), y)

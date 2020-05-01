@@ -1,5 +1,5 @@
-using LightGraphs: AbstractSimpleGraph, nv, adjacency_matrix
-
+using LightGraphs: AbstractSimpleGraph, nv, adjacency_matrix, inneighbors, outneighbors, all_neighbors
+import LightGraphs: adjacency_matrix
 
 ## Linear algebra API for AbstractSimpleGraph
 
@@ -19,12 +19,7 @@ function laplacian_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::
     laplacian_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
 end
 
-function normalized_laplacian(sg::AbstractSimpleGraph, T::DataType=eltype(sg); selfloop::Bool=false)
-    adj = adjacency_matrix(sg, T)
-    selfloop && (adj += I)
-    normalized_laplacian(adj, T)
-end
-
+adjacency_matrix(sg::Base.RefValue{<:AbstractSimpleGraph}, T::DataType=eltype(sg)) = adjacency_matrix(sg[], T)
 
 ## Convolution layers accepting AbstractSimpleGraph
 
