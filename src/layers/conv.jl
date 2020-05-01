@@ -41,10 +41,9 @@ end
 @functor GCNConv
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
-    nl = normalized_laplacian(graph(g.graph), float(T); selfloop=true)
     W, b, σ = g.weight, g.bias, g.σ
-    wX = W * X
-    σ.(wX * nl .+ b)
+    nl = normalized_laplacian(graph(g.graph), float(T); selfloop=true)
+    σ.(W * X * nl .+ b)
 end
 
 function (g::GCNConv)(fg::FeaturedGraph)
