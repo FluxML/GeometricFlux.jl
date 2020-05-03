@@ -68,7 +68,7 @@ end
 function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
-    FT = floattype(T)
+    FT = float(T)
     Y = ones(FT, dims.us_dims[1], c)
     scatter_div!(Y, FT.(X), cluster)
     Y
@@ -93,7 +93,7 @@ end
 function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
-    FT = floattype(T)
+    FT = float(T)
     Y = zeros(FT, dims.us_dims[1], c)
     scatter_mean!(Y, FT.(X), cluster)
     Y
