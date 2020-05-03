@@ -120,7 +120,7 @@ end
 function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
     selfloop && (adj += I)
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
-    I - inv_sqrtD * adj * inv_sqrtD
+    T.(I - inv_sqrtD * adj * inv_sqrtD)
 end
 
 function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
