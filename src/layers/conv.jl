@@ -42,14 +42,15 @@ end
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
     W, b, σ = g.weight, g.bias, g.σ
-    nl = normalized_laplacian(graph(g.graph), float(T); selfloop=true)
-    σ.(W * X * nl .+ b)
+    L = normalized_laplacian(g.graph, float(T); selfloop=true)
+    σ.(W * X * L .+ b)
 end
 
 function (g::GCNConv)(fg::FeaturedGraph)
     X = feature(fg)
-    A = graph(fg)
-    X_ = g.σ.(g.weight * X * normalized_laplacian(A, eltype(X); selfloop=true) .+ g.bias)
+    A = adjacency_matrix(fg)
+    L = normalized_laplacian(A, eltype(X); selfloop=true)
+    X_ = g.σ.(g.weight * X * L .+ g.bias)
     FeaturedGraph(A, X_)
 end
 

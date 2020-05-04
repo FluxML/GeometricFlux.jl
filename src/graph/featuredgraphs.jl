@@ -1,5 +1,3 @@
-import LightGraphs: nv
-
 abstract type AbstractFeaturedGraph end
 
 """
@@ -47,6 +45,8 @@ nv(fg::FeaturedGraph{T}) where {T<:AbstractMatrix} = size(fg.graph[], 1)
 
 
 ## Linear algebra API for AbstractFeaturedGraph
+
+adjacency_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph[])) = adjacency_matrix(fg.graph[], T)
 
 function degrees(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); dir::Symbol=:out)
     degrees(fg.graph[], T; dir=dir)
