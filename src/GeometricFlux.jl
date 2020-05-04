@@ -52,14 +52,6 @@ export
     GlobalPool,
     LocalPool,
     TopKPool,
-    sumpool,
-    subpool,
-    prodpool,
-    divpool,
-    maxpool,
-    minpool,
-    meanpool,
-    pool,
 
     # models
     GAE,
@@ -67,13 +59,13 @@ export
     InnerProductDecoder,
     VariationalEncoder,
 
-    # linalg
+    # operations/linalg
     degree_matrix,
     laplacian_matrix,
     normalized_laplacian,
     neighbors,
 
-    # scatter
+    # operations/scatter
     scatter_add!,
     scatter_sub!,
     scatter_max!,
@@ -82,6 +74,16 @@ export
     scatter_div!,
     scatter_mean!,
     scatter!,
+
+    # operations/pool
+    sumpool,
+    subpool,
+    prodpool,
+    divpool,
+    maxpool,
+    minpool,
+    meanpool,
+    pool,
 
     # graph/featuredgraphs
     AbstractFeaturedGraph,
@@ -116,17 +118,23 @@ end
 
 const IntOrTuple = Union{Integer,Tuple}
 
-include("scatter.jl")
-include("linalg.jl")
+include("operations/scatter.jl")
+include("operations/pool.jl")
+include("operations/linalg.jl")
+
+include("utils.jl")
+
 include("graph/featuredgraphs.jl")
 include("graph/linalg.jl")
-include("utils.jl")
+
 include("layers/meta.jl")
 include("layers/msgpass.jl")
+
 include("layers/conv.jl")
-include("graph/simplegraphs.jl")
 include("layers/pool.jl")
 include("models.jl")
+
+include("graph/simplegraphs.jl")
 
 
 function __init__()
