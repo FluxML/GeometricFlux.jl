@@ -43,6 +43,7 @@ end
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
     W, b, σ = g.weight, g.bias, g.σ
     L = normalized_laplacian(g.graph, float(T); selfloop=true)
+    L = convert(typeof(X), L)
     σ.(W * X * L .+ b)
 end
 
