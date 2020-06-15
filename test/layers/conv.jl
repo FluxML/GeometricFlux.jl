@@ -44,6 +44,19 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = cc(X)
         @test size(Y) == (out_channel, N)
+
+        # # With variable graph
+        cc = ChebConv(in_channel=>out_channel, k)
+        @test size(cc.weight) == (out_channel, in_channel, k)
+        @test size(cc.bias) == (out_channel,)
+        @test isnothing(cc.L̃)
+        @test cc.k == k
+        @test cc.in_channel == in_channel
+        @test cc.out_channel == out_channel
+
+        fg = FeaturedGraph(adj, X)
+        fg_ = cc(fg)
+        @test size(feature(fg_)) == (out_channel, N)
     end
 
     @testset "GraphConv" begin
