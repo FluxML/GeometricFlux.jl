@@ -67,3 +67,7 @@ end
 function normalized_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); selfloop::Bool=false)
     normalized_laplacian(fg.graph[], T; selfloop=selfloop)
 end
+
+function scaled_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]))
+    scaled_laplacian(fg.graph[], T)
+end

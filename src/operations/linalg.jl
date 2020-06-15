@@ -123,6 +123,20 @@ function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); self
     T.(I - inv_sqrtD * adj * inv_sqrtD)
 end
 
+@doc raw"""
+    scaled_laplacian(adj::AbstractMatrix[, T::DataType]) 
+
+Scaled Laplacien matrix of graph `g`, 
+defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normalized Laplacian matrix.
+
+# Arguments
+- `g`: should be a adjacency matrix, `FeaturedGraph`, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `T`: result element type of degree vector; default is the element type of `g` (optional).
+"""
+function scaled_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
+    T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
+end
+
 function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
     n = size(adj,1)
     @assert n == size(adj,2) "adjacency matrix is not a square matrix."
