@@ -8,13 +8,15 @@ const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏
 Graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) 
+or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 
 Data should be stored in (# features, # nodes) order.
-For example, a 1000-node graph each node of which poses 100 feautres is constructed.
+For example, a 1000-node graph each node of which poses 100 features is constructed.
 The input data would be a `1000×100` array.
 """
 struct GCNConv{T,F,S<:AbstractFeaturedGraph}
@@ -68,12 +70,14 @@ end
 
 
 """
-    ChebConv(graph, in=>out, k)
+    ChebConv([graph, ]in=>out, k)
 
 Chebyshev spectral graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `k`: the order of Chebyshev polynomial.
@@ -82,7 +86,7 @@ Chebyshev spectral graph convolutional layer.
 struct ChebConv{T}
     weight::AbstractArray{T,3}
     bias::AbstractVector{T}
-    L̃::AbstractMatrix{T}
+    L̃::Union{Nothing, AbstractMatrix{T}}
     k::Integer
     in_channel::Integer
     out_channel::Integer
@@ -90,26 +94,32 @@ end
 
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    N = size(adj, 1)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
+    L̃ = scaled_laplacian(adj, T)
+    ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
+end
+
+function ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer;
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    L̃ = nothing
     ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
 end
 
 @functor ChebConv
 
-function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
+function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:Real, T<:Real}
     fin = c.in_channel
     @assert size(X, 1) == fin "Input feature size must match input channel size."
-    N = size(c.L̃, 1)
+    N = size(L̃, 1)
     @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
     fout = c.out_channel
 
     Z = similar(X, fin, N, c.k)
     Z[:,:,1] = X
-    Z[:,:,2] = X * c.L̃
+    Z[:,:,2] = X * L̃
     for k = 3:c.k
-        Z[:,:,k] = 2*view(Z, :, :, k-1)*c.L̃ - view(Z, :, :, k-2)
+        Z[:,:,k] = 2*view(Z, :, :, k-1)*L̃ - view(Z, :, :, k-2)
     end
 
     Y = view(c.weight, :, :, 1) * view(Z, :, :, 1)
@@ -118,6 +128,16 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     end
     Y .+= c.bias
     return Y
+end
+
+function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
+    @assert !isnothing(c.L̃) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
+    c(c.L̃, X)
+end
+
+function (c::ChebConv)(fg::FeaturedGraph)
+    X_ = c(scaled_laplacian(adjacency_matrix(fg)), feature(fg))
+    FeaturedGraph(graph(fg), X_)
 end
 
 function Base.show(io::IO, l::ChebConv)
