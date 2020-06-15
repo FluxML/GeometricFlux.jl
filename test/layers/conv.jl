@@ -23,11 +23,11 @@ adj = [0. 1. 0. 1.;
         gc = GCNConv(in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === nothing
+        @test isnothing(graph(gc.graph))
 
         fg = FeaturedGraph(adj, X)
         fg_ = gc(fg)
-        @test size(Y) == (out_channel, N)
+        @test size(feature(fg_)) == (out_channel, N)
     end
 
 
