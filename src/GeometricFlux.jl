@@ -63,6 +63,7 @@ export
     degree_matrix,
     laplacian_matrix,
     normalized_laplacian,
+    scaled_laplacian,
     neighbors,
 
     # operations/scatter
