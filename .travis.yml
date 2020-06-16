@@ -11,11 +11,6 @@ julia:
   - 1.4
   - nightly
 
-branches:
-  only:
-  - master
-  - develop
-
 after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("GeometricFlux")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
 
