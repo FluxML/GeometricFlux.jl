@@ -384,7 +384,7 @@ Edge convolutional layer.
 - `nn`: a neural network
 - `aggr::Symbol=:max`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
 """
-struct EdgeConv{V} <: MessagePassing
+struct EdgeConv{V <: Union{Nothing, AbstractArray}} <: MessagePassing
     adjlist::V
     nn
     aggr::Symbol
@@ -394,6 +394,10 @@ function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
     EdgeConv(neighbors(adj), nn, aggr)
 end
 
+function EdgeConv(nn; aggr::Symbol=:max)
+    EdgeConv(nothing, nn, aggr)
+end
+
 @functor EdgeConv
 
 function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
@@ -401,7 +405,8 @@ function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
     e.nn(vcat(repeat(x_i, outer=(1,n)), x_j .- x_i))
 end
 update(e::EdgeConv; X=zeros(0), M=zeros(0)) = M
-(e::EdgeConv)(X::AbstractMatrix) = propagate(e, X=X, aggr=e.aggr)
+(e::EdgeConv{V})(X::AbstractMatrix) where V <: AbstractArray = propagate(e, X=X, aggr=e.aggr)
+(e::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(e, X=feature(fg), aggr=e.aggr, adjl=neighbors(graph(fg))))
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)
