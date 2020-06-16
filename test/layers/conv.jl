@@ -132,6 +132,17 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = ggc(X)
         @test size(Y) == (out_channel, N)
+
+
+        # With variable graph
+        ggc = GatedGraphConv(out_channel, num_layers)
+        @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+
+        X = rand(in_channel, N)
+        fg = FeaturedGraph(adj, X)
+        fg_ = ggc(fg)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws MethodError ggc(X)
     end
 
     @testset "EdgeConv" begin
