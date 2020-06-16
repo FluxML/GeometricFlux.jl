@@ -43,6 +43,7 @@ end
 @functor GCNConv
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
+    @assert !isnothing(graph(g.graph)) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
     W, b, σ = g.weight, g.bias, g.σ
     L = normalized_laplacian(g.graph, float(T); selfloop=true)
     L = convert(typeof(X), L)
@@ -150,13 +151,15 @@ end
 
 
 """
-    GraphConv(graph, in=>out)
-    GraphConv(graph, in=>out, aggr)
+    GraphConv([graph, ]in=>out)
+    GraphConv([graph, ]in=>out, aggr)
 
 Graph neural network layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
@@ -173,23 +176,33 @@ end
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
-    N = size(el, 1)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
     GraphConv(el, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    N = size(adj, 1)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
     GraphConv(neighbors(adj), init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
+end
+
+function GraphConv(ch::Pair{<:Integer,<:Integer}, aggr=:add;
+                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    GraphConv(nothing, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 @functor GraphConv
 
 message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
 update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M .+ g.bias
-(g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
+function (g::GraphConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T <: Real}
+    propagate(g, X=X, aggr=:add)
+end
+function (g::GraphConv{V, T})(fg::FeaturedGraph) where {V <: Union{AbstractArray, Nothing}, T <: Real}
+    Y = propagate(g, X=feature(fg), aggr=:add; adjl=neighbors(graph(fg)))
+    FeaturedGraph(graph(fg), Y)
+end
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))

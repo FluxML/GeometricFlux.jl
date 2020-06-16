@@ -28,6 +28,7 @@ adj = [0. 1. 0. 1.;
         fg = FeaturedGraph(adj, X)
         fg_ = gc(fg)
         @test size(feature(fg_)) == (out_channel, N)
+        @test_throws AssertionError gc(X)
     end
 
 
@@ -45,7 +46,7 @@ adj = [0. 1. 0. 1.;
         Y = cc(X)
         @test size(Y) == (out_channel, N)
 
-        # # With variable graph
+        # With variable graph
         cc = ChebConv(in_channel=>out_channel, k)
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
@@ -57,6 +58,7 @@ adj = [0. 1. 0. 1.;
         fg = FeaturedGraph(adj, X)
         fg_ = cc(fg)
         @test size(feature(fg_)) == (out_channel, N)
+        @test_throws AssertionError cc(X)
     end
 
     @testset "GraphConv" begin
@@ -69,6 +71,19 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = gc(X)
         @test size(Y) == (out_channel, N)
+
+        # With variable graph
+        gc = GraphConv(in_channel=>out_channel)
+        @test size(gc.weight1) == (out_channel, in_channel)
+        @test size(gc.weight2) == (out_channel, in_channel)
+        @test size(gc.bias) == (out_channel,)
+
+
+        X = rand(in_channel, N)
+        fg = FeaturedGraph(adj, X)
+        fg_ = gc(fg)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws MethodError gc(X)
     end
 
     @testset "GATConv" begin
