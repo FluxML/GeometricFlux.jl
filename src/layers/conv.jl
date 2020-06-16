@@ -216,18 +216,20 @@ end
 
 
 """
-    GATConv(graph, in=>out)
+    GATConv([graph, ]in=>out)
 
 Graph attentional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 - `negative_slope::Real=0.2`: keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{V,T} <: MessagePassing
+struct GATConv{V <: Union{Nothing, AbstractArray}, T <: Real} <: MessagePassing
     adjlist::V
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
@@ -246,6 +248,15 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
     b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
     a = init(2*ch[2], heads, 1)
     GATConv(neighbors(adj), w, b, a, negative_slope, ch, heads, concat)
+end
+
+function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
+                 concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
+                 bias::Bool=true, T::DataType=Float32)
+    w = init(ch[2]*heads, ch[1])
+    b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
+    a = init(2*ch[2], heads, 1)
+    GATConv(nothing, w, b, a, negative_slope, ch, heads, concat)
 end
 
 @functor GATConv
@@ -269,7 +280,8 @@ function update(g::GATConv; X=zeros(0), M=zeros(0))
     return M .+ g.bias
 end
 
-(g::GATConv)(X::AbstractMatrix) = propagate(g, X=g.weight*X, aggr=:add)
+(g::GATConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T} = propagate(g, X=g.weight*X, aggr=:add)
+(g::GATConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(g, X=g.weight*feature(fg), aggr=:add, adjl=neighbors(graph(fg))))
 
 
 function _softmax(xs)

@@ -102,6 +102,23 @@ adj = [0. 1. 0. 1.;
                 else
                     @test size(Y) == (out_channel * heads, 1)
                 end
+
+                # With variable graph
+                gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel * heads,)
+                @test size(gat.a) == (2*out_channel, heads, 1)
+
+                X = rand(in_channel, N)
+                fg = FeaturedGraph(adj, X)
+                fg_ = gat(fg)
+                Y = feature(fg_)
+                if concat
+                    @test size(Y) == (out_channel * heads, N)
+                else
+                    @test size(Y) == (out_channel * heads, 1)
+                end
+                @test_throws MethodError gat(X)
             end
         end
     end
