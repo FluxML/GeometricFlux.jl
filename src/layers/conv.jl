@@ -302,17 +302,19 @@ end
 
 
 """
-    GatedGraphConv(graph, out, num_layers)
+    GatedGraphConv([graph, ]out, num_layers)
 
 Gated graph convolution layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `out`: the dimension of output features.
 - `num_layers` specifies the number of gated recurrent unit.
 - `aggr::Symbol=:add`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
 """
-struct GatedGraphConv{V,T,R} <: MessagePassing
+struct GatedGraphConv{V <: Union{Nothing, AbstractArray}, T <: Real, R} <: MessagePassing
     adjlist::V
     weight::AbstractArray{T}
     gru::R
@@ -329,11 +331,25 @@ function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Intege
     GatedGraphConv(neighbors(adj), w, gru, out_ch, num_layers, aggr)
 end
 
+function GatedGraphConv(out_ch::Integer, num_layers::Integer;
+                        aggr=:add, init=glorot_uniform)
+    w = init(out_ch, out_ch, num_layers)
+    gru = GRUCell(out_ch, out_ch)
+    GatedGraphConv(nothing, w, gru, out_ch, num_layers, aggr)
+end
+
 @functor GatedGraphConv
 
 message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
 update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
-function (g::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
+function (g::GatedGraphConv{V, T, R})(X::AbstractMatrix) where {V <: AbstractArray, T<:Real, R}
+    forward_ggc(g, X, adjlist(g))
+end
+function (g::GatedGraphConv{V, T, R})(fg::FeaturedGraph) where {V, T<:Real, R}
+    FeaturedGraph(graph(fg), forward_ggc(g, feature(fg), neighbors(graph(fg))))
+end
+
+function forward_ggc(g::GatedGraphConv, X::AbstractMatrix{T}, adjl::AbstractArray) where {T}
     H = X
     m, n = size(H)
     @assert (m <= g.out_ch) "number of input features must less or equals to output features."
@@ -341,7 +357,7 @@ function (g::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
 
     for i = 1:g.num_layers
         M = view(g.weight, :, :, i) * H
-        M = propagate(g, X=M, aggr=g.aggr)
+        M = propagate(g, X=M, aggr=g.aggr, adjl=adjl)
         H, _ = g.gru(H, M)
     end
     H
