@@ -1,19 +1,5 @@
 import Base: identity
 
-## Type transformation
-
-floattype(::Type{T}) where {T<:AbstractFloat} = T
-floattype(::Type{Int8}) = Float16
-floattype(::Type{UInt8}) = Float16
-floattype(::Type{Int16}) = Float16
-floattype(::Type{UInt16}) = Float16
-floattype(::Type{Int32}) = Float32
-floattype(::Type{UInt32}) = Float32
-floattype(::Type{Int64}) = Float64
-floattype(::Type{UInt64}) = Float64
-
-
-
 ## Inverse operation of scatter
 
 function gather(input::AbstractArray{T,N}, index::AbstractArray{<:Integer,N}, dims::Integer;
