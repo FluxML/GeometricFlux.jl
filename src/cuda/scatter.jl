@@ -122,7 +122,11 @@ end
             ind = Tuple(ind)
             inds = filter(x -> x != ind, rev_xs[xs[ind...]])
             for i = 1:size(us, 1)
-                Δu[i, ind...] *= mapreduce(j -> us[i, j...], *, inds; init=one(T))
+                multiplier = one(T)
+                for j = inds
+                    multiplier *= us[i, j...]
+                end
+                Δu[i, ind...] *= multiplier
             end
         end
         (Δy, Δu, nothing)
@@ -143,7 +147,11 @@ end
             ind = Tuple(ind)
             inds = filter(x -> x != ind, rev_xs[xs[ind...]])
             for i = 1:size(us, 1)
-                Δu[i, ind...] /= mapreduce(j -> us[i, j...], *, inds; init=one(T))
+                denom = one(T)
+                for j = inds
+                    denom *= us[i, j...]
+                end
+                Δu[i, ind...] /= denom
             end
         end
         (Δy, Δu, nothing)
