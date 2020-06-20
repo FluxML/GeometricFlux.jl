@@ -27,3 +27,8 @@ function normalized_laplacian(g::AbstractGraph, T::DataType=eltype(g); selfloop:
     selfloop && (adj += I)
     normalized_laplacian(adj, T)
 end
+
+function scaled_laplacian(g::AbstractGraph, T::DataType=eltype(g))
+    adj = adjacency_matrix(g, T)
+    scaled_laplacian(adj, T)
+end
