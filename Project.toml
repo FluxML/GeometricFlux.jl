@@ -23,9 +23,9 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
-CUDAapi = "3.0.0, 3.1.0, 4.0"
-CUDAnative = "2.10.0, 2.10.1, 2.10.2, 3.0"
-CuArrays = "1.7.1, 1.7.2, 2.0"
+CUDAapi = "3, 4.0"
+CUDAnative = "2.10, 3.0, 3.1"
+CuArrays = "1.7.1, 1.7.2, 2.0, 2.1, 2.2"
 DataStructures = "~0.17"
 FillArrays = "^0.8.5"
 Flux = "~0.10"
@@ -37,9 +37,7 @@ ZygoteRules = "~0.2"
 julia = "1.4"
 
 [extras]
-MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
-SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "SimpleWeightedGraphs", "MetaGraphs"]
+test = ["Test"]
