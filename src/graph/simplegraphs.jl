@@ -1,34 +1,10 @@
-using LightGraphs: AbstractSimpleGraph, nv, inneighbors, outneighbors, all_neighbors
-import LightGraphs: adjacency_matrix
-
-## Utils for AbstractSimpleGraph
+using LightGraphs: AbstractSimpleGraph, nv, adjacency_matrix, inneighbors, outneighbors,
+                   all_neighbors
 
 function adjlist(g::AbstractSimpleGraph)
     N = nv(g)
-    el = Vector{Int}[outneighbors(g, i) for i = 1:N]
-    return el
+    Vector{Int}[outneighbors(g, i) for i = 1:N]
 end
-
-
-## Linear algebra API for AbstractSimpleGraph
-
-function degrees(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    degrees(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
-end
-
-function degree_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    degree_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
-end
-
-function inv_sqrt_degree_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    inv_sqrt_degree_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
-end
-
-function laplacian_matrix(sg::AbstractSimpleGraph, T::DataType=eltype(sg); dir::Symbol=:out)
-    laplacian_matrix(adjacency_matrix(sg, T; dir=dir), T; dir=dir)
-end
-
-adjacency_matrix(sg::Base.RefValue{<:AbstractSimpleGraph}, T::DataType=eltype(sg)) = adjacency_matrix(sg[], T)
 
 ## Convolution layers accepting AbstractSimpleGraph
 

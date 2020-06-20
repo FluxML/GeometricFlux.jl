@@ -94,7 +94,7 @@ export
     feature,
     nv,
 
-    # graph/utils
+    # graph/simplegraphs
     adjlist,
 
     # utils

@@ -41,7 +41,6 @@ tests = [
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/metagraphs",
-    "graph/utils",
     "utils",
 ]
 

@@ -30,8 +30,19 @@ ug = SimpleGraph(6)
 add_edge!(ug, 1, 2); add_edge!(ug, 1, 3); add_edge!(ug, 2, 3)
 add_edge!(ug, 3, 4); add_edge!(ug, 2, 5); add_edge!(ug, 3, 6)
 
+dg = SimpleDiGraph(6)
+add_edge!(dg, 1, 3); add_edge!(dg, 2, 3); add_edge!(dg, 1, 6)
+add_edge!(dg, 2, 5); add_edge!(dg, 3, 4); add_edge!(dg, 3, 5)
+
+el_ug = Vector{Int64}[[2, 3], [1, 3, 5], [1, 2, 4, 6], [3], [2], [3]]
+el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
 
 @testset "simplegraphs" begin
+    @testset "adjlist" begin
+        @test adjlist(ug) == el_ug
+        @test adjlist(dg) == el_dg
+    end
+
     @testset "linalg" begin
         for T in [Int8, Int16, Int32, Int64, Int128]
             @test degree_matrix(adj, T, dir=:out) == T.(deg)
