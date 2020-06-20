@@ -85,7 +85,11 @@ meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
             ind = Tuple(ind)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
             for i = 1:size(X, 1)
-                ∇X[i, ind...] *= mapreduce(j -> X[i, j...], *, inds; init=one(T))
+                multiplier = one(T)
+                for j = inds
+                    multiplier *= X[i, j...]
+                end
+                ∇X[i, ind...] *= multiplier
             end
         end
         (nothing, ∇X)
@@ -101,7 +105,11 @@ end
             ind = Tuple(ind)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
             for i = 1:size(X, 1)
-                ∇X[i, ind...] /= mapreduce(j -> X[i, j...], *, inds; init=one(T))
+                denom = one(T)
+                for j = inds
+                    denom *= X[i, j...]
+                end
+                ∇X[i, ind...] /= denom
             end
         end
         (nothing, ∇X)
