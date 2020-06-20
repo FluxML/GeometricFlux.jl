@@ -16,6 +16,10 @@
                    -.5 1. -.5 0.;
                    0. -.5 1. -.5;
                    -.5 0. -.5 1.]
+        scaled_lap =   [0 -0.5 0 -0.5; 
+                        -0.5 0 -0.5 -0; 
+                        0 -0.5 0 -0.5; 
+                        -0.5 0 -0.5 0]
 
         for T in [Int8, Float64]
             @test degree_matrix(adj, T, dir=:out) == T.(deg)
@@ -25,6 +29,8 @@
         end
         @test normalized_laplacian(adj, Float64) ≈ norm_lap
         @test eltype(normalized_laplacian(adj, Float32)) == Float32
+        @test scaled_laplacian(adj, Float64) ≈ scaled_lap
+        @test eltype(scaled_laplacian(adj, Float32)) == Float32
         @test neighbors(adj) == [[2,4], [1,3], [2,4], [1,3]]
     end
 

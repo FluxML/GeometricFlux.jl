@@ -8,13 +8,15 @@ const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏
 Graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) 
+or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 
 Data should be stored in (# features, # nodes) order.
-For example, a 1000-node graph each node of which poses 100 feautres is constructed.
+For example, a 1000-node graph each node of which poses 100 features is constructed.
 The input data would be a `1000×100` array.
 """
 struct GCNConv{T,F,S<:AbstractFeaturedGraph}
@@ -41,6 +43,7 @@ end
 @functor GCNConv
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
+    @assert !isnothing(graph(g.graph)) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
     W, b, σ = g.weight, g.bias, g.σ
     L = normalized_laplacian(g.graph, float(T); selfloop=true)
     L = convert(typeof(X), L)
@@ -68,12 +71,14 @@ end
 
 
 """
-    ChebConv(graph, in=>out, k)
+    ChebConv([graph, ]in=>out, k)
 
 Chebyshev spectral graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `k`: the order of Chebyshev polynomial.
@@ -82,7 +87,7 @@ Chebyshev spectral graph convolutional layer.
 struct ChebConv{T}
     weight::AbstractArray{T,3}
     bias::AbstractVector{T}
-    L̃::AbstractMatrix{T}
+    L̃::Union{Nothing, AbstractMatrix{T}}
     k::Integer
     in_channel::Integer
     out_channel::Integer
@@ -90,26 +95,32 @@ end
 
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    N = size(adj, 1)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    L̃ = T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
+    L̃ = scaled_laplacian(adj, T)
+    ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
+end
+
+function ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer;
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    L̃ = nothing
     ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
 end
 
 @functor ChebConv
 
-function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
+function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:Real, T<:Real}
     fin = c.in_channel
     @assert size(X, 1) == fin "Input feature size must match input channel size."
-    N = size(c.L̃, 1)
+    N = size(L̃, 1)
     @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
     fout = c.out_channel
 
     Z = similar(X, fin, N, c.k)
     Z[:,:,1] = X
-    Z[:,:,2] = X * c.L̃
+    Z[:,:,2] = X * L̃
     for k = 3:c.k
-        Z[:,:,k] = 2*view(Z, :, :, k-1)*c.L̃ - view(Z, :, :, k-2)
+        Z[:,:,k] = 2*view(Z, :, :, k-1)*L̃ - view(Z, :, :, k-2)
     end
 
     Y = view(c.weight, :, :, 1) * view(Z, :, :, 1)
@@ -118,6 +129,16 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     end
     Y .+= c.bias
     return Y
+end
+
+function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
+    @assert !isnothing(c.L̃) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
+    c(c.L̃, X)
+end
+
+function (c::ChebConv)(fg::FeaturedGraph)
+    X_ = c(scaled_laplacian(adjacency_matrix(fg)), feature(fg))
+    FeaturedGraph(graph(fg), X_)
 end
 
 function Base.show(io::IO, l::ChebConv)
@@ -130,13 +151,15 @@ end
 
 
 """
-    GraphConv(graph, in=>out)
-    GraphConv(graph, in=>out, aggr)
+    GraphConv([graph, ]in=>out)
+    GraphConv([graph, ]in=>out, aggr)
 
 Graph neural network layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
@@ -153,23 +176,33 @@ end
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true)
-    N = size(el, 1)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
     GraphConv(el, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    N = size(adj, 1)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
     GraphConv(neighbors(adj), init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
+end
+
+function GraphConv(ch::Pair{<:Integer,<:Integer}, aggr=:add;
+                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
+    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    GraphConv(nothing, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
 
 @functor GraphConv
 
 message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
 update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M .+ g.bias
-(g::GraphConv)(X::AbstractMatrix) = propagate(g, X=X, aggr=:add)
+function (g::GraphConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T <: Real}
+    propagate(g, X=X, aggr=:add)
+end
+function (g::GraphConv{V, T})(fg::FeaturedGraph) where {V <: Union{AbstractArray, Nothing}, T <: Real}
+    Y = propagate(g, X=feature(fg), aggr=:add; adjl=neighbors(graph(fg)))
+    FeaturedGraph(graph(fg), Y)
+end
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -183,18 +216,20 @@ end
 
 
 """
-    GATConv(graph, in=>out)
+    GATConv([graph, ]in=>out)
 
 Graph attentional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `in`: the dimension of input features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 - `negative_slope::Real=0.2`: keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{V,T} <: MessagePassing
+struct GATConv{V <: Union{Nothing, AbstractArray}, T <: Real} <: MessagePassing
     adjlist::V
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
@@ -213,6 +248,15 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
     b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
     a = init(2*ch[2], heads, 1)
     GATConv(neighbors(adj), w, b, a, negative_slope, ch, heads, concat)
+end
+
+function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
+                 concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
+                 bias::Bool=true, T::DataType=Float32)
+    w = init(ch[2]*heads, ch[1])
+    b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
+    a = init(2*ch[2], heads, 1)
+    GATConv(nothing, w, b, a, negative_slope, ch, heads, concat)
 end
 
 @functor GATConv
@@ -236,7 +280,8 @@ function update(g::GATConv; X=zeros(0), M=zeros(0))
     return M .+ g.bias
 end
 
-(g::GATConv)(X::AbstractMatrix) = propagate(g, X=g.weight*X, aggr=:add)
+(g::GATConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T} = propagate(g, X=g.weight*X, aggr=:add)
+(g::GATConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(g, X=g.weight*feature(fg), aggr=:add, adjl=neighbors(graph(fg))))
 
 
 function _softmax(xs)
@@ -257,17 +302,19 @@ end
 
 
 """
-    GatedGraphConv(graph, out, num_layers)
+    GatedGraphConv([graph, ]out, num_layers)
 
 Gated graph convolution layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+the layer instead of only the features.
 - `out`: the dimension of output features.
 - `num_layers` specifies the number of gated recurrent unit.
 - `aggr::Symbol=:add`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
 """
-struct GatedGraphConv{V,T,R} <: MessagePassing
+struct GatedGraphConv{V <: Union{Nothing, AbstractArray}, T <: Real, R} <: MessagePassing
     adjlist::V
     weight::AbstractArray{T}
     gru::R
@@ -284,11 +331,25 @@ function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Intege
     GatedGraphConv(neighbors(adj), w, gru, out_ch, num_layers, aggr)
 end
 
+function GatedGraphConv(out_ch::Integer, num_layers::Integer;
+                        aggr=:add, init=glorot_uniform)
+    w = init(out_ch, out_ch, num_layers)
+    gru = GRUCell(out_ch, out_ch)
+    GatedGraphConv(nothing, w, gru, out_ch, num_layers, aggr)
+end
+
 @functor GatedGraphConv
 
 message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
 update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
-function (g::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
+function (g::GatedGraphConv{V, T, R})(X::AbstractMatrix) where {V <: AbstractArray, T<:Real, R}
+    forward_ggc(g, X, adjlist(g))
+end
+function (g::GatedGraphConv{V, T, R})(fg::FeaturedGraph) where {V, T<:Real, R}
+    FeaturedGraph(graph(fg), forward_ggc(g, feature(fg), neighbors(graph(fg))))
+end
+
+function forward_ggc(g::GatedGraphConv, X::AbstractMatrix{T}, adjl::AbstractArray) where {T}
     H = X
     m, n = size(H)
     @assert (m <= g.out_ch) "number of input features must less or equals to output features."
@@ -296,7 +357,7 @@ function (g::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
 
     for i = 1:g.num_layers
         M = view(g.weight, :, :, i) * H
-        M = propagate(g, X=M, aggr=g.aggr)
+        M = propagate(g, X=M, aggr=g.aggr, adjl=adjl)
         H, _ = g.gru(H, M)
     end
     H
@@ -323,7 +384,7 @@ Edge convolutional layer.
 - `nn`: a neural network
 - `aggr::Symbol=:max`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
 """
-struct EdgeConv{V} <: MessagePassing
+struct EdgeConv{V <: Union{Nothing, AbstractArray}} <: MessagePassing
     adjlist::V
     nn
     aggr::Symbol
@@ -333,6 +394,10 @@ function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
     EdgeConv(neighbors(adj), nn, aggr)
 end
 
+function EdgeConv(nn; aggr::Symbol=:max)
+    EdgeConv(nothing, nn, aggr)
+end
+
 @functor EdgeConv
 
 function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
@@ -340,7 +405,8 @@ function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
     e.nn(vcat(repeat(x_i, outer=(1,n)), x_j .- x_i))
 end
 update(e::EdgeConv; X=zeros(0), M=zeros(0)) = M
-(e::EdgeConv)(X::AbstractMatrix) = propagate(e, X=X, aggr=e.aggr)
+(e::EdgeConv{V})(X::AbstractMatrix) where V <: AbstractArray = propagate(e, X=X, aggr=e.aggr)
+(e::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(e, X=feature(fg), aggr=e.aggr, adjl=neighbors(graph(fg))))
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)

@@ -23,11 +23,12 @@ adj = [0. 1. 0. 1.;
         gc = GCNConv(in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === nothing
+        @test isnothing(graph(gc.graph))
 
         fg = FeaturedGraph(adj, X)
         fg_ = gc(fg)
-        @test size(Y) == (out_channel, N)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws AssertionError gc(X)
     end
 
 
@@ -44,6 +45,20 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = cc(X)
         @test size(Y) == (out_channel, N)
+
+        # With variable graph
+        cc = ChebConv(in_channel=>out_channel, k)
+        @test size(cc.weight) == (out_channel, in_channel, k)
+        @test size(cc.bias) == (out_channel,)
+        @test isnothing(cc.L̃)
+        @test cc.k == k
+        @test cc.in_channel == in_channel
+        @test cc.out_channel == out_channel
+
+        fg = FeaturedGraph(adj, X)
+        fg_ = cc(fg)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws AssertionError cc(X)
     end
 
     @testset "GraphConv" begin
@@ -56,6 +71,19 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = gc(X)
         @test size(Y) == (out_channel, N)
+
+        # With variable graph
+        gc = GraphConv(in_channel=>out_channel)
+        @test size(gc.weight1) == (out_channel, in_channel)
+        @test size(gc.weight2) == (out_channel, in_channel)
+        @test size(gc.bias) == (out_channel,)
+
+
+        X = rand(in_channel, N)
+        fg = FeaturedGraph(adj, X)
+        fg_ = gc(fg)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws MethodError gc(X)
     end
 
     @testset "GATConv" begin
@@ -74,6 +102,23 @@ adj = [0. 1. 0. 1.;
                 else
                     @test size(Y) == (out_channel * heads, 1)
                 end
+
+                # With variable graph
+                gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel * heads,)
+                @test size(gat.a) == (2*out_channel, heads, 1)
+
+                X = rand(in_channel, N)
+                fg = FeaturedGraph(adj, X)
+                fg_ = gat(fg)
+                Y = feature(fg_)
+                if concat
+                    @test size(Y) == (out_channel * heads, N)
+                else
+                    @test size(Y) == (out_channel * heads, 1)
+                end
+                @test_throws MethodError gat(X)
             end
         end
     end
@@ -87,6 +132,17 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = ggc(X)
         @test size(Y) == (out_channel, N)
+
+
+        # With variable graph
+        ggc = GatedGraphConv(out_channel, num_layers)
+        @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+
+        X = rand(in_channel, N)
+        fg = FeaturedGraph(adj, X)
+        fg_ = ggc(fg)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws MethodError ggc(X)
     end
 
     @testset "EdgeConv" begin
@@ -96,5 +152,14 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = ec(X)
         @test size(Y) == (out_channel, N)
+
+        # With variable graph
+        ec = EdgeConv(Dense(2*in_channel, out_channel))
+
+        X = rand(in_channel, N)
+        fg = FeaturedGraph(adj, X)
+        fg_ = ec(fg)
+        @test size(feature(fg_)) == (out_channel, N)
+        @test_throws MethodError ec(X)
     end
 end

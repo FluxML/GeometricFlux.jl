@@ -14,6 +14,10 @@ norm_lap = [1. -.5 0. -.5;
            -.5 1. -.5 0.;
            0. -.5 1. -.5;
            -.5 0. -.5 1.]
+scaled_lap =   [0 -0.5 0 -0.5; 
+                -0.5 0 -0.5 -0; 
+                0 -0.5 0 -0.5; 
+                -0.5 0 -0.5 0]
 
 @testset "featuredgraphs" begin
     fg = FeaturedGraph(adj, nothing)
@@ -33,5 +37,6 @@ norm_lap = [1. -.5 0. -.5;
         @test degree_matrix(fg, T; dir=:out) == degree_matrix(adj, T; dir=:both)
         @test laplacian_matrix(fg, T) == T.(lap)
         @test normalized_laplacian(fg, T) ≈ T.(norm_lap)
+        @test scaled_laplacian(fg, T) ≈ T.(scaled_lap)
     end
 end
