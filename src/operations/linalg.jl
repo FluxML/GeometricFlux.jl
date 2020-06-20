@@ -1,6 +1,12 @@
 ## Linear algebra API for adjacency matrix
 using LinearAlgebra
 
+function adjacency_matrix(adj::AbstractMatrix, T::DataType=eltype(adj))
+    m, n = size(adj)
+    (m == n) || throw(DimensionMismatch("adjacency matrix is not a square matrix: ($m, $n)"))
+    T.(adj)
+end
+
 """
     degrees(g[, T; dir=:out])
 
@@ -111,16 +117,10 @@ Normalized Laplacian matrix of graph `g`.
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 - `selfloop`: adding self loop while calculating the matrix (optional).
 """
-function normalized_laplacian(sg, T::DataType=eltype(sg); selfloop::Bool=false)
-    adj = adjacency_matrix(sg, T)
-    selfloop && (adj += I)
-    normalized_laplacian(adj, T)
-end
-
 function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
     selfloop && (adj += I)
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
-    I - inv_sqrtD * adj * inv_sqrtD
+    T.(I - inv_sqrtD * adj * inv_sqrtD)
 end
 
 function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))

@@ -123,12 +123,14 @@ X = CuArray(reshape(1:24, 2, 3, 4))
             end
 
             @testset "divpool" begin
+                # It seems that y have to convert to CuArray to avoid error,
+                # instead of broadcastly casting an array
                 y = 1 ./ [1729, 4480, 27, 40, 315, 352, 55, 72, 391, 432]
                 y = reshape(y, 2, 5)
-                @test divpool(CuArray{Int64}(cluster), T.(X)) ≈ T.(y)
-                @test pool(:div, CuArray{Int64}(cluster), T.(X)) ≈ T.(y)
-                @test divpool(cluster, T.(X)) ≈ T.(y)
-                @test pool(:div, cluster, T.(X)) ≈ T.(y)
+                @test divpool(CuArray{Int64}(cluster), T.(X)) ≈ CuArray{T}(y)
+                @test pool(:div, CuArray{Int64}(cluster), T.(X)) ≈ CuArray{T}(y)
+                @test divpool(cluster, T.(X)) ≈ CuArray{T}(y)
+                @test pool(:div, cluster, T.(X)) ≈ CuArray{T}(y)
             end
 
             @testset "meanpool" begin

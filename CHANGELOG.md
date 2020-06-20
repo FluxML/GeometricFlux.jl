@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1]
+
+- GCNConv layer supports FeaturedGraph (#34)
+- Support linear algebra for FeaturedGraph
+- Add `nv` API for FeaturedGraph
+- Add LightGraphs as dependency
+- Correct normalized laplacian type
+- Fix bug in normalized_laplacian
+- Fix Base.show on GCNConv
+- Add docs (#35)
+
 ## [0.5.0]
 
 - Support scatter operations for MArray (#32)
