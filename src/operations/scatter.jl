@@ -21,7 +21,7 @@ function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where
         k = CartesianIndices(xs)[k]
         ys_v = view(ys, :, xs[k]...)
         us_v = view(us, :, k)
-        @inbounds ys_v .= max.(ys_v, us_v)
+        @inbounds view(ys, :, xs[k]...) .= max.(ys_v, us_v)
     end
     ys
 end
@@ -175,7 +175,7 @@ end
             counts += sum(xs.==i) * (xs.==i)
         end
         @inbounds for ind = CartesianIndices(counts)
-            Δu[:, ind] ./= counts[ind]
+            view(Δu, :, ind) ./= counts[ind]
         end
         (Δ, Δu, nothing)
     end
