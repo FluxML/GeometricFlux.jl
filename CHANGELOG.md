@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.2]
+
+- Add scaled Laplacian
+- Support CuArrays v2.0 and Flux v0.10.4
+- ChebConv, GraphConv, GATConv, GatedGraphConv and EdgeConv support FeaturedGraph
+- Add SimpleWeightedGraphs and MetaGraphs as deps
+- Fix broadcastly casting error
+
 ## [0.5.1]
 
 - GCNConv layer supports FeaturedGraph (#34)
