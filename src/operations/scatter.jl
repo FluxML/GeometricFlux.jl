@@ -8,7 +8,9 @@ for op = [:add, :sub, :mul, :div]
     @eval function $fn(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
         @simd for k = 1:length(xs)
             k = CartesianIndices(xs)[k]
-            @inbounds ys[:, xs[k]...] .= $(name2op[op]).(view(ys, :, xs[k]...), view(us, :, k))
+            ys_v = view(ys, :, xs[k]...)
+            us_v = view(us, :, k)
+            @inbounds ys_v .= $(name2op[op]).(ys_v, us_v)
         end
         ys
     end
@@ -17,7 +19,9 @@ end
 function scatter_max!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     @simd for k = 1:length(xs)
         k = CartesianIndices(xs)[k]
-        @inbounds ys[:, xs[k]...] .= max.(view(ys, :, xs[k]...), view(us, :, k))
+        ys_v = view(ys, :, xs[k]...)
+        us_v = view(us, :, k)
+        @inbounds ys_v .= max.(ys_v, us_v)
     end
     ys
 end
@@ -25,7 +29,9 @@ end
 function scatter_min!(ys::Array{T}, us::Array{T}, xs::Array{<:IntOrTuple}) where {T<:Real}
     @simd for k = 1:length(xs)
         k = CartesianIndices(xs)[k]
-        @inbounds ys[:, xs[k]...] .= min.(view(ys, :, xs[k]...), view(us, :, k))
+        ys_v = view(ys, :, xs[k]...)
+        us_v = view(us, :, k)
+        @inbounds ys_v .= min.(ys_v, us_v)
     end
     ys
 end
@@ -48,7 +54,9 @@ for op = [:add, :sub, :mul, :div]
                        xs::StaticArray{<:Tuple,<:IntOrTuple}) where {T<:Real}
         @simd for k = 1:length(xs)
             k = CartesianIndices(xs)[k]
-            @inbounds ys[:, xs[k]...] .= $(name2op[op]).(view(ys, :, xs[k]...), view(us, :, k))
+            ys_v = view(ys, :, xs[k]...)
+            us_v = view(us, :, k)
+            @inbounds ys_v .= $(name2op[op]).(ys_v, us_v)
         end
         ys
     end
@@ -58,7 +66,9 @@ function scatter_max!(ys::StaticArray{<:Tuple,T}, us::StaticArray{<:Tuple,T},
                       xs::StaticArray{<:Tuple,<:IntOrTuple}) where {T<:Real}
     @simd for k = 1:length(xs)
         k = CartesianIndices(xs)[k]
-        @inbounds ys[:, xs[k]...] .= max.(view(ys, :, xs[k]...), view(us, :, k))
+        ys_v = view(ys, :, xs[k]...)
+        us_v = view(us, :, k)
+        @inbounds ys_v .= max.(ys_v, us_v)
     end
     ys
 end
@@ -67,7 +77,9 @@ function scatter_min!(ys::StaticArray{<:Tuple,T}, us::StaticArray{<:Tuple,T},
                       xs::StaticArray{<:Tuple,<:IntOrTuple}) where {T<:Real}
     @simd for k = 1:length(xs)
         k = CartesianIndices(xs)[k]
-        @inbounds ys[:, xs[k]...] .= min.(view(ys, :, xs[k]...), view(us, :, k))
+        ys_v = view(ys, :, xs[k]...)
+        us_v = view(us, :, k)
+        @inbounds ys_v .= min.(ys_v, us_v)
     end
     ys
 end
