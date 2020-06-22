@@ -8,6 +8,8 @@ using BenchmarkTools
 using BenchmarkTools: Trial, TrialEstimate, median, mean
 # using ProfileView
 
+ENV["JULIA_NUM_THREADS"] = 1
+
 d = 50
 nbins = 20
 getinfo(te::TrialEstimate) = te.time, te.gctime, te.memory
@@ -57,7 +59,7 @@ CSV.write("benchmark/scatter_julia.tsv", data; delim="\t")
 ## Profiling
 # sudo nvprof --profile-from-start off julia benchmark/scatter.jl
 # sudo nvprof --profile-from-start off --print-gpu-trace julia --proj benchmark/scatter.jl
-# sudo chown yuehhua -R /home/yuehhua/.julia/
+# sudo chown $USER -R $HOME/.julia/
 
 # @profview scatter_add!(hist, δ, idx)
 # CUDAdrv.@profile scatter_add!(hist_gpu, δ_gpu, idx_gpu)
