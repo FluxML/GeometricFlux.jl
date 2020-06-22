@@ -1,4 +1,4 @@
-using Flux: Dense
+using Flux: Dense, params
 
 in_channel = 3
 out_channel = 5
@@ -20,6 +20,11 @@ adj = [0. 1. 0. 1.;
         Y = gc(X)
         @test size(Y) == (out_channel, N)
 
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(gc(X)), params(gc))
+        @test true
+        
+
         gc = GCNConv(in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
@@ -29,6 +34,14 @@ adj = [0. 1. 0. 1.;
         fg_ = gc(fg)
         @test size(feature(fg_)) == (out_channel, N)
         @test_throws AssertionError gc(X)
+
+        @test size(feature(Zygote._pullback(x -> gc(x), fg)[1])) == (out_channel, N)
+
+        gc2 = GCNConv(in_channel=>out_channel)
+
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(feature(gc(fg))), params(gc))
+        @test true
     end
 
 
@@ -45,6 +58,10 @@ adj = [0. 1. 0. 1.;
         X = rand(in_channel, N)
         Y = cc(X)
         @test size(Y) == (out_channel, N)
+        
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(cc(X)), params(cc))
+        @test true
 
         # With variable graph
         cc = ChebConv(in_channel=>out_channel, k)
@@ -59,6 +76,10 @@ adj = [0. 1. 0. 1.;
         fg_ = cc(fg)
         @test size(feature(fg_)) == (out_channel, N)
         @test_throws AssertionError cc(X)
+        
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(cc(fg)), params(cc))
+        @test true
     end
 
     @testset "GraphConv" begin
@@ -72,6 +93,11 @@ adj = [0. 1. 0. 1.;
         Y = gc(X)
         @test size(Y) == (out_channel, N)
 
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(gc(X)), params(gc))
+        @test true
+
+
         # With variable graph
         gc = GraphConv(in_channel=>out_channel)
         @test size(gc.weight1) == (out_channel, in_channel)
@@ -84,6 +110,10 @@ adj = [0. 1. 0. 1.;
         fg_ = gc(fg)
         @test size(feature(fg_)) == (out_channel, N)
         @test_throws MethodError gc(X)
+
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(gc(fg)), params(gc))
+        @test true
     end
 
     @testset "GATConv" begin
@@ -103,6 +133,11 @@ adj = [0. 1. 0. 1.;
                     @test size(Y) == (out_channel * heads, 1)
                 end
 
+                # Test that the gradient can be computed
+                Zygote.gradient(() -> sum(gat(X)), params(gat))
+                @test true
+
+
                 # With variable graph
                 gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
                 @test size(gat.weight) == (out_channel * heads, in_channel)
@@ -119,6 +154,10 @@ adj = [0. 1. 0. 1.;
                     @test size(Y) == (out_channel * heads, 1)
                 end
                 @test_throws MethodError gat(X)
+
+                # Test that the gradient can be computed
+                Zygote.gradient(() -> sum(gat(fg)), params(gat))
+                @test true
             end
         end
     end
@@ -133,6 +172,10 @@ adj = [0. 1. 0. 1.;
         Y = ggc(X)
         @test size(Y) == (out_channel, N)
 
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(ggc(X)), params(ggc))
+        @test true
+
 
         # With variable graph
         ggc = GatedGraphConv(out_channel, num_layers)
@@ -143,6 +186,10 @@ adj = [0. 1. 0. 1.;
         fg_ = ggc(fg)
         @test size(feature(fg_)) == (out_channel, N)
         @test_throws MethodError ggc(X)
+
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(ggc(fg)), params(ggc))
+        @test true
     end
 
     @testset "EdgeConv" begin
@@ -153,6 +200,11 @@ adj = [0. 1. 0. 1.;
         Y = ec(X)
         @test size(Y) == (out_channel, N)
 
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(ec(X)), params(ec))
+        @test true
+
+
         # With variable graph
         ec = EdgeConv(Dense(2*in_channel, out_channel))
 
@@ -161,5 +213,9 @@ adj = [0. 1. 0. 1.;
         fg_ = ec(fg)
         @test size(feature(fg_)) == (out_channel, N)
         @test_throws MethodError ec(X)
+
+        # Test that the gradient can be computed
+        Zygote.gradient(() -> sum(ec(fg)), params(ec))
+        @test true
     end
 end
