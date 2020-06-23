@@ -19,7 +19,7 @@ bmk[!, :max_time] .= bmk[!, :max_time]/1000
 
 function plot_benchmark(device)
         DEVICE = uppercase(device)
-        p = plot(bmk[bmk[:device] .== device, :], x="sample", y="mean_time", color="framework",
+        p = plot(bmk[bmk[!,:device] .== device, :], x="sample", y="mean_time", color="framework",
                  Geom.point, Geom.line, Scale.x_log2, Scale.y_log10,
                  Guide.title("Scatter add performance on $(DEVICE)"),
                  Guide.xlabel("Matrix Size"), Guide.ylabel("Time (μs)"),
