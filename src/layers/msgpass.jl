@@ -1,4 +1,5 @@
 using Base.Threads
+using Zygote
 
 abstract type MessagePassing <: Meta end
 
@@ -45,7 +46,7 @@ function propagate(mp::T; aggr::Symbol=:add, adjl=adjlist(mp), kwargs...) where 
 
     # aggregate function
     cluster = generate_cluster(M, gi)
-    M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster)
+    M = aggregate_neighbors(mp, aggr, M, cluster)
 
     # update function
     Y = update_vertex(mp; M=M, kwargs...)
