@@ -41,9 +41,7 @@ function propagate(mp::T; aggr::Symbol=:add, adjl=adjlist(mp), kwargs...) where 
     M = update_edge(mp; gi=gi, kwargs...)
 
     # aggregate function
-    Zygote.ignore() do
-        cluster = generate_cluster(M, gi)
-    end
+    cluster = generate_cluster(M, gi)
     M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster)
 
     # update function
