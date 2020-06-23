@@ -7,7 +7,6 @@ using BenchmarkTools: Trial, TrialEstimate, median, mean
 py"""
 import torch
 import torch_scatter as sc
-torch.set_num_threads(12)
 cuda = torch.device("cuda:0")
 d = 50
 nbins = 20
