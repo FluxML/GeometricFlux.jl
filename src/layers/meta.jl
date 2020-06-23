@@ -34,7 +34,10 @@ function propagate(meta::T; adjl=adjlist(meta), kwargs...) where {T<:Meta}
     newE = update_edge(meta; gi=gi, kwargs...)
 
     if haskey(kwargs, :naggr)
-        Ē = aggregate_neighbors(meta, kwargs[:naggr]; E=newE, cluster=generate_cluster(newE, gi))
+        Zygote.ignore() do
+            cluster = generate_cluster(newE, gi)
+        end
+        Ē = aggregate_neighbors(meta, kwargs[:naggr]; E=newE, cluster=cluster)
         kwargs = (kwargs..., Ē=Ē)
     end
 
