@@ -35,6 +35,7 @@ update_vertex(m::T; kwargs...) where {T<:MessagePassing} = update(m; kwargs...)
 aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     pool(aggr, kwargs[:cluster], kwargs[:M])
 
+# TO DELETE: This is just to make Zygote print better error messages
 aggregate_neighbors(m::T, aggr::Symbol, M, cluster; kwargs...) where {T<:MessagePassing} =
     pool(aggr, cluster, M)
 
