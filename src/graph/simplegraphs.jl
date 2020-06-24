@@ -11,7 +11,7 @@ end
 function GCNConv(g::AbstractSimpleGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    fg = FeaturedGraph(Ref(g), Ref(nothing))
+    fg = FeaturedGraph(g, nothing)
     GCNConv(init(ch[2], ch[1]), b, σ, fg)
 end
 
