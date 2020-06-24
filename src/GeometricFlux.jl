@@ -3,7 +3,7 @@ module GeometricFlux
 using Statistics: mean
 using StaticArrays: StaticArray
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint
+using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint, Diagonal
 
 using Requires
 using DataStructures: DefaultDict
@@ -11,6 +11,7 @@ using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
 using LightGraphs
+using Zygote
 using ZygoteRules
 using FillArrays: Fill
 

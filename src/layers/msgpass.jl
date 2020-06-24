@@ -41,7 +41,8 @@ function propagate(mp::T; aggr::Symbol=:add, adjl=adjlist(mp), kwargs...) where 
     M = update_edge(mp; gi=gi, kwargs...)
 
     # aggregate function
-    M = aggregate_neighbors(mp, aggr; M=M, cluster=generate_cluster(M, gi))
+    cluster = generate_cluster(M, gi)
+    M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster)
 
     # update function
     Y = update_vertex(mp; M=M, kwargs...)

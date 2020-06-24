@@ -34,7 +34,8 @@ function propagate(meta::T; adjl=adjlist(meta), kwargs...) where {T<:Meta}
     newE = update_edge(meta; gi=gi, kwargs...)
 
     if haskey(kwargs, :naggr)
-        Ē = aggregate_neighbors(meta, kwargs[:naggr]; E=newE, cluster=generate_cluster(newE, gi))
+        cluster = generate_cluster(newE, gi)
+        Ē = aggregate_neighbors(meta, kwargs[:naggr]; E=newE, cluster=cluster)
         kwargs = (kwargs..., Ē=Ē)
     end
 
@@ -54,7 +55,7 @@ function propagate(meta::T; adjl=adjlist(meta), kwargs...) where {T<:Meta}
     (newE, newV, new_u)
 end
 
-function generate_cluster(M::AbstractArray{T,N}, gi::GraphInfo) where {T,N}
+Zygote.@nograd function generate_cluster(M::AbstractArray{T,N}, gi::GraphInfo) where {T,N}
     cluster = similar(M, Int, gi.E)
     @inbounds for i = 1:gi.V
         j = gi.edge_idx[i]

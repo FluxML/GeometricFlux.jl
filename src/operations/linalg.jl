@@ -1,5 +1,6 @@
 ## Linear algebra API for adjacency matrix
-using LinearAlgebra
+
+Zygote.@nograd issymmetric
 
 function adjacency_matrix(adj::AbstractMatrix, T::DataType=eltype(adj))
     m, n = size(adj)
@@ -124,9 +125,9 @@ function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); self
 end
 
 @doc raw"""
-    scaled_laplacian(adj::AbstractMatrix[, T::DataType]) 
+    scaled_laplacian(adj::AbstractMatrix[, T::DataType])
 
-Scaled Laplacien matrix of graph `g`, 
+Scaled Laplacien matrix of graph `g`,
 defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normalized Laplacian matrix.
 
 # Arguments
