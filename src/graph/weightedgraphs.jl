@@ -1,4 +1,9 @@
-using SimpleWeightedGraphs: AbstractSimpleWeightedGraph, nv
+using SimpleWeightedGraphs: AbstractSimpleWeightedGraph, nv, outneighbors
+
+function adjlist(g::AbstractSimpleWeightedGraph)
+    N = nv(g)
+    Vector{Int}[outneighbors(g, i) for i = 1:N]
+end
 
 ## Convolution layers accepting AbstractSimpleWeightedGraph
 
