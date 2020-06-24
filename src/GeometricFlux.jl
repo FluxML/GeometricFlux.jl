@@ -100,7 +100,6 @@ export
 
     # utils
     gather,
-    identity,
     GraphInfo,
     edge_index_table,
     topk_index

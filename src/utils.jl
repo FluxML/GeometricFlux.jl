@@ -1,5 +1,3 @@
-import Base: identity
-
 ## Inverse operation of scatter
 
 function gather(input::AbstractArray{T,N}, index::AbstractArray{<:Integer,N}, dims::Integer;
@@ -31,8 +29,6 @@ function gather_indices(X::Array{T}) where T
     end
     Y
 end
-
-identity(; kwargs...) = kwargs.data
 
 """
     save_div(x, y)

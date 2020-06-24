@@ -3,8 +3,33 @@ using Base.Threads
 abstract type MessagePassing <: Meta end
 
 adjlist(m::T) where {T<:MessagePassing} = m.adjlist
-message(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
-update(m::T; kwargs...) where {T<:MessagePassing} = identity(; kwargs...)
+
+"""
+    message(m, x_j)
+    message(m, x_i, x_j, e_ij)
+
+Message function for message-passing scheme. This function can be overrided to dispatch to custom layers.
+First argument should be message-passing layer, the rest of arguments can be arbitary and
+usually they are `x_i`, `x_j` and `e_ij`.
+
+# Arguments
+- `m`: message-passing layer.
+- `x_j`: the feature of neighbors of node `x_i`.
+"""
+message(m::T, x_j::AbstractArray) where {T<:MessagePassing} = x_j
+
+"""
+    update(m, M)
+    update(m, X, M)
+
+Update function for message-passing scheme. This function can be overrided to dispatch to custom layers.
+First argument should be message-passing layer, the rest of arguments can be arbitary and usually they are `X` and `M`.
+
+# Arguments
+- `m`: message-passing layer.
+- `M`: the message aggregated from message function.
+"""
+update(m::T, M::AbstractArray) where {T<:MessagePassing} = M
 
 function update_edge(m::T; gi::GraphInfo, kwargs...) where {T<:MessagePassing}
     adj = gi.adj
@@ -29,7 +54,7 @@ function _apply_msg!(m, Y::Array, V, edge_idx, adj; kwargs...)
     Y
 end
 
-update_vertex(m::T; kwargs...) where {T<:MessagePassing} = update(m; kwargs...)
+update_vertex(m::T, M::AbstractArray) where {T<:MessagePassing} = update(m, M)
 
 aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     pool(aggr, kwargs[:cluster], kwargs[:M])

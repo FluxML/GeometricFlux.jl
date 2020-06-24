@@ -8,7 +8,7 @@ const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏
 Graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) 
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs)
 or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
 - `in`: the dimension of input features.
@@ -76,7 +76,7 @@ end
 Chebyshev spectral graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
 `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
 - `in`: the dimension of input features.
@@ -157,7 +157,7 @@ end
 Graph neural network layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
 `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
 - `in`: the dimension of input features.
@@ -194,8 +194,8 @@ end
 
 @functor GraphConv
 
-message(g::GraphConv; x_i=zeros(0), x_j=zeros(0)) = g.weight2 * x_j
-update(g::GraphConv; X=zeros(0), M=zeros(0)) = g.weight1*X + M .+ g.bias
+message(g::GraphConv, x_j::AbstractArray) = g.weight2 * x_j
+update(g::GraphConv, X::AbstractArray, M::AbstractArray) = g.weight1*X + M .+ g.bias
 function (g::GraphConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T <: Real}
     propagate(g, X=X, aggr=:add)
 end
@@ -221,7 +221,7 @@ end
 Graph attentional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
 `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
 - `in`: the dimension of input features.
@@ -261,7 +261,7 @@ end
 
 @functor GATConv
 
-function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
+function message(g::GATConv, x_i::AbstractArray, x_j::AbstractArray)
     x_i = reshape(x_i, g.channel[2], g.heads, :)
     x_j = reshape(x_j, g.channel[2], g.heads, :)
     n = size(x_j, 3)
@@ -273,7 +273,7 @@ function message(g::GATConv; x_i=zeros(0), x_j=zeros(0))
     reshape(x_j, g.channel[2]*g.heads, :)
 end
 
-function update(g::GATConv; X=zeros(0), M=zeros(0))
+function update(g::GATConv, M::AbstractArray)
     if !g.concat
         M = mean(M, dims=2)
     end
@@ -307,7 +307,7 @@ end
 Gated graph convolution layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, 
+- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
 `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
 - `out`: the dimension of output features.
@@ -340,8 +340,8 @@ end
 
 @functor GatedGraphConv
 
-message(g::GatedGraphConv; x_i=zeros(0), x_j=zeros(0)) = x_j
-update(g::GatedGraphConv; X=zeros(0), M=zeros(0)) = M
+message(g::GatedGraphConv, x_j::AbstractArray) = x_j
+update(g::GatedGraphConv, M::AbstractArray) = M
 function (g::GatedGraphConv{V, T, R})(X::AbstractMatrix) where {V <: AbstractArray, T<:Real, R}
     forward_ggc(g, X, adjlist(g))
 end
@@ -404,7 +404,7 @@ function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
     n = size(x_j, 2)
     e.nn(vcat(repeat(x_i, outer=(1,n)), x_j .- x_i))
 end
-update(e::EdgeConv; X=zeros(0), M=zeros(0)) = M
+update(e::EdgeConv, M::AbstractArray) = M
 (e::EdgeConv{V})(X::AbstractMatrix) where V <: AbstractArray = propagate(e, X=X, aggr=e.aggr)
 (e::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(e, X=feature(fg), aggr=e.aggr, adjl=neighbors(graph(fg))))
 
