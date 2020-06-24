@@ -63,7 +63,7 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
         gc = GCNConv(ug, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph)[] === ug
+        @test graph(gc.graph) === ug
     end
 
     @testset "ChebConv" begin

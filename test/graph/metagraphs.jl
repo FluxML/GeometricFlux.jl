@@ -55,12 +55,12 @@ dg = MetaDiGraph(sg)
         gc = GCNConv(ug, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph)[] === ug.graph
+        @test graph(gc.graph) === ug.graph
 
         gc = GCNConv(dg, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph)[] === dg.graph
+        @test graph(gc.graph) === dg.graph
     end
 
     @testset "ChebConv" begin
