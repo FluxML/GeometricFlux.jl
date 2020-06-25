@@ -98,3 +98,5 @@ function topk_index(y::AbstractVector, k::Integer)
 end
 
 topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
+
+@inline drop_nothing(args...) = filter(x -> !isnothing(x), args)

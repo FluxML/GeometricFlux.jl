@@ -197,10 +197,10 @@ end
 message(g::GraphConv, x_j::AbstractArray) = g.weight2 * x_j
 update(g::GraphConv, X::AbstractArray, M::AbstractArray) = g.weight1*X + M .+ g.bias
 function (g::GraphConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T <: Real}
-    propagate(g, X=X, aggr=:add)
+    propagate(g, :add; X=X)
 end
 function (g::GraphConv{V, T})(fg::FeaturedGraph) where {V <: Union{AbstractArray, Nothing}, T <: Real}
-    Y = propagate(g, X=feature(fg), aggr=:add; adjl=neighbors(graph(fg)))
+    Y = propagate(g, :add; X=feature(fg), adjl=neighbors(graph(fg)))
     FeaturedGraph(graph(fg), Y)
 end
 
@@ -280,8 +280,8 @@ function update(g::GATConv, M::AbstractArray)
     return M .+ g.bias
 end
 
-(g::GATConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T} = propagate(g, X=g.weight*X, aggr=:add)
-(g::GATConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(g, X=g.weight*feature(fg), aggr=:add, adjl=neighbors(graph(fg))))
+(g::GATConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T} = propagate(g, :add; X=g.weight*X)
+(g::GATConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(g, :add; X=g.weight*feature(fg), adjl=neighbors(graph(fg))))
 
 
 function _softmax(xs)
@@ -357,7 +357,7 @@ function forward_ggc(g::GatedGraphConv, X::AbstractMatrix{T}, adjl::AbstractArra
 
     for i = 1:g.num_layers
         M = view(g.weight, :, :, i) * H
-        M = propagate(g, X=M, aggr=g.aggr, adjl=adjl)
+        M = propagate(g, g.aggr; X=M, adjl=adjl)
         H, _ = g.gru(H, M)
     end
     H
@@ -400,13 +400,13 @@ end
 
 @functor EdgeConv
 
-function message(e::EdgeConv; x_i=zeros(0), x_j=zeros(0))
+function message(e::EdgeConv, x_i::AbstractArray, x_j::AbstractArray)
     n = size(x_j, 2)
     e.nn(vcat(repeat(x_i, outer=(1,n)), x_j .- x_i))
 end
 update(e::EdgeConv, M::AbstractArray) = M
-(e::EdgeConv{V})(X::AbstractMatrix) where V <: AbstractArray = propagate(e, X=X, aggr=e.aggr)
-(e::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(e, X=feature(fg), aggr=e.aggr, adjl=neighbors(graph(fg))))
+(e::EdgeConv{V})(X::AbstractMatrix) where V <: AbstractArray = propagate(e, e.aggr; X=X)
+(e::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(e, e.aggr; X=feature(fg), adjl=neighbors(graph(fg))))
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", length(l.adjlist), ", E=", sum(length, l.adjlist)÷2)

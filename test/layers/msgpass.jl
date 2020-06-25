@@ -18,14 +18,14 @@ end
 
 NewLayer(adjm::AbstractMatrix, m, n) = NewLayer(neighbors(adjm), randn(m,n))
 
-(l::NewLayer)(X) = propagate(l, X=X, aggr=:add)
-message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = x_j
-update(::NewLayer; X=zeros(0), M=zeros(0)) = M
+(l::NewLayer)(X) = propagate(l, :add, X=X)
+message(::NewLayer, x_j) = x_j
+update(::NewLayer, M) = M
 
 X = Array(reshape(1:N*in_channel, in_channel, N))
-l = NewLayer(adj, in_channel, out_channel)
+l = NewLayer(adj, out_channel, in_channel)
 
-message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = n.weight' * x_j
+message(n::NewLayer, x_j) = n.weight * x_j
 
 @testset "msgpass" begin
     Y = l(X)

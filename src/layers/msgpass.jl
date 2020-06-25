@@ -5,61 +5,66 @@ abstract type MessagePassing <: Meta end
 adjlist(m::T) where {T<:MessagePassing} = m.adjlist
 
 """
-    message(m, x_j)
     message(m, x_i, x_j, e_ij)
 
 Message function for message-passing scheme. This function can be overrided to dispatch to custom layers.
-First argument should be message-passing layer, the rest of arguments can be arbitary and
-usually they are `x_i`, `x_j` and `e_ij`.
+First argument should be message-passing layer, the rest of arguments can be `x_i`, `x_j` and `e_ij`.
 
 # Arguments
 - `m`: message-passing layer.
+- `x_i`: the feature of node `x_i`.
 - `x_j`: the feature of neighbors of node `x_i`.
+- `e_ij`: the feature of edge (`x_i`, `x_j`).
 """
-message(m::T, x_j::AbstractArray) where {T<:MessagePassing} = x_j
+message(m::T, x_i=zeros(0), x_j=zeros(0)) where {T<:MessagePassing} = x_j
 
 """
-    update(m, M)
     update(m, X, M)
 
 Update function for message-passing scheme. This function can be overrided to dispatch to custom layers.
-First argument should be message-passing layer, the rest of arguments can be arbitary and usually they are `X` and `M`.
+First argument should be message-passing layer, the rest of arguments can be `X` and `M`.
 
 # Arguments
 - `m`: message-passing layer.
+- `X`: the feature of all nodes.
 - `M`: the message aggregated from message function.
 """
-update(m::T, M::AbstractArray) where {T<:MessagePassing} = M
+update(m::T, X, M) where {T<:MessagePassing} = M
 
 function update_edge(m::T; gi::GraphInfo, kwargs...) where {T<:MessagePassing}
     adj = gi.adj
     edge_idx = gi.edge_idx
-    M = message(m; adjacent_vertices_data(kwargs, 1, adj[1])...,
-                   incident_edges_data(kwargs, 1, adj[1])...)
+    X = get(kwargs, :X, nothing)
+    E = get(kwargs, :E, nothing)
+    args = drop_nothing(get_xi(X, 1), get_xj(X, adj[1]), get_eij(E, 1, adj[1]))
+    M = message(m, args...)
     dims = collect(size(M))
     dims[end] = gi.E
     Y = similar(M, dims...)
     assign!(Y, M; last_dim=1:edge_idx[2])
-    _apply_msg!(m, Y, gi.V, edge_idx, adj; kwargs...)
+    _apply_msg!(m, Y, gi.V, edge_idx, adj, X, E)
 end
 
-function _apply_msg!(m, Y::Array, V, edge_idx, adj; kwargs...)
+function _apply_msg!(m, Y::Array, V, edge_idx, adj, X=nothing, E=nothing)
     @inbounds Threads.@threads for i = 2:V
         j = edge_idx[i]
         k = edge_idx[i+1]
-        M = message(m; adjacent_vertices_data(kwargs, i, adj[i])...,
-                       incident_edges_data(kwargs, i, adj[i])...)
+        args = drop_nothing(get_xi(X, i), get_xj(X, adj[i]), get_eij(E, i, adj[i]))
+        M = message(m, args...)
         assign!(Y, M; last_dim=j+1:k)
     end
     Y
 end
 
-update_vertex(m::T, M::AbstractArray) where {T<:MessagePassing} = update(m, M)
+function update_vertex(m::T, M::AbstractArray; kwargs...) where {T<:MessagePassing}
+    X = get(kwargs, :X, nothing)
+    update(m, X, M)
+end
 
 aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
     pool(aggr, kwargs[:cluster], kwargs[:M])
 
-function propagate(mp::T; aggr::Symbol=:add, adjl=adjlist(mp), kwargs...) where {T<:MessagePassing}
+function propagate(mp::T, aggr::Symbol=:add; adjl=adjlist(mp), kwargs...) where {T<:MessagePassing}
     gi = GraphInfo(adjl)
 
     # message function
@@ -70,6 +75,6 @@ function propagate(mp::T; aggr::Symbol=:add, adjl=adjlist(mp), kwargs...) where 
     M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster)
 
     # update function
-    Y = update_vertex(mp; M=M, kwargs...)
+    Y = update_vertex(mp, M; kwargs...)
     return Y
 end
