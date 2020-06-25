@@ -17,10 +17,14 @@ References to graph or feature are hold in this type. `graph` and `feature` are 
 - `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
 - `feature`: features attached to graph.
 """
-struct FeaturedGraph{T,S} <: AbstractFeaturedGraph
+struct FeaturedGraph{T,S,R} <: AbstractFeaturedGraph
     graph::Ref{T}
-    feature::Ref{S}
-    FeaturedGraph(graph::T, feature::S) where {T,S} = new{T,S}(Ref(graph), Ref(feature))
+    nf::Ref{S}
+    ef::Ref{R}
+
+    function FeaturedGraph(graph::T, nf::S, ef::R) where {T,S,R}
+        new{T,S,R}(Ref(graph), Ref(nf), Ref(ef))
+    end
 end
 
 """
@@ -32,16 +36,58 @@ graph(::NullGraph) = nothing
 graph(fg::FeaturedGraph) = fg.graph[]
 
 """
-    feature(::AbstractFeaturedGraph)
+    node_feature(::AbstractFeaturedGraph)
 
-Get feature attached to graph.
+Get node feature attached to graph.
 """
-feature(::NullGraph) = nothing
-feature(fg::FeaturedGraph) = fg.feature[]
+node_feature(::NullGraph) = nothing
+node_feature(fg::FeaturedGraph) = fg.nf[]
 
+"""
+    edge_feature(::AbstractFeaturedGraph)
+
+Get edge feature attached to graph.
+"""
+edge_feature(::NullGraph) = nothing
+edge_feature(fg::FeaturedGraph) = fg.ef[]
+
+"""
+    neighbors(::AbstractFeaturedGraph)
+
+Get adjacency list of graph.
+"""
+neighbors(::NullGraph) = [zeros(0)]
+neighbors(fg::FeaturedGraph) = neighbors(fg.graph[])
+
+"""
+    nv(::AbstractFeaturedGraph)
+
+Get node number of graph.
+"""
 nv(::NullGraph) = 0
 nv(fg::FeaturedGraph) = nv(fg.graph[])
 nv(fg::FeaturedGraph{T}) where {T<:AbstractMatrix} = size(fg.graph[], 1)
+
+"""
+    ne(::AbstractFeaturedGraph)
+
+Get edge number of graph.
+"""
+ne(::NullGraph) = 0
+ne(fg::FeaturedGraph) = ne(fg.graph[])
+
+edge_index_table(::NullGraph) = zeros(0)
+edge_index_table(fg::FeaturedGraph) = edge_index_table(neighbors(fg), nv(fg))
+
+@inline get_xi(::NullGraph, i) = nothing
+@inline get_xi(fg::FeaturedGraph, i::Integer) = view(fg.nf[],:,i)
+
+@inline get_xj(::NullGraph, ne) = nothing
+@inline get_xj(fg::FeaturedGraph, ne::AbstractArray{<:Integer}) = view(fg.nf[],:,ne)
+
+@inline get_eij(::NullGraph, i, ne) = nothing
+@inline get_eij(fg::FeaturedGraph, i::Integer, ne::AbstractArray{<:Integer}) = view(fg.ef[],:,i,ne)
+
 
 
 ## Linear algebra API for AbstractFeaturedGraph

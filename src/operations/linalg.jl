@@ -149,3 +149,10 @@ function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
     ne = Vector{Int}[indecies[view(A, :, i)] for i = 1:n]
     return ne
 end
+
+function edge_index_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
+                          N::Integer=size(adj,1))
+    y = similar(adj[1], N+1)
+    y .= 0, cumsum(map(length, adj))...
+    y
+end

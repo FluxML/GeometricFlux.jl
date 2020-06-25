@@ -15,7 +15,7 @@ using Zygote
 using ZygoteRules
 using FillArrays: Fill
 
-import LightGraphs: nv, adjacency_matrix
+import LightGraphs: nv, ne, adjacency_matrix
 
 export
 
