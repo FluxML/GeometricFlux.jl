@@ -28,6 +28,12 @@ struct FeaturedGraph{T,S,R,Q} <: AbstractFeaturedGraph
     end
 end
 
+FeaturedGraph() =
+    FeaturedGraph{AbstractMatrix,AbstractArray,AbstractArray,AbstractArray}(zeros(0,0), zeros(0), zeros(0), zeros(0))
+
+FeaturedGraph(graph::T) where {T} =
+    FeaturedGraph{T,AbstractArray,AbstractArray,AbstractArray}(graph, zeros(0), zeros(0), zeros(0))
+
 """
     graph(::AbstractFeaturedGraph)
 
