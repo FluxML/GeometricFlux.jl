@@ -17,13 +17,14 @@ References to graph or feature are hold in this type. `graph` and `feature` are 
 - `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
 - `feature`: features attached to graph.
 """
-struct FeaturedGraph{T,S,R} <: AbstractFeaturedGraph
+struct FeaturedGraph{T,S,R,Q} <: AbstractFeaturedGraph
     graph::Ref{T}
     nf::Ref{S}
     ef::Ref{R}
+    gf::Ref{Q}
 
-    function FeaturedGraph(graph::T, nf::S, ef::R) where {T,S,R}
-        new{T,S,R}(Ref(graph), Ref(nf), Ref(ef))
+    function FeaturedGraph(graph::T, nf::S, ef::R, gf::Q) where {T,S,R,Q}
+        new{T,S,R,Q}(Ref(graph), Ref(nf), Ref(ef), Ref(gf))
     end
 end
 
@@ -50,6 +51,14 @@ Get edge feature attached to graph.
 """
 edge_feature(::NullGraph) = nothing
 edge_feature(fg::FeaturedGraph) = fg.ef[]
+
+"""
+    global_feature(::AbstractFeaturedGraph)
+
+Get global feature attached to graph.
+"""
+global_feature(::NullGraph) = nothing
+global_feature(fg::FeaturedGraph) = fg.gf[]
 
 """
     neighbors(::AbstractFeaturedGraph)
