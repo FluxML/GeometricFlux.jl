@@ -118,10 +118,10 @@ Normalized Laplacian matrix of graph `g`.
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 - `selfloop`: adding self loop while calculating the matrix (optional).
 """
-function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
+function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)::AbstractMatrix{T}
     selfloop && (adj += I)
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
-    T.(I - inv_sqrtD * adj * inv_sqrtD)
+    I - inv_sqrtD * adj * inv_sqrtD
 end
 
 @doc raw"""
