@@ -38,23 +38,6 @@ Savely divde `x` by `y`. If `y` is zero, return `x` directly.
 save_div(x, y) = ifelse(iszero(y), x, x/y)
 
 
-## Graph related utility functions
-
-struct GraphInfo{A,T<:Integer}
-    adj::AbstractVector{A}
-    edge_idx::A
-    V::T
-    E::T
-
-    function GraphInfo(adj::AbstractVector{<:AbstractVector{<:Integer}})
-        V = length(adj)
-        edge_idx = edge_index_table(adj, V)
-        E = edge_idx[end]
-        new{typeof(edge_idx),typeof(V)}(adj, edge_idx, V, E)
-    end
-end
-
-
 
 ## Indexing
 
@@ -91,5 +74,3 @@ function topk_index(y::AbstractVector, k::Integer)
 end
 
 topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
-
-@inline drop_nothing(args...) = filter(x -> !isnothing(x), args)

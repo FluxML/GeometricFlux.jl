@@ -137,22 +137,3 @@ defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normal
 function scaled_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
     T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
 end
-
-function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
-    n = size(adj,1)
-    @assert n == size(adj,2) "adjacency matrix is not a square matrix."
-    A = (adj .!= zero(T))
-    if !issymmetric(adj)
-        A = A .| A'
-    end
-    indecies = collect(1:n)
-    ne = Vector{Int}[indecies[view(A, :, i)] for i = 1:n]
-    return ne
-end
-
-function edge_index_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
-                          N::Integer=size(adj,1))
-    y = similar(adj[1], N+1)
-    y .= 0, cumsum(map(length, adj))...
-    y
-end
