@@ -1,5 +1,8 @@
+using Zygote
+
 const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏", :div => "1/∏",
                                      :max => "max", :min => "min", :mean => "𝔼[]")
+
 
 """
     GCNConv([graph, ]in=>out)
@@ -46,7 +49,11 @@ function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
     @assert !isnothing(graph(g.graph)) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
     W, b, σ = g.weight, g.bias, g.σ
     L = normalized_laplacian(g.graph, float(T); selfloop=true)
-    L = convert(typeof(X), L)
+
+    Zygote.ignore() do
+        L = convert(typeof(X), L)
+    end
+    
     σ.(W * X * L .+ b)
 end
 
