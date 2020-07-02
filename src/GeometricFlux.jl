@@ -18,20 +18,17 @@ using FillArrays: Fill
 import LightGraphs: nv, ne, adjacency_matrix
 
 export
-
-    # layers/meta
+    # layers/gn
     Meta,
     adjlist,
     update_edge,
     update_vertex,
     update_global,
+    update_batch_edge,
+    update_batch_vertex,
     aggregate_neighbors,
     aggregate_edges,
     aggregate_vertices,
-    all_vertices_data,
-    all_edges_data,
-    adjacent_vertices_data,
-    incident_edges_data,
     propagate,
     generate_cluster,
 
@@ -128,7 +125,7 @@ include("utils.jl")
 include("graph/featuredgraphs.jl")
 include("graph/linalg.jl")
 
-include("layers/meta.jl")
+include("layers/gn.jl")
 include("layers/msgpass.jl")
 
 include("layers/conv.jl")
