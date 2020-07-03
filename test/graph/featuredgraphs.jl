@@ -14,15 +14,15 @@ norm_lap = [1. -.5 0. -.5;
            -.5 1. -.5 0.;
            0. -.5 1. -.5;
            -.5 0. -.5 1.]
-scaled_lap =   [0 -0.5 0 -0.5; 
-                -0.5 0 -0.5 -0; 
-                0 -0.5 0 -0.5; 
+scaled_lap =   [0 -0.5 0 -0.5;
+                -0.5 0 -0.5 -0;
+                0 -0.5 0 -0.5;
                 -0.5 0 -0.5 0]
 
 @testset "featuredgraphs" begin
-    fg = FeaturedGraph(adj, nothing)
+    fg = FeaturedGraph(adj)
     @test graph(fg) === adj
-    @test isnothing(feature(fg))
+    @test length(node_feature(fg)) == 0
     @test nv(fg) == 4
 
     for T in [Int8, Int16, Int32, Int64, Int128]

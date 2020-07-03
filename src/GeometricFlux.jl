@@ -19,8 +19,7 @@ import LightGraphs: nv, ne, adjacency_matrix
 
 export
     # layers/gn
-    Meta,
-    adjlist,
+    GraphNet,
     update_edge,
     update_vertex,
     update_global,
@@ -62,7 +61,6 @@ export
     laplacian_matrix,
     normalized_laplacian,
     scaled_laplacian,
-    neighbors,
 
     # operations/scatter
     scatter_add!,
@@ -84,12 +82,17 @@ export
     meanpool,
     pool,
 
+    # graph/index
+    neighbors,
+
     # graph/featuredgraphs
     AbstractFeaturedGraph,
     NullGraph,
     FeaturedGraph,
     graph,
-    feature,
+    node_feature,
+    edge_feature,
+    global_feature,
     nv,
 
     # graph/simplegraphs
@@ -97,7 +100,6 @@ export
 
     # utils
     gather,
-    GraphInfo,
     edge_index_table,
     topk_index
 
@@ -122,6 +124,7 @@ include("operations/linalg.jl")
 
 include("utils.jl")
 
+include("graph/index.jl")
 include("graph/featuredgraphs.jl")
 include("graph/linalg.jl")
 
