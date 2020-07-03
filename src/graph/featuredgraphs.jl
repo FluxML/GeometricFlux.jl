@@ -93,18 +93,6 @@ Get edge number of graph.
 ne(::NullGraph) = 0
 ne(fg::FeaturedGraph) = ne(fg.graph[])
 
-edge_index_table(::NullGraph) = zeros(0)
-edge_index_table(fg::FeaturedGraph) = edge_index_table(neighbors(fg), nv(fg))
-
-@inline get_xi(::NullGraph, i) = nothing
-@inline get_xi(fg::FeaturedGraph, i::Integer) = view(fg.nf[],:,i)
-
-@inline get_xj(::NullGraph, ne) = nothing
-@inline get_xj(fg::FeaturedGraph, ne::AbstractArray{<:Integer}) = view(fg.nf[],:,ne)
-
-@inline get_eij(::NullGraph, i, ne) = nothing
-@inline get_eij(fg::FeaturedGraph, i::Integer, ne::AbstractArray{<:Integer}) = view(fg.ef[],:,i,ne)
-
 
 
 ## Linear algebra API for AbstractFeaturedGraph

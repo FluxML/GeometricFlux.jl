@@ -13,7 +13,7 @@ abstract type GraphNet end
     for (i, js) = enumerate(adj)
         for j = js
             k = edge_idx[(i,j)]
-            e = update_edge(gn, E[:,k], V[:,i], V[:,j], u)
+            e = update_edge(gn, get_feature(E, k), get_feature(V, i), get_feature(V, j), u)
             push!(E_, e)
         end
     end
@@ -23,7 +23,7 @@ end
 @inline function update_batch_vertex(gn::T, Ē, V, u) where {T<:GraphNet}
     V_ = Vector[]
     for i = 1:size(V,2)
-        v = update_vertex(gn, Ē[:,i], V[:,i], u)
+        v = update_vertex(gn, get_feature(Ē, i), get_feature(V, i), u)
         push!(V_, v)
     end
     hcat(V_...)
@@ -65,10 +65,11 @@ end
 end
 
 function propagate(gn::T, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet}
-    _propagate(fg, naggr, eaggr, vaggr)
+    _propagate(gn, fg, naggr, eaggr, vaggr)
 end
 
-function _propagate(fg::FeaturedGraph, naggr, eaggr, vaggr)
+@inline function _propagate(gn::GraphNet, fg::FeaturedGraph, naggr, eaggr, vaggr)
+    adj = neighbors(fg)
     num_V = nv(fg)
     accu_edge = accumulated_edges(adj, num_V)
     num_E = accu_edge[end]
@@ -88,15 +89,5 @@ function _propagate(fg::FeaturedGraph, naggr, eaggr, vaggr)
 
     u = update_global(gn, ē, v̄, u)
 
-    E, V, u
-end
-
-Zygote.@nograd function generate_cluster(M::AbstractArray{T,N}, accu_edge, V, E) where {T,N}
-    cluster = similar(M, Int, E)
-    @inbounds for i = 1:V
-        j = accu_edge[i]
-        k = accu_edge[i+1]
-        cluster[j+1:k] .= i
-    end
-    cluster
+    FeaturedGraph(graph(fg), V, E, u)
 end

@@ -74,3 +74,10 @@ function topk_index(y::AbstractVector, k::Integer)
 end
 
 topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
+
+
+
+## Get feature with defaults
+
+get_feature(::Nothing, i::Integer) = zeros(0)
+get_feature(A::AbstractMatrix, i::Integer) = (i ≤ size(A,2)) ? view(A, :, i) : zeros(0)
