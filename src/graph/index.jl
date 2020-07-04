@@ -13,6 +13,8 @@ Zygote.@nograd function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
     return ne
 end
 
+Zygote.@nograd neighbors(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
+
 """
 Return a vector which acts as a mapping table. The index is the vertex index,
 value is accumulated numbers of edge (current vertex not included).

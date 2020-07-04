@@ -30,8 +30,7 @@ end
 end
 
 @inline function aggregate_neighbors(gn::T, aggr::Symbol, E, accu_edge, num_V, num_E) where {T<:GraphNet}
-    @assert iszero(E) "edge feature must not be zero."
-    @assert iszero(accu_edge) "accumulated edge must not be zero."
+    @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(E, accu_edge, num_V, num_E)
     pool(aggr, cluster, E)
 end
@@ -41,8 +40,7 @@ end
 end
 
 @inline function aggregate_edges(gn::T, aggr::Symbol, E) where {T<:GraphNet}
-    @assert iszero(E) "edge feature must not be zero."
-    u = vec(AGGR2FUN[aggr](E, dims=(2,3)))
+    u = vec(AGGR2FUN[aggr](E, dims=2))
     aggr == :sub && (u = -u)
     aggr == :div && (u = 1 ./ u)
     u
@@ -53,7 +51,6 @@ end
 end
 
 @inline function aggregate_vertices(gn::T, aggr::Symbol, V) where {T<:GraphNet}
-    @assert iszero(V) "node feature must not be zero."
     u = vec(AGGR2FUN[aggr](V, dims=2))
     aggr == :sub && (u = -u)
     aggr == :div && (u = 1 ./ u)
