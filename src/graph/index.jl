@@ -1,7 +1,9 @@
 """
+    neighbors(adj)
+
 Transform a adjacency matrix into a adjacency list.
 """
-Zygote.@nograd function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
+function neighbors(adj::AbstractMatrix{T}) where {T}
     n = size(adj,1)
     @assert n == size(adj,2) "adjacency matrix is not a square matrix."
     A = (adj .!= zero(T))
@@ -13,15 +15,17 @@ Zygote.@nograd function neighbors(adj::AbstractMatrix, T::DataType=eltype(adj))
     return ne
 end
 
-Zygote.@nograd neighbors(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
+neighbors(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
 
 """
+    accumulated_edges(adj[, num_V])
+
 Return a vector which acts as a mapping table. The index is the vertex index,
 value is accumulated numbers of edge (current vertex not included).
 """
-Zygote.@nograd function accumulated_edges(adj::AbstractVector{<:AbstractVector{<:Integer}},
-                                          N::Integer=size(adj,1))
-    y = similar(adj[1], N+1)
+function accumulated_edges(adj::AbstractVector{<:AbstractVector{<:Integer}},
+                           num_V=size(adj,1))
+    y = similar(adj[1], num_V+1)
     y .= 0, cumsum(map(length, adj))...
     y
 end
@@ -37,11 +41,13 @@ Zygote.@nograd function generate_cluster(M::AbstractArray{T,N}, accu_edge, V, E)
 end
 
 """
+    vertex_pair_table(adj[, num_E])
+
 Generate a mapping from edge index to vertex pair (i, j). The edge indecies are determined by
 the sorted vertex indecies.
 """
-Zygote.@nograd function vertex_pair_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
-                                          num_E=sum(map(length, adj)))
+function vertex_pair_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
+                           num_E=sum(map(length, adj)))
     table = similar(adj[1], Tuple{UInt32,UInt32}, num_E)
     e = one(UInt64)
     for (i, js) = enumerate(adj)
@@ -54,7 +60,7 @@ Zygote.@nograd function vertex_pair_table(adj::AbstractVector{<:AbstractVector{<
     table
 end
 
-Zygote.@nograd function vertex_pair_table(eidx::Dict)
+function vertex_pair_table(eidx::Dict)
     table = Array{Tuple{UInt32,UInt32}}(undef, num_E)
     for (k, v) = eidx
         table[v] = k
@@ -63,11 +69,13 @@ Zygote.@nograd function vertex_pair_table(eidx::Dict)
 end
 
 """
+    edge_index_table(adj[, num_E])
+
 Generate a mapping from vertex pair (i, j) to edge index. The edge indecies are determined by
 the sorted vertex indecies.
 """
-Zygote.@nograd function edge_index_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
-                                         num_E=sum(map(length, adj)))
+function edge_index_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
+                          num_E=sum(map(length, adj)))
     table = Dict{Tuple{UInt32,UInt32},UInt64}()
     e = one(UInt64)
     for (i, js) = enumerate(adj)
@@ -80,7 +88,7 @@ Zygote.@nograd function edge_index_table(adj::AbstractVector{<:AbstractVector{<:
     table
 end
 
-Zygote.@nograd function edge_index_table(vpair::AbstractVector{<:Tuple})
+function edge_index_table(vpair::AbstractVector{<:Tuple})
     table = Dict{Tuple{UInt32,UInt32},UInt64}()
     for (i, p) = enumerate(vpair)
         table[p] = i
@@ -88,7 +96,7 @@ Zygote.@nograd function edge_index_table(vpair::AbstractVector{<:Tuple})
     table
 end
 
-Zygote.@nograd function transform(X::AbstractArray, vpair::AbstractVector{<:Tuple}, num_V)
+function transform(X::AbstractArray, vpair::AbstractVector{<:Tuple}, num_V)
     dims = size(X)[1:end-1]..., num_V, num_V
     Y = similar(X, dims)
     for (i, p) in enumerate(vpair)
@@ -97,7 +105,7 @@ Zygote.@nograd function transform(X::AbstractArray, vpair::AbstractVector{<:Tupl
     Y
 end
 
-Zygote.@nograd function transform(X::AbstractArray, eidx::Dict)
+function transform(X::AbstractArray, eidx::Dict)
     dims = size(X)[1:end-2]..., length(eidx)
     Y = similar(X, dims)
     for (k, v) in eidx

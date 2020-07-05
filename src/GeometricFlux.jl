@@ -29,10 +29,11 @@ export
     aggregate_edges,
     aggregate_vertices,
     propagate,
-    generate_cluster,
 
     # layers/msgpass
     MessagePassing,
+    message,
+    update,
 
     # layers/conv
     GCNConv,
@@ -84,6 +85,7 @@ export
 
     # graph/index
     neighbors,
+    generate_cluster,
 
     # graph/featuredgraphs
     AbstractFeaturedGraph,
@@ -100,7 +102,6 @@ export
 
     # utils
     gather,
-    edge_index_table,
     topk_index
 
 using CUDAapi

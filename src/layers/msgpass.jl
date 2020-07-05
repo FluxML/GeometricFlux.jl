@@ -1,8 +1,4 @@
-using Base.Threads
-
-abstract type MessagePassing <: Meta end
-
-adjlist(m::T) where {T<:MessagePassing} = m.adjlist
+abstract type MessagePassing <: GraphNet end
 
 """
     message(m, x_i, x_j, e_ij)
@@ -16,7 +12,7 @@ First argument should be message-passing layer, the rest of arguments can be `x_
 - `x_j`: the feature of neighbors of node `x_i`.
 - `e_ij`: the feature of edge (`x_i`, `x_j`).
 """
-message(m::T, x_i=zeros(0), x_j=zeros(0)) where {T<:MessagePassing} = x_j
+@inline message(m::T, x_i, x_j, e_ij) where {T<:MessagePassing} = x_j
 
 """
     update(m, X, M)
@@ -29,52 +25,36 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 - `X`: the feature of all nodes.
 - `M`: the message aggregated from message function.
 """
-update(m::T, X, M) where {T<:MessagePassing} = M
+@inline update(m::T, x, msg) where {T<:MessagePassing} = msg
 
-function update_edge(m::T; gi::GraphInfo, kwargs...) where {T<:MessagePassing}
-    adj = gi.adj
-    edge_idx = gi.edge_idx
-    X = get(kwargs, :X, nothing)
-    E = get(kwargs, :E, nothing)
-    args = drop_nothing(get_xi(X, 1), get_xj(X, adj[1]), get_eij(E, 1, adj[1]))
-    M = message(m, args...)
-    dims = collect(size(M))
-    dims[end] = gi.E
-    Y = similar(M, dims...)
-    assign!(Y, M; last_dim=1:edge_idx[2])
-    _apply_msg!(m, Y, gi.V, edge_idx, adj, X, E)
-end
-
-function _apply_msg!(m, Y::Array, V, edge_idx, adj, X=nothing, E=nothing)
-    @inbounds Threads.@threads for i = 2:V
-        j = edge_idx[i]
-        k = edge_idx[i+1]
-        args = drop_nothing(get_xi(X, i), get_xj(X, adj[i]), get_eij(E, i, adj[i]))
-        M = message(m, args...)
-        assign!(Y, M; last_dim=j+1:k)
+@inline function update_batch_edge(m::T, E, X, adj) where {T<:MessagePassing}
+    edge_idx = edge_index_table(adj)
+    M = Vector[]
+    for (i, js) = enumerate(adj)
+        for j = js
+            k = edge_idx[(i,j)]
+            m = message(m, get_feature(X, i), get_feature(X, j), get_feature(E, k))
+            push!(M, m)
+        end
     end
-    Y
+    hcat(M...)
 end
 
-function update_vertex(m::T, M::AbstractArray; kwargs...) where {T<:MessagePassing}
-    X = get(kwargs, :X, nothing)
-    update(m, X, M)
+@inline function update_batch_vertex(m::T, M::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+    X_ = Vector[]
+    for i = 1:size(X,2)
+        x = update(m, get_feature(M, i), get_feature(X, i))
+        push!(X_, x)
+    end
+    hcat(X_...)
 end
 
-aggregate_neighbors(m::T, aggr::Symbol; kwargs...) where {T<:MessagePassing} =
-    pool(aggr, kwargs[:cluster], kwargs[:M])
+@inline function aggregate_neighbors(m::T, aggr::Symbol, M, accu_edge, num_V, num_E) where {T<:MessagePassing}
+    @assert !iszero(accu_edge) "accumulated edge must not be zero."
+    cluster = generate_cluster(M, accu_edge, num_V, num_E)
+    pool(aggr, cluster, M)
+end
 
-function propagate(mp::T, aggr::Symbol=:add; adjl=adjlist(mp), kwargs...) where {T<:MessagePassing}
-    gi = GraphInfo(adjl)
-
-    # message function
-    M = update_edge(mp; gi=gi, kwargs...)
-
-    # aggregate function
-    cluster = generate_cluster(M, gi)
-    M = aggregate_neighbors(mp, aggr; M=M, cluster=cluster)
-
-    # update function
-    Y = update_vertex(mp, M; kwargs...)
-    return Y
+function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
+    _propagate(mp, fg, aggr, nothing, nothing)
 end
