@@ -203,15 +203,15 @@ end
 
 @functor GraphConv
 
-message(g::GraphConv, x_j::AbstractArray) = g.weight2 * x_j
-update(g::GraphConv, X::AbstractArray, M::AbstractArray) = g.weight1*X + M .+ g.bias
-function (g::GraphConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T <: Real}
-    propagate(g, :add; X=X)
+message(g::GraphConv, x_i, x_j::AbstractVector, e_ij) = g.weight2 * x_j
+update(g::GraphConv, m::AbstractVector, x::AbstractVector) = g.weight1*x .+ m .+ g.bias
+function (g::GraphConv)(X::AbstractMatrix)
+    @assert has_graph(g.fg) "A GraphConv created without a graph must be given a FeaturedGraph as an input."
+    fg = FeaturedGraph(graph(g.fg), X)
+    fg_ = g(fg)
+    node_feature(fg_)
 end
-function (g::GraphConv{V, T})(fg::FeaturedGraph) where {V <: Union{AbstractArray, Nothing}, T <: Real}
-    Y = propagate(g, :add; X=feature(fg), adjl=neighbors(graph(fg)))
-    FeaturedGraph(graph(fg), Y)
-end
+(g::GraphConv)(fg::FeaturedGraph) = propagate(g, fg, :add)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -271,7 +271,7 @@ end
 
 @functor GATConv
 
-function message(g::GATConv, x_i::AbstractArray, x_j::AbstractArray)
+function message(g::GATConv, x_i::AbstractArray, x_j::AbstractArray, e_ij)
     x_i = reshape(x_i, g.channel[2], g.heads, :)
     x_j = reshape(x_j, g.channel[2], g.heads, :)
     n = size(x_j, 3)
@@ -283,15 +283,20 @@ function message(g::GATConv, x_i::AbstractArray, x_j::AbstractArray)
     reshape(x_j, g.channel[2]*g.heads, :)
 end
 
-function update(g::GATConv, M::AbstractArray)
+function update(g::GATConv, M::AbstractArray, x::AbstractVector)
     if !g.concat
         M = mean(M, dims=2)
     end
     return M .+ g.bias
 end
 
-(g::GATConv{V, T})(X::AbstractMatrix) where {V <: AbstractArray, T} = propagate(g, :add; X=g.weight*X)
-(g::GATConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(g, :add; X=g.weight*feature(fg), adjl=neighbors(graph(fg))))
+function (g::GATConv)(X::AbstractMatrix)
+    @assert has_graph(g.fg) "A GATConv created without a graph must be given a FeaturedGraph as an input."
+    fg = FeaturedGraph(graph(g.fg), g.weight*X)
+    fg_ = g(fg)
+    node_feature(fg_)
+end
+(g::GATConv)(fg::FeaturedGraph) = propagate(g, fg, :add)
 
 
 function _softmax(xs)
@@ -353,25 +358,25 @@ end
 
 message(g::GatedGraphConv, x_j::AbstractArray) = x_j
 update(g::GatedGraphConv, M::AbstractArray) = M
-function (g::GatedGraphConv{V, T, R})(X::AbstractMatrix) where {V <: AbstractArray, T<:Real, R}
-    forward_ggc(g, X, adjlist(g))
-end
-function (g::GatedGraphConv{V, T, R})(fg::FeaturedGraph) where {V, T<:Real, R}
-    FeaturedGraph(graph(fg), forward_ggc(g, feature(fg), neighbors(graph(fg))))
+function (g::GatedGraphConv)(X::AbstractMatrix)
+    @assert has_graph(g.fg) "A GraphConv created without a graph must be given a FeaturedGraph as an input."
+    fg = FeaturedGraph(graph(g.fg), X)
+    fg_ = g(fg)  # forward_ggc(g, X, adjlist(g))
+    node_feature(fg_)
 end
 
-function forward_ggc(g::GatedGraphConv, X::AbstractMatrix{T}, adjl::AbstractArray) where {T}
-    H = X
+function (g::GatedGraphConv{V,T})(fg::FeaturedGraph) where {V,T<:Real}
+    H = node_feature(fg)
     m, n = size(H)
     @assert (m <= g.out_ch) "number of input features must less or equals to output features."
     (m < g.out_ch) && (H = vcat(H, zeros(T, g.out_ch - m, n)))
 
     for i = 1:g.num_layers
         M = view(g.weight, :, :, i) * H
-        M = propagate(g, g.aggr; X=M, adjl=adjl)
+        M = propagate(g, fg, g.aggr)
         H, _ = g.gru(H, M)
     end
-    H
+    FeaturedGraph(graph(fg), H)
 end
 
 function Base.show(io::IO, l::GatedGraphConv)

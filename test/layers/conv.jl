@@ -69,28 +69,31 @@ adj = [0. 1. 0. 1.;
     end
 
     @testset "GraphConv" begin
-        gc = GraphConv(adj, in_channel=>out_channel)
-        @test graph(gc.fg) == [[2,4], [1,3], [2,4], [1,3]]
-        @test size(gc.weight1) == (out_channel, in_channel)
-        @test size(gc.weight2) == (out_channel, in_channel)
-        @test size(gc.bias) == (out_channel,)
+        @testset "layer with graph" begin
+            gc = GraphConv(adj, in_channel=>out_channel)
+            @test graph(gc.fg) == [[2,4], [1,3], [2,4], [1,3]]
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
 
-        X = rand(in_channel, N)
-        Y = gc(X)
-        @test size(Y) == (out_channel, N)
+            X = rand(in_channel, N)
+            Y = gc(X)
+            @test size(Y) == (out_channel, N)
+        end
 
-        # With variable graph
-        gc = GraphConv(in_channel=>out_channel)
-        @test size(gc.weight1) == (out_channel, in_channel)
-        @test size(gc.weight2) == (out_channel, in_channel)
-        @test size(gc.bias) == (out_channel,)
+        @testset "layer without graph" begin
+            gc = GraphConv(in_channel=>out_channel)
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
 
 
-        X = rand(in_channel, N)
-        fg = FeaturedGraph(adj, X)
-        fg_ = gc(fg)
-        @test size(feature(fg_)) == (out_channel, N)
-        @test_throws MethodError gc(X)
+            X = rand(in_channel, N)
+            fg = FeaturedGraph(adj, X)
+            fg_ = gc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws AssertionError gc(X)
+        end
     end
 
     @testset "GATConv" begin
