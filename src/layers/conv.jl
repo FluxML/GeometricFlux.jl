@@ -356,12 +356,13 @@ end
 
 @functor GatedGraphConv
 
-message(g::GatedGraphConv, x_j::AbstractArray) = x_j
-update(g::GatedGraphConv, M::AbstractArray) = M
+message(g::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
+update(g::GatedGraphConv, m::AbstractVector, x) = m
+
 function (g::GatedGraphConv)(X::AbstractMatrix)
     @assert has_graph(g.fg) "A GraphConv created without a graph must be given a FeaturedGraph as an input."
     fg = FeaturedGraph(graph(g.fg), X)
-    fg_ = g(fg)  # forward_ggc(g, X, adjlist(g))
+    fg_ = g(fg)
     node_feature(fg_)
 end
 
@@ -417,13 +418,17 @@ end
 
 @functor EdgeConv
 
-function message(e::EdgeConv, x_i::AbstractArray, x_j::AbstractArray)
-    n = size(x_j, 2)
-    e.nn(vcat(repeat(x_i, outer=(1,n)), x_j .- x_i))
+message(e::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = e.nn(vcat(x_i, x_j .- x_i))
+update(e::EdgeConv, m::AbstractVector, x) = m
+
+function (e::EdgeConv)(X::AbstractMatrix)
+    @assert has_graph(e.fg) "A EdgeConv created without a graph must be given a FeaturedGraph as an input."
+    fg = FeaturedGraph(graph(e.fg), X)
+    fg_ = e(fg)
+    node_feature(fg_)
 end
-update(e::EdgeConv, M::AbstractArray) = M
-(e::EdgeConv{V})(X::AbstractMatrix) where V <: AbstractArray = propagate(e, e.aggr; X=X)
-(e::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(graph(fg), propagate(e, e.aggr; X=feature(fg), adjl=neighbors(graph(fg))))
+
+(e::EdgeConv)(fg::FeaturedGraph) = propagate(e, fg, e.aggr)
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", nv(l.fg), ", E=", ne(l.fg))

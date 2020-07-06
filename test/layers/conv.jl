@@ -122,54 +122,59 @@ adj = [0. 1. 0. 1.;
                 X = rand(in_channel, N)
                 fg = FeaturedGraph(adj, X)
                 fg_ = gat(fg)
-                Y = feature(fg_)
+                Y = node_feature(fg_)
                 if concat
                     @test size(Y) == (out_channel * heads, N)
                 else
                     @test size(Y) == (out_channel * heads, 1)
                 end
-                @test_throws MethodError gat(X)
+                @test_throws AssertionError gat(X)
             end
         end
     end
 
     @testset "GatedGraphConv" begin
         num_layers = 3
-        ggc = GatedGraphConv(adj, out_channel, num_layers)
-        @test graph(ggc.fg) == [[2,4], [1,3], [2,4], [1,3]]
-        @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+        @testset "layer with graph" begin
+            ggc = GatedGraphConv(adj, out_channel, num_layers)
+            @test graph(ggc.fg) == [[2,4], [1,3], [2,4], [1,3]]
+            @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-        X = rand(in_channel, N)
-        Y = ggc(X)
-        @test size(Y) == (out_channel, N)
+            X = rand(in_channel, N)
+            Y = ggc(X)
+            @test size(Y) == (out_channel, N)
+        end
 
+        @testset "layer without graph" begin
+            ggc = GatedGraphConv(out_channel, num_layers)
+            @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-        # With variable graph
-        ggc = GatedGraphConv(out_channel, num_layers)
-        @test size(ggc.weight) == (out_channel, out_channel, num_layers)
-
-        X = rand(in_channel, N)
-        fg = FeaturedGraph(adj, X)
-        fg_ = ggc(fg)
-        @test size(feature(fg_)) == (out_channel, N)
-        @test_throws MethodError ggc(X)
+            X = rand(in_channel, N)
+            fg = FeaturedGraph(adj, X)
+            fg_ = ggc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws AssertionError ggc(X)
+        end
     end
 
     @testset "EdgeConv" begin
-        ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
-        @test graph(ec.fg) == [[2,4], [1,3], [2,4], [1,3]]
+        @testset "layer with graph" begin
+            ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
+            @test graph(ec.fg) == [[2,4], [1,3], [2,4], [1,3]]
 
-        X = rand(in_channel, N)
-        Y = ec(X)
-        @test size(Y) == (out_channel, N)
+            X = rand(in_channel, N)
+            Y = ec(X)
+            @test size(Y) == (out_channel, N)
+        end
 
-        # With variable graph
-        ec = EdgeConv(Dense(2*in_channel, out_channel))
+        @testset "layer without graph" begin
+            ec = EdgeConv(Dense(2*in_channel, out_channel))
 
-        X = rand(in_channel, N)
-        fg = FeaturedGraph(adj, X)
-        fg_ = ec(fg)
-        @test size(feature(fg_)) == (out_channel, N)
-        @test_throws MethodError ec(X)
+            X = rand(in_channel, N)
+            fg = FeaturedGraph(adj, X)
+            fg_ = ec(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws AssertionError ec(X)
+        end
     end
 end
