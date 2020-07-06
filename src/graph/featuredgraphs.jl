@@ -68,6 +68,18 @@ Get global feature attached to graph.
 global_feature(::NullGraph) = nothing
 global_feature(fg::FeaturedGraph) = fg.gf[]
 
+has_graph(::NullGraph) = false
+has_graph(fg::FeaturedGraph) = fg.graph[] != zeros(0,0)
+
+has_node_feature(::NullGraph) = false
+has_node_feature(fg::FeaturedGraph) = fg.nf[] != zeros(0,0)
+
+has_edge_feature(::NullGraph) = false
+has_edge_feature(fg::FeaturedGraph) = fg.ef[] != zeros(0,0)
+
+has_global_feature(::NullGraph) = false
+has_global_feature(fg::FeaturedGraph) = fg.gf[] != zeros(0)
+
 """
     neighbors(::AbstractFeaturedGraph)
 

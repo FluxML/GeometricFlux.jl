@@ -23,36 +23,37 @@ struct GCNConv{T,F,S<:AbstractFeaturedGraph}
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
     σ::F
-    graph::S
+    fg::S
 end
 
 function GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    graph = cache ? FeaturedGraph(nothing, nothing) : NullGraph()
-    GCNConv(T.(init(ch[2], ch[1])), b, σ, graph)
+    fg = cache ? FeaturedGraph() : NullGraph()
+    GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
 end
 
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    graph = cache ? FeaturedGraph(adj, nothing) : NullGraph()
-    GCNConv(T.(init(ch[2], ch[1])), b, σ, graph)
+    fg = cache ? FeaturedGraph(adj) : NullGraph()
+    GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
 end
 
 @functor GCNConv
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
-    @assert !isnothing(graph(g.graph)) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
+    @assert !isnothing(graph(g.fg)) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
     W, b, σ = g.weight, g.bias, g.σ
-    L = normalized_laplacian(g.graph, float(T); selfloop=true)
+    L = normalized_laplacian(g.fg, float(T); selfloop=true)
     L = convert(typeof(X), L)
     σ.(W * X * L .+ b)
 end
 
 function (g::GCNConv)(fg::FeaturedGraph)
-    X = feature(fg)
+    X = node_feature(fg)
     A = adjacency_matrix(fg)
+    g.fg isa NullGraph || (g.fg.graph[] = A)
     L = normalized_laplacian(A, eltype(X); selfloop=true)
     X_ = g.σ.(g.weight * X * L .+ g.bias)
     FeaturedGraph(A, X_)
@@ -84,27 +85,27 @@ the layer instead of only the features.
 - `k`: the order of Chebyshev polynomial.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 """
-struct ChebConv{T}
+struct ChebConv{T,S<:AbstractFeaturedGraph}
     weight::AbstractArray{T,3}
     bias::AbstractVector{T}
-    L̃::Union{Nothing, AbstractMatrix{T}}
+    fg::S
     k::Integer
     in_channel::Integer
     out_channel::Integer
 end
 
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    L̃ = scaled_laplacian(adj, T)
-    ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
+    fg = cache ? FeaturedGraph(adj) : NullGraph()
+    ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
 end
 
 function ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    L̃ = nothing
-    ChebConv(init(ch[2], ch[1], k), b, L̃, k, ch[1], ch[2])
+    fg = cache ? FeaturedGraph() : NullGraph()
+    ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
 end
 
 @functor ChebConv
@@ -132,13 +133,19 @@ function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:R
 end
 
 function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
-    @assert !isnothing(c.L̃) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
-    c(c.L̃, X)
+    g = graph(c.fg)
+    @assert !isnothing(g) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
+    L̃ = scaled_laplacian(g, T)
+    c(L̃, X)
 end
 
 function (c::ChebConv)(fg::FeaturedGraph)
-    X_ = c(scaled_laplacian(adjacency_matrix(fg)), feature(fg))
-    FeaturedGraph(graph(fg), X_)
+    g = graph(fg)
+    @assert !isnothing(g) "A given FeaturedGraph must contain a graph."
+    c.fg isa NullGraph || (c.fg.graph[] = g)
+    L̃ = scaled_laplacian(adjacency_matrix(fg))
+    X_ = c(L̃, node_feature(fg))
+    FeaturedGraph(g, X_)
 end
 
 function Base.show(io::IO, l::ChebConv)
