@@ -22,12 +22,12 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 
 # Arguments
 - `m`: message-passing layer.
-- `X`: the feature of all nodes.
-- `M`: the message aggregated from message function.
+- `x`: the single node feature.
+- `msg`: the message aggregated from message function.
 """
 @inline update(m::T, x, msg) where {T<:MessagePassing} = msg
 
-@inline function update_batch_edge(m::T, E, X, adj) where {T<:MessagePassing}
+@inline function update_batch_edge(m::T, E::AbstractMatrix, X::AbstractMatrix, adj) where {T<:MessagePassing}
     edge_idx = edge_index_table(adj)
     M = Vector[]
     for (i, js) = enumerate(adj)
@@ -49,7 +49,7 @@ end
     hcat(X_...)
 end
 
-@inline function aggregate_neighbors(m::T, aggr::Symbol, M, accu_edge, num_V, num_E) where {T<:MessagePassing}
+@inline function aggregate_neighbors(m::T, aggr::Symbol, M::AbstractMatrix, accu_edge, num_V, num_E) where {T<:MessagePassing}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(M, accu_edge, num_V, num_E)
     pool(aggr, cluster, M)

@@ -7,7 +7,7 @@ abstract type GraphNet end
 @inline update_vertex(gn::T, ē, vi, u) where {T<:GraphNet} = vi
 @inline update_global(gn::T, ē, v̄, u) where {T<:GraphNet} = u
 
-@inline function update_batch_edge(gn::T, E, V, u, adj) where {T<:GraphNet}
+@inline function update_batch_edge(gn::T, adj, E, V, u) where {T<:GraphNet}
     edge_idx = edge_index_table(adj)
     E_ = Vector[]
     for (i, js) = enumerate(adj)
@@ -62,19 +62,15 @@ end
 end
 
 function propagate(gn::T, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet}
-    _propagate(gn, fg, naggr, eaggr, vaggr)
-end
-
-@inline function _propagate(gn::GraphNet, fg::FeaturedGraph, naggr, eaggr, vaggr)
     adj = neighbors(fg)
     num_V = nv(fg)
-    accu_edge = accumulated_edges(adj, num_V)
+    accu_edge = accumulated_edges(adj)
     num_E = accu_edge[end]
     E = edge_feature(fg)
     V = node_feature(fg)
     u = global_feature(fg)
 
-    E = update_batch_edge(gn, E, V, u, adj)
+    E = update_batch_edge(gn, adj, E, V, u)
 
     Ē = aggregate_neighbors(gn, naggr, E, accu_edge, num_V, num_E)
 
