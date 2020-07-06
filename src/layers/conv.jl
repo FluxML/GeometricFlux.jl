@@ -374,7 +374,8 @@ function (g::GatedGraphConv{V,T})(fg::FeaturedGraph) where {V,T<:Real}
 
     for i = 1:g.num_layers
         M = view(g.weight, :, :, i) * H
-        M = propagate(g, fg, g.aggr)
+        fg_ = propagate(g, FeaturedGraph(graph(fg), M), g.aggr)
+        M = node_feature(fg_)
         H, _ = g.gru(H, M)
     end
     FeaturedGraph(graph(fg), H)
