@@ -183,22 +183,28 @@ end
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
+    w1 = T.(init(ch[2], ch[1]))
+    w2 = T.(init(ch[2], ch[1]))
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
     fg = FeaturedGraph(el)
-    GraphConv(fg, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
+    GraphConv(fg, w1, w2, b, aggr)
 end
 
 function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
+    w1 = T.(init(ch[2], ch[1]))
+    w2 = T.(init(ch[2], ch[1]))
+    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
     fg = FeaturedGraph(neighbors(adj))
-    GraphConv(fg, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
+    GraphConv(fg, w1, w2, b, aggr)
 end
 
 function GraphConv(ch::Pair{<:Integer,<:Integer}, aggr=:add;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
-    GraphConv(NullGraph(), init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
+    w1 = T.(init(ch[2], ch[1]))
+    w2 = T.(init(ch[2], ch[1]))
+    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
+    GraphConv(NullGraph(), w1, w2, b, aggr)
 end
 
 @functor GraphConv
@@ -252,10 +258,9 @@ end
 function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
                  concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
                  bias::Bool=true, T::DataType=Float32)
-    N = size(adj, 1)
-    w = init(ch[2]*heads, ch[1])
-    b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
-    a = init(2*ch[2], heads, 1)
+    w = T.(init(ch[2]*heads, ch[1]))
+    b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
+    a = T.(init(2*ch[2], heads, 1))
     fg = FeaturedGraph(neighbors(adj))
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
 end
@@ -263,9 +268,9 @@ end
 function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
                  concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
                  bias::Bool=true, T::DataType=Float32)
-    w = init(ch[2]*heads, ch[1])
-    b = bias ? init(ch[2]*heads) : zeros(T, ch[2]*heads)
-    a = init(2*ch[2], heads, 1)
+    w = T.(init(ch[2]*heads, ch[1]))
+    b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
+    a = T.(init(2*ch[2], heads, 1))
     GATConv(NullGraph(), w, b, a, negative_slope, ch, heads, concat)
 end
 
@@ -338,17 +343,16 @@ struct GatedGraphConv{V<:AbstractFeaturedGraph, T <: Real, R} <: MessagePassing
 end
 
 function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer;
-                        aggr=:add, init=glorot_uniform)
-    N = size(adj, 1)
-    w = init(out_ch, out_ch, num_layers)
+                        aggr=:add, init=glorot_uniform, T::DataType=Float32)
+    w = T.(init(out_ch, out_ch, num_layers))
     gru = GRUCell(out_ch, out_ch)
     fg = FeaturedGraph(neighbors(adj))
     GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
 end
 
 function GatedGraphConv(out_ch::Integer, num_layers::Integer;
-                        aggr=:add, init=glorot_uniform)
-    w = init(out_ch, out_ch, num_layers)
+                        aggr=:add, init=glorot_uniform, T::DataType=Float32)
+    w = T.(init(out_ch, out_ch, num_layers))
     gru = GRUCell(out_ch, out_ch)
     GatedGraphConv(NullGraph(), w, gru, out_ch, num_layers, aggr)
 end
