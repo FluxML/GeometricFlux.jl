@@ -136,6 +136,7 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     @assert has_graph(c.fg) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
     g = graph(c.fg)
     L̃ = scaled_laplacian(g, T)
+    L̃ = convert(typeof(X), L̃)
     c(L̃, X)
 end
 
@@ -143,8 +144,10 @@ function (c::ChebConv)(fg::FeaturedGraph)
     @assert has_graph(fg) "A given FeaturedGraph must contain a graph."
     g = graph(fg)
     c.fg isa NullGraph || (c.fg.graph[] = g)
+    X = node_feature(fg)
     L̃ = scaled_laplacian(adjacency_matrix(fg))
-    X_ = c(L̃, node_feature(fg))
+    L̃ = convert(typeof(X), L̃)
+    X_ = c(L̃, X)
     FeaturedGraph(g, X_)
 end
 
