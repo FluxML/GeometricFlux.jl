@@ -14,7 +14,7 @@ adj = [0 1 0 1;
         gc = GCNConv(adj, in_channel=>out_channel) |> gpu
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === adj
+        @test graph(gc.fg) === adj
 
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
@@ -27,7 +27,7 @@ adj = [0 1 0 1;
         cc = ChebConv(adj, in_channel=>out_channel, k) |> gpu
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test size(cc.L̃) == (N, N)
+        @test graph(cc.fg) == adj
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel
@@ -39,8 +39,6 @@ adj = [0 1 0 1;
 
     @testset "GraphConv" begin
         gc = GraphConv(adj, in_channel=>out_channel) |> gpu
-        @test gc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-        @test eltype(gc.adjlist[1]) <: Integer
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
@@ -52,8 +50,6 @@ adj = [0 1 0 1;
 
     @testset "GATConv" begin
         gat = GATConv(adj, in_channel=>out_channel) |> gpu
-        @test gat.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-        @test eltype(gat.adjlist[1]) <: Integer
         @test size(gat.weight) == (out_channel, in_channel)
         @test size(gat.bias) == (out_channel,)
 
@@ -65,8 +61,6 @@ adj = [0 1 0 1;
     @testset "GatedGraphConv" begin
         num_layers = 3
         ggc = GatedGraphConv(adj, out_channel, num_layers) |> gpu
-        @test ggc.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-        @test eltype(ggc.adjlist[1]) <: Integer
         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
         X = rand(in_channel, N) |> gpu
@@ -76,9 +70,6 @@ adj = [0 1 0 1;
 
     @testset "EdgeConv" begin
         ec = EdgeConv(adj, Dense(2*in_channel, out_channel)) |> gpu
-        @test ec.adjlist == [[2,4], [1,3], [2,4], [1,3]]
-        @test eltype(ec.adjlist[1]) <: Integer
-
         X = rand(in_channel, N) |> gpu
         Y = ec(X)
         @test size(Y) == (out_channel, N)
