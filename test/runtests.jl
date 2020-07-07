@@ -1,5 +1,7 @@
 using GeometricFlux
 using GeometricFlux: neighbors, laplacian_matrix
+using Flux
+using Flux: @functor
 using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
