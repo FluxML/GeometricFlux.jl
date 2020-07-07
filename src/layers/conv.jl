@@ -271,28 +271,27 @@ end
 
 @functor GATConv
 
-function message(g::GATConv, x_i::AbstractArray, x_j::AbstractArray, e_ij)
-    x_i = reshape(x_i, g.channel[2], g.heads, :)
-    x_j = reshape(x_j, g.channel[2], g.heads, :)
-    n = size(x_j, 3)
-    α = cat(repeat(x_i, outer=(1,1,n)), x_j+zero(x_j), dims=1) .* g.a
-    α = reshape(sum(α, dims=1), g.heads, n)
+function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
+    x_i = reshape(g.weight*x_i, :, g.heads)
+    x_j = reshape(g.weight*x_j, :, g.heads)
+    n = size(x_i, 1)
+    α = vcat(x_i, x_j+zero(x_j)) .* g.a
+    α = reshape(sum(α, dims=1), g.heads)
     α = leakyrelu.(α, g.negative_slope)
     α = _softmax(α)
-    x_j .*= reshape(α, 1, g.heads, n)
-    reshape(x_j, g.channel[2]*g.heads, :)
+    x_j .*= reshape(α, 1, g.heads)
+    reshape(x_j, n*g.heads)
 end
 
-function update(g::GATConv, M::AbstractArray, x::AbstractVector)
-    if !g.concat
-        M = mean(M, dims=2)
-    end
+# The same as update function in batch manner
+function update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix)
+    g.concat || (M = mean(M, dims=2))
     return M .+ g.bias
 end
 
 function (g::GATConv)(X::AbstractMatrix)
     @assert has_graph(g.fg) "A GATConv created without a graph must be given a FeaturedGraph as an input."
-    fg = FeaturedGraph(graph(g.fg), g.weight*X)
+    fg = FeaturedGraph(graph(g.fg), X)
     fg_ = g(fg)
     node_feature(fg_)
 end

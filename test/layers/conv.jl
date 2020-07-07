@@ -97,38 +97,65 @@ adj = [0. 1. 0. 1.;
     end
 
     @testset "GATConv" begin
-        for heads = [1, 6]
-            for concat = [true, false]
-                gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=concat)
-                @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
-                @test size(gat.weight) == (out_channel * heads, in_channel)
-                @test size(gat.bias) == (out_channel * heads,)
-                @test size(gat.a) == (2*out_channel, heads, 1)
+        X = rand(in_channel, N)
 
-                X = rand(in_channel, N)
-                Y = gat(X)
-                if concat
+        @testset "layer with graph" begin
+            @testset "concat=true" begin
+                for heads = [1, 6]
+                    gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=true)
+                    @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
+                    @test size(gat.weight) == (out_channel * heads, in_channel)
+                    @test size(gat.bias) == (out_channel * heads,)
+                    @test size(gat.a) == (2*out_channel, heads, 1)
+
+                    Y = gat(X)
                     @test size(Y) == (out_channel * heads, N)
-                else
+                end
+            end
+
+            @testset "concat=false" begin
+                for heads = [1, 6]
+                    gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=false)
+                    @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
+                    @test size(gat.weight) == (out_channel * heads, in_channel)
+                    @test size(gat.bias) == (out_channel * heads,)
+                    @test size(gat.a) == (2*out_channel, heads, 1)
+
+                    Y = gat(X)
                     @test size(Y) == (out_channel * heads, 1)
                 end
+            end
+        end
 
-                # With variable graph
-                gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
-                @test size(gat.weight) == (out_channel * heads, in_channel)
-                @test size(gat.bias) == (out_channel * heads,)
-                @test size(gat.a) == (2*out_channel, heads, 1)
+        @testset "layer without graph" begin
+            fg = FeaturedGraph(adj, X)
+            
+            @testset "concat=true" begin
+                for heads = [1, 6]
+                    gat = GATConv(in_channel=>out_channel, heads=heads, concat=true)
+                    @test size(gat.weight) == (out_channel * heads, in_channel)
+                    @test size(gat.bias) == (out_channel * heads,)
+                    @test size(gat.a) == (2*out_channel, heads, 1)
 
-                X = rand(in_channel, N)
-                fg = FeaturedGraph(adj, X)
-                fg_ = gat(fg)
-                Y = node_feature(fg_)
-                if concat
+                    fg_ = gat(fg)
+                    Y = node_feature(fg_)
                     @test size(Y) == (out_channel * heads, N)
-                else
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test_throws AssertionError gat(X)
                 end
-                @test_throws AssertionError gat(X)
+            end
+
+            @testset "concat=false" begin
+                for heads = [1, 6]
+                    gat = GATConv(in_channel=>out_channel, heads=heads, concat=false)
+                    @test size(gat.weight) == (out_channel * heads, in_channel)
+                    @test size(gat.bias) == (out_channel * heads,)
+                    @test size(gat.a) == (2*out_channel, heads, 1)
+
+                    fg_ = gat(fg)
+                    Y = node_feature(fg_)
+                    @test size(Y) == (out_channel * heads, 1)
+                    @test_throws AssertionError gat(X)
+                end
             end
         end
     end
