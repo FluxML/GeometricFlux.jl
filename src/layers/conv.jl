@@ -118,10 +118,10 @@ function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:R
     fout = c.out_channel
 
     Z = similar(X, fin, N, c.k)
-    Z[:,:,1] = X
-    Z[:,:,2] = X * L̃
+    view(Z,:,:,1) .= X
+    view(Z,:,:,2) .= X * L̃
     for k = 3:c.k
-        Z[:,:,k] = 2*view(Z, :, :, k-1)*L̃ - view(Z, :, :, k-2)
+        view(Z,:,:,k) .= 2*view(Z, :, :, k-1)*L̃ - view(Z, :, :, k-2)
     end
 
     Y = view(c.weight, :, :, 1) * view(Z, :, :, 1)
@@ -149,7 +149,7 @@ function (c::ChebConv)(fg::FeaturedGraph)
 end
 
 function Base.show(io::IO, l::ChebConv)
-    print(io, "ChebConv(G(V=", size(l.L̃, 1))
+    print(io, "ChebConv(G(V=", nv(l.fg))
     print(io, ", E), ", l.in_channel, "=>", l.out_channel)
     print(io, ", k=", l.k)
     print(io, ")")
@@ -182,8 +182,8 @@ end
 
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
                    ch::Pair{<:Integer,<:Integer}, aggr=:add;
-                   init = glorot_uniform, bias::Bool=true)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
+                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
+    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
     fg = FeaturedGraph(el)
     GraphConv(fg, init(ch[2], ch[1]), init(ch[2], ch[1]), b, aggr)
 end
