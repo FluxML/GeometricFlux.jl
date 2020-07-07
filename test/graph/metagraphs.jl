@@ -55,12 +55,12 @@ dg = MetaDiGraph(sg)
         gc = GCNConv(ug, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === ug.graph
+        @test graph(gc.fg) === ug.graph
 
         gc = GCNConv(dg, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === dg.graph
+        @test graph(gc.fg) === dg.graph
     end
 
     @testset "ChebConv" begin
@@ -68,7 +68,7 @@ dg = MetaDiGraph(sg)
         cc = ChebConv(ug, in_channel=>out_channel, k)
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test size(cc.L̃) == (N, N)
+        @test graph(cc.fg) == ug.graph
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel
@@ -76,7 +76,7 @@ dg = MetaDiGraph(sg)
         cc = ChebConv(dg, in_channel=>out_channel, k)
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test size(cc.L̃) == (N, N)
+        @test graph(cc.fg) == dg.graph
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel
@@ -84,13 +84,13 @@ dg = MetaDiGraph(sg)
 
     @testset "GraphConv" begin
         gc = GraphConv(ug, in_channel=>out_channel)
-        @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(gc.fg) == ug.graph
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
 
         gc = GraphConv(dg, in_channel=>out_channel)
-        @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(gc.fg) == dg.graph
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
@@ -98,12 +98,12 @@ dg = MetaDiGraph(sg)
 
     @testset "GATConv" begin
         gat = GATConv(ug, in_channel=>out_channel)
-        @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(gat.fg) == ug.graph
         @test size(gat.weight) == (out_channel, in_channel)
         @test size(gat.bias) == (out_channel,)
 
         gat = GATConv(dg, in_channel=>out_channel)
-        @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(gat.fg) == dg.graph
         @test size(gat.weight) == (out_channel, in_channel)
         @test size(gat.bias) == (out_channel,)
     end
@@ -111,19 +111,19 @@ dg = MetaDiGraph(sg)
     @testset "GatedGraphConv" begin
         num_layers = 3
         ggc = GatedGraphConv(ug, out_channel, num_layers)
-        @test ggc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(ggc.fg) == ug.graph
         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
         ggc = GatedGraphConv(dg, out_channel, num_layers)
-        @test ggc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(ggc.fg) == dg.graph
         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
     end
 
     @testset "EdgeConv" begin
         ec = EdgeConv(ug, Dense(2*in_channel, out_channel))
-        @test ec.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(ec.fg) == ug.graph
 
         ec = EdgeConv(dg, Dense(2*in_channel, out_channel))
-        @test ec.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(ec.fg) == dg.graph
     end
 end
