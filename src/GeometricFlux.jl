@@ -15,6 +15,7 @@ using Zygote
 using ZygoteRules
 using FillArrays: Fill
 
+import Flux: maxpool, meanpool
 import LightGraphs: nv, ne, adjacency_matrix
 
 export
