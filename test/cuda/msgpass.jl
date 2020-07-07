@@ -19,7 +19,7 @@ NewCudaLayer(m, n) = NewCudaLayer(randn(m,n))
 GeometricFlux.message(n::NewCudaLayer, x_i, x_j, e_ij) = n.weight * x_j
 GeometricFlux.update(::NewCudaLayer, m, x) = m
 
-X = Array(reshape(1:N*in_channel, in_channel, N)) |> gpu
+X = rand(Float32, in_channel, N) |> gpu
 fg = FeaturedGraph(adj, X)
 l = NewCudaLayer(out_channel, in_channel) |> gpu
 

@@ -151,6 +151,7 @@ function __init__()
         import CuArrays: cu
         include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
+        include("cuda/conv.jl")
         include("cuda/pool.jl")
         include("cuda/utils.jl")
         CuArrays.cu(x::Array{<:Integer}) = CuArray(x)
