@@ -38,7 +38,7 @@ accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
 ## Training
 ps = Flux.params(model)
 train_data = [(train_X, train_y)]
-opt = ADAM(0.01)
+opt = ADAM(0.05)
 evalcb() = @show(accuracy(train_X, train_y))
 
 @epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
