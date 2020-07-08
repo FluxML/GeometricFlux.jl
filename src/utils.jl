@@ -81,3 +81,11 @@ topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
 
 get_feature(::Nothing, i::Integer) = zeros(0)
 get_feature(A::AbstractMatrix, i::Integer) = (i ≤ size(A,2)) ? view(A, :, i) : zeros(0)
+
+
+function bypass_graph(nf_func=identity, ef_func=identity, gf_func=identity)
+    return function (fg::FeaturedGraph)
+        FeaturedGraph(graph(fg), nf_func(node_feature(fg)), ef_func(edge_feature(fg)),
+                      gf_func(global_feature(fg)))
+    end
+end

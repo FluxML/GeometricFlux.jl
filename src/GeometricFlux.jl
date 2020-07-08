@@ -115,11 +115,11 @@ include("operations/scatter.jl")
 include("operations/pool.jl")
 include("operations/linalg.jl")
 
-include("utils.jl")
-
 include("graph/index.jl")
 include("graph/featuredgraphs.jl")
 include("graph/linalg.jl")
+
+include("utils.jl")
 
 include("layers/gn.jl")
 include("layers/msgpass.jl")
