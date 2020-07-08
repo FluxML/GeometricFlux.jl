@@ -120,6 +120,11 @@ Normalized Laplacian matrix of graph `g`.
 """
 function normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj); selfloop::Bool=false)
     selfloop && (adj += I)
+    _normalized_laplacian(adj, T)
+end
+
+# nograd can only used without keyword arguments
+Zygote.@nograd function _normalized_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
     inv_sqrtD = inv_sqrt_degree_matrix(adj, T, dir=:both)
     T.(I - inv_sqrtD * adj * inv_sqrtD)
 end
