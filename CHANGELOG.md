@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0]
+
+- Rewrite graph network `GraphNet` and message passing `MessagePassing` framework
+- Expand functionality of FeaturedGraph to support `node_feature`, `edge_feature` and `global_feature`
+- Speed up ChebConv layer
+- Speed up scatter functions
+- Add graph index-related functions
+- GCN example works and increase training stablility
+- Fix show GCNConv
+- Add more test for linear algebra
+- Update cpu scatter benchmark plot and scripts
+
 ## [0.5.2]
 
 - Add scaled Laplacian
