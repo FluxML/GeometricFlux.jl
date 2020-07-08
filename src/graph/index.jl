@@ -1,9 +1,9 @@
 """
-    neighbors(adj)
+    adjacency_list(adj)
 
 Transform a adjacency matrix into a adjacency list.
 """
-function neighbors(adj::AbstractMatrix{T}) where {T}
+function adjacency_list(adj::AbstractMatrix{T}) where {T}
     n = size(adj,1)
     @assert n == size(adj,2) "adjacency matrix is not a square matrix."
     A = (adj .!= zero(T))
@@ -15,7 +15,9 @@ function neighbors(adj::AbstractMatrix{T}) where {T}
     return ne
 end
 
-neighbors(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
+adjacency_list(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
+
+Zygote.@nograd adjacency_list
 
 """
     accumulated_edges(adj[, num_V])

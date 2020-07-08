@@ -33,11 +33,11 @@
         for T in [Float16, Float32, Float64]
             @test normalized_laplacian(adj, T) ≈ T.(norm_lap)
             @test eltype(normalized_laplacian(adj, T)) == T
-            
+
             @test scaled_laplacian(adj, T) ≈ T.(scaled_lap)
             @test eltype(scaled_laplacian(adj, T)) == T
         end
-        @test neighbors(adj) == [[2,4], [1,3], [2,4], [1,3]]
+        @test adjacency_list(adj) == [[2,4], [1,3], [2,4], [1,3]]
     end
 
     @testset "asymmetric" begin
@@ -74,6 +74,6 @@
             @test eltype(laplacian_matrix(adj, T, dir=:in)) == T
             @test eltype(laplacian_matrix(adj, T, dir=:both)) == T
         end
-        @test neighbors(adj) == [[2,3,4], [1,3], [1,2,4], [1,3]]
+        @test adjacency_list(adj) == [[2,3,4], [1,3], [1,2,4], [1,3]]
     end
 end
