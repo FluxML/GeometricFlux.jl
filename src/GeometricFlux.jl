@@ -85,7 +85,7 @@ export
     pool,
 
     # graph/index
-    neighbors,
+    adjacency_list,
     generate_cluster,
 
     # graph/featuredgraphs
@@ -101,9 +101,6 @@ export
     has_edge_feature,
     has_global_feature,
     nv,
-
-    # graph/simplegraphs
-    adjlist,
 
     # utils
     gather,
