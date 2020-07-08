@@ -1,6 +1,6 @@
 using GeometricFlux
 using Flux
-using Flux: onehotbatch, onecold, crossentropy, throttle
+using Flux: onehotbatch, onecold, logitcrossentropy, throttle
 using JLD2  # use v0.1.2
 using Statistics: mean
 using SparseArrays
@@ -31,7 +31,7 @@ model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
               softmax) |> gpu
 
 ## Loss
-loss(x, y) = crossentropy(model(x), y)
+loss(x, y) = logitcrossentropy(model(x), y)
 accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
 
 ## Training
