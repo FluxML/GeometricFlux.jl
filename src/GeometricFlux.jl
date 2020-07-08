@@ -15,28 +15,26 @@ using Zygote
 using ZygoteRules
 using FillArrays: Fill
 
-import LightGraphs: nv, adjacency_matrix
+import Flux: maxpool, meanpool
+import LightGraphs: nv, ne, adjacency_matrix
 
 export
-
-    # layers/meta
-    Meta,
-    adjlist,
+    # layers/gn
+    GraphNet,
     update_edge,
     update_vertex,
     update_global,
+    update_batch_edge,
+    update_batch_vertex,
     aggregate_neighbors,
     aggregate_edges,
     aggregate_vertices,
-    all_vertices_data,
-    all_edges_data,
-    adjacent_vertices_data,
-    incident_edges_data,
     propagate,
-    generate_cluster,
 
     # layers/msgpass
     MessagePassing,
+    message,
+    update,
 
     # layers/conv
     GCNConv,
@@ -65,7 +63,6 @@ export
     laplacian_matrix,
     normalized_laplacian,
     scaled_laplacian,
-    neighbors,
 
     # operations/scatter
     scatter_add!,
@@ -87,12 +84,22 @@ export
     meanpool,
     pool,
 
+    # graph/index
+    neighbors,
+    generate_cluster,
+
     # graph/featuredgraphs
     AbstractFeaturedGraph,
     NullGraph,
     FeaturedGraph,
     graph,
-    feature,
+    node_feature,
+    edge_feature,
+    global_feature,
+    has_graph,
+    has_node_feature,
+    has_edge_feature,
+    has_global_feature,
     nv,
 
     # graph/simplegraphs
@@ -100,9 +107,6 @@ export
 
     # utils
     gather,
-    identity,
-    GraphInfo,
-    edge_index_table,
     topk_index
 
 using CUDAapi
@@ -126,10 +130,11 @@ include("operations/linalg.jl")
 
 include("utils.jl")
 
+include("graph/index.jl")
 include("graph/featuredgraphs.jl")
 include("graph/linalg.jl")
 
-include("layers/meta.jl")
+include("layers/gn.jl")
 include("layers/msgpass.jl")
 
 include("layers/conv.jl")
@@ -146,6 +151,7 @@ function __init__()
         import CuArrays: cu
         include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
+        include("cuda/conv.jl")
         include("cuda/pool.jl")
         include("cuda/utils.jl")
         CuArrays.cu(x::Array{<:Integer}) = CuArray(x)

@@ -1,8 +1,7 @@
-import GeometricFlux: message, update, propagate
-
 in_channel = 10
 out_channel = 5
-N = 6
+num_V = 6
+num_E = 7
 adj = [0. 1. 0. 0. 0. 0.;
        1. 0. 0. 1. 1. 1.;
        0. 0. 0. 0. 0. 1.;
@@ -12,22 +11,44 @@ adj = [0. 1. 0. 0. 0. 0.;
 ne = [[2], [1,4,5,6], [6], [2,5], [2,4,6], [2,3,5]]
 
 struct NewLayer <: MessagePassing
-    adjlist::AbstractVector{<:AbstractVector}
     weight
 end
+NewLayer(m, n) = NewLayer(randn(m,n))
 
-NewLayer(adjm::AbstractMatrix, m, n) = NewLayer(neighbors(adjm), randn(m,n))
+(l::NewLayer)(fg) = propagate(l, fg, :add)
 
-(l::NewLayer)(X) = propagate(l, X=X, aggr=:add)
-message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = x_j
-update(::NewLayer; X=zeros(0), M=zeros(0)) = M
+X = Array(reshape(1:num_V*in_channel, in_channel, num_V))
+fg = FeaturedGraph(adj, X)
 
-X = Array(reshape(1:N*in_channel, in_channel, N))
-l = NewLayer(adj, in_channel, out_channel)
-
-message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = n.weight' * x_j
+l = NewLayer(out_channel, in_channel)
 
 @testset "msgpass" begin
-    Y = l(X)
-    @test size(Y) == (out_channel, N)
+    @testset "no message or update" begin
+        fg_ = l(fg)
+
+        @test graph(fg_) === adj
+        @test size(node_feature(fg_)) == (in_channel, num_V)
+        @test size(edge_feature(fg_)) == (in_channel, 2*num_E)
+        @test size(global_feature(fg_)) == (0,)
+    end
+
+    GeometricFlux.message(l::NewLayer, x_i, x_j, e_ij) = l.weight * x_j
+    @testset "message function" begin
+        fg_ = l(fg)
+
+        @test graph(fg_) === adj
+        @test size(node_feature(fg_)) == (out_channel, num_V)
+        @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
+        @test size(global_feature(fg_)) == (0,)
+    end
+
+    GeometricFlux.update(l::NewLayer, m, x) = l.weight * x + m
+    @testset "message and update" begin
+        fg_ = l(fg)
+
+        @test graph(fg_) === adj
+        @test size(node_feature(fg_)) == (out_channel, num_V)
+        @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
+        @test size(global_feature(fg_)) == (0,)
+    end
 end

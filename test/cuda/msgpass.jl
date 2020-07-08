@@ -1,5 +1,3 @@
-import GeometricFlux: message, update, propagate
-
 in_channel = 10
 out_channel = 5
 N = 6
@@ -11,23 +9,21 @@ adj = [0. 1. 0. 0. 0. 0.;
        0. 1. 1. 0. 1. 0.]
 ne = [[2], [1,4,5,6], [6], [2,5], [2,4,6], [2,3,5]]
 
-struct NewLayer <: MessagePassing
-    adjlist::AbstractVector{<:AbstractVector}
+struct NewCudaLayer <: MessagePassing
     weight
 end
+NewCudaLayer(m, n) = NewCudaLayer(randn(m,n))
+@functor NewCudaLayer
 
-NewLayer(adjm::AbstractMatrix, m, n) = NewLayer(neighbors(adjm), randn(m,n))
+(l::NewCudaLayer)(X) = propagate(l, X, :add)
+GeometricFlux.message(n::NewCudaLayer, x_i, x_j, e_ij) = n.weight * x_j
+GeometricFlux.update(::NewCudaLayer, m, x) = m
 
-(l::NewLayer)(X) = propagate(l, X=X, aggr=:add)
-message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = x_j
-update(::NewLayer; X=zeros(0), M=zeros(0)) = M
-
-X = Array(reshape(1:N*in_channel, in_channel, N)) |> gpu
-l = NewLayer(adj, in_channel, out_channel) |> gpu
-
-message(n::NewLayer; x_i=zeros(0), x_j=zeros(0)) = n.weight' * x_j
+X = rand(Float32, in_channel, N) |> gpu
+fg = FeaturedGraph(adj, X)
+l = NewCudaLayer(out_channel, in_channel) |> gpu
 
 @testset "cuda/msgpass" begin
-    Y = l(X)
-    @test size(Y) == (out_channel, N)
+    fg_ = l(fg)
+    @test size(node_feature(fg_)) == (out_channel, N)
 end

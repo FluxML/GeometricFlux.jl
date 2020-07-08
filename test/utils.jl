@@ -23,14 +23,6 @@
         end
     end
 
-    @testset "GraphInfo" begin
-        adjl = [[2,3,4,5], [1,3,4], [2,4], [1,2,3], [1]]
-        gi = GraphInfo(adjl)
-        @test gi.edge_idx == [0, 4, 7, 9, 12, 13]
-        @test gi.V == 5
-        @test gi.E == 13
-    end
-
     @testset "topk_index" begin
         X = [8,7,6,5,4,3,2,1]
         @test topk_index(X, 4) == [1,2,3,4]

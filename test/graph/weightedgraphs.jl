@@ -38,11 +38,6 @@ el_ug = Vector{Int64}[[2, 3], [1, 3, 5], [1, 2, 4, 6], [3], [2], [3]]
 el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
 
 @testset "weightedgraphs" begin
-    @testset "adjlist" begin
-        @test adjlist(ug) == el_ug
-        @test adjlist(dg) == el_dg
-    end
-
     @testset "linalg" begin
         for T in [Int8, Int16, Int32, Int64, Int128]
             @test degree_matrix(adj, T, dir=:out) == T.(deg)
@@ -63,7 +58,7 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
         gc = GCNConv(ug, in_channel=>out_channel)
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.graph) === ug
+        @test graph(gc.fg) === ug
     end
 
     @testset "ChebConv" begin
@@ -71,7 +66,7 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
         cc = ChebConv(ug, in_channel=>out_channel, k)
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test size(cc.L̃) == (N, N)
+        @test graph(cc.fg) == ug
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel
@@ -79,7 +74,7 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
 
     @testset "GraphConv" begin
         gc = GraphConv(ug, in_channel=>out_channel)
-        @test gc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(gc.fg) == ug
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
@@ -89,7 +84,7 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
         for heads = [1, 5]
             for concat = [true, false]
                 gat = GATConv(ug, in_channel=>out_channel, heads=heads, concat=concat)
-                @test gat.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+                @test graph(gat.fg) == ug
                 @test size(gat.weight) == (out_channel * heads, in_channel)
                 @test size(gat.bias) == (out_channel * heads,)
                 @test size(gat.a) == (2*out_channel, heads, 1)
@@ -100,12 +95,12 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
     @testset "GatedGraphConv" begin
         num_layers = 3
         ggc = GatedGraphConv(ug, out_channel, num_layers)
-        @test ggc.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(ggc.fg) == ug
         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
     end
 
     @testset "EdgeConv" begin
         ec = EdgeConv(ug, Dense(2*in_channel, out_channel))
-        @test ec.adjlist == [[2,3], [1,3,5], [1,2,4,6], [3], [2], [3]]
+        @test graph(ec.fg) == ug
     end
 end

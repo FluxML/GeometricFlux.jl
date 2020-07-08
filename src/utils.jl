@@ -1,5 +1,3 @@
-import Base: identity
-
 ## Inverse operation of scatter
 
 function gather(input::AbstractArray{T,N}, index::AbstractArray{<:Integer,N}, dims::Integer;
@@ -32,38 +30,12 @@ function gather_indices(X::Array{T}) where T
     Y
 end
 
-identity(; kwargs...) = kwargs.data
-
 """
     save_div(x, y)
 
 Savely divde `x` by `y`. If `y` is zero, return `x` directly.
 """
 save_div(x, y) = ifelse(iszero(y), x, x/y)
-
-
-## Graph related utility functions
-
-struct GraphInfo{A,T<:Integer}
-    adj::AbstractVector{A}
-    edge_idx::A
-    V::T
-    E::T
-
-    function GraphInfo(adj::AbstractVector{<:AbstractVector{<:Integer}})
-        V = length(adj)
-        edge_idx = edge_index_table(adj, V)
-        E = edge_idx[end]
-        new{typeof(edge_idx),typeof(V)}(adj, edge_idx, V, E)
-    end
-end
-
-function edge_index_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
-                          N::Integer=size(adj,1))
-    y = similar(adj[1], N+1)
-    y .= 0, cumsum(map(length, adj))...
-    y
-end
 
 
 
@@ -102,3 +74,10 @@ function topk_index(y::AbstractVector, k::Integer)
 end
 
 topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
+
+
+
+## Get feature with defaults
+
+get_feature(::Nothing, i::Integer) = zeros(0)
+get_feature(A::AbstractMatrix, i::Integer) = (i ≤ size(A,2)) ? view(A, :, i) : zeros(0)

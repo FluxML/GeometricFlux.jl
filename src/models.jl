@@ -66,22 +66,3 @@ end
 
 summarize(ve::VariationalEncoder, h::AbstractMatrix) = (ve.μ(h), ve.logσ(h))
 sampling(::VariationalEncoder, μ, logσ) = μ .+ exp.(logσ) .* randn(size(logσ))
-
-
-
-# function logpdf(b::Bernoulli, y::Bool; T::Real=Float32)
-#     y * log(b.p + eps(T)) + (one(T) - y) * log(one(T) - b.p + eps(T))
-# end
-#
-# # KL-divergence between approximation posterior and N(0, 1) prior.
-# kl_q_p(μ, logσ; T::Real=Float32) = T(0.5) * sum(exp.(T(2) .* logσ) + μ.^2 .- one(T) .+ logσ.^2)
-#
-# # logp(x|z) - decoder
-# logp_x_z(x, z) = sum(logpdf.(Bernoulli.(f(z)), x))
-#
-# function loss(X; T=eltype(X), β=one(T), λ=T(0.01))
-#     N = size(X, 1)  # batch size
-#     μ̂, logσ̂ = g(X)
-#     L̄ = 1//N * (logp_x_z(X, sampling.(μ̂, logσ̂)) - β * kl_q_p(μ̂, logσ̂))
-#     -L̄ + λ * sum(x->sum(x.^2), params(f))
-# end
