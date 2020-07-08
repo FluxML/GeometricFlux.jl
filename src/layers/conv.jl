@@ -62,7 +62,7 @@ end
 function Base.show(io::IO, l::GCNConv)
     in_channel = size(l.weight, ndims(l.weight))
     out_channel = size(l.weight, ndims(l.weight)-1)
-    print(io, "GCNConv(G(V=", nv(l.graph))
+    print(io, "GCNConv(G(V=", nv(l.fg))
     print(io, ", E), ", in_channel, "=>", out_channel)
     print(io, "GCNConv(", in_channel, "=>", out_channel)
     l.σ == identity || print(io, ", ", l.σ)
