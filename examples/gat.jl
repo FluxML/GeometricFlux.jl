@@ -1,6 +1,7 @@
 using GeometricFlux
 using Flux
-using Flux: onehotbatch, onecold, crossentropy, throttle
+using Flux: onehotbatch, onecold, logitcrossentropy, throttle
+using Flux: @epochs
 using JLD2  # use v0.1.2
 using Statistics: mean
 using SparseArrays
@@ -32,15 +33,13 @@ model = Chain(GATConv(g, num_features=>hidden, heads=heads),
 # model(train_X)
 
 ## Loss
-loss(x, y) = crossentropy(model(x), y)
+loss(x, y) = logitcrossentropy(model(x), y)
 accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
 
 ## Training
 ps = Flux.params(model)
 train_data = [(train_X, train_y)]
-opt = ADAM(0.01)
+opt = ADAM(0.05)
 evalcb() = @show(accuracy(train_X, train_y))
 
-for i = 1:epochs
-    Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
-end
+@epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
