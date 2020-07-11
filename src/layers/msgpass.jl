@@ -29,9 +29,8 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
     edge_idx = edge_index_table(adj)
-    edges = map(x -> map((i,j) -> (i,j), repeat([x[1]],length(x[2])), x[2]), enumerate(adj))
-    ij = vcat(edges...)
-    ijk = map(x -> (x[1], x[2], edge_idx[(x[1],x[2])]), ij)
+    edges = edge_list(adj)
+    ijk = map(x -> (x[1], x[2], edge_idx[(x[1],x[2])]), edges)
     E_ = map(x -> message(mp, get_feature(X, x[1]), get_feature(X, x[2]), get_feature(E, x[3])), ijk)
     hcat(E_...)
 end

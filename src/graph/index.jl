@@ -19,6 +19,20 @@ adjacency_list(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
 
 Zygote.@nograd adjacency_list
 
+function edge_list(adj::AbstractVector{<:AbstractVector{<:Integer}})
+    el = Tuple{Int64,Int64}[]
+    for (i, js) in enumerate(adj)
+        for j = js
+            push!(el, (i, j))
+        end
+    end
+    el
+end
+
+edge_list(adj::AbstractMatrix) = edge_list(adjacency_list(adj))
+
+Zygote.@nograd edge_list
+
 """
     accumulated_edges(adj[, num_V])
 
