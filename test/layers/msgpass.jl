@@ -28,7 +28,7 @@ l = NewLayer(out_channel, in_channel)
     @testset "no message or update" begin
         fg_ = l(fg)
 
-        @test graph(fg_) === adj
+        @test graph(fg_) == adj
         @test size(node_feature(fg_)) == (in_channel, num_V)
         @test size(edge_feature(fg_)) == (in_channel, 2*num_E)
         @test size(global_feature(fg_)) == (0,)
@@ -38,7 +38,7 @@ l = NewLayer(out_channel, in_channel)
     @testset "message function" begin
         fg_ = l(fg)
 
-        @test graph(fg_) === adj
+        @test graph(fg_) == adj
         @test size(node_feature(fg_)) == (out_channel, num_V)
         @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
         @test size(global_feature(fg_)) == (0,)
@@ -57,7 +57,7 @@ l = NewLayer(out_channel, in_channel)
     @testset "message and update" begin
         fg_ = l(fg)
 
-        @test graph(fg_) === adj
+        @test graph(fg_) == adj
         @test size(node_feature(fg_)) == (out_channel, num_V)
         @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
         @test size(global_feature(fg_)) == (0,)
