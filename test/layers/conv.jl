@@ -118,18 +118,18 @@ adj = [0. 1. 0. 1.;
                     gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=false)
                     @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
                     @test size(gat.weight) == (out_channel * heads, in_channel)
-                    @test size(gat.bias) == (out_channel * heads,)
+                    @test size(gat.bias) == (out_channel,)
                     @test size(gat.a) == (2*out_channel, heads, 1)
 
                     Y = gat(X)
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test size(Y) == (out_channel, N)
                 end
             end
         end
 
         @testset "layer without graph" begin
             fg = FeaturedGraph(adj, X)
-            
+
             @testset "concat=true" begin
                 for heads = [1, 6]
                     gat = GATConv(in_channel=>out_channel, heads=heads, concat=true)
@@ -148,12 +148,12 @@ adj = [0. 1. 0. 1.;
                 for heads = [1, 6]
                     gat = GATConv(in_channel=>out_channel, heads=heads, concat=false)
                     @test size(gat.weight) == (out_channel * heads, in_channel)
-                    @test size(gat.bias) == (out_channel * heads,)
+                    @test size(gat.bias) == (out_channel,)
                     @test size(gat.a) == (2*out_channel, heads, 1)
 
                     fg_ = gat(fg)
                     Y = node_feature(fg_)
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test size(Y) == (out_channel, N)
                     @test_throws AssertionError gat(X)
                 end
             end

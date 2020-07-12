@@ -262,7 +262,8 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
                  concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
                  bias::Bool=true, T::DataType=Float32)
     w = T.(init(ch[2]*heads, ch[1]))
-    b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
+    b = concat ? (bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)) :
+        (bias ? T.(init(ch[2])) : zeros(T, ch[2]))
     a = T.(init(2*ch[2], heads, 1))
     fg = FeaturedGraph(adjacency_list(adj))
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
@@ -272,7 +273,8 @@ function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
                  concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
                  bias::Bool=true, T::DataType=Float32)
     w = T.(init(ch[2]*heads, ch[1]))
-    b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
+    b = concat ? (bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)) :
+        (bias ? T.(init(ch[2])) : zeros(T, ch[2]))
     a = T.(init(2*ch[2], heads, 1))
     GATConv(NullGraph(), w, b, a, negative_slope, ch, heads, concat)
 end
@@ -293,7 +295,10 @@ end
 
 # The same as update function in batch manner
 function update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix)
-    g.concat || (M = mean(M, dims=2))
+    if !g.concat
+        N = size(M, 2)
+        M = reshape(mean(reshape(M, :, g.heads, N), dims=2), :, N)
+    end
     return M .+ g.bias
 end
 
