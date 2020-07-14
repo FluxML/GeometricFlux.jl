@@ -62,7 +62,7 @@ end
 end
 
 function propagate(gn::T, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet}
-    adj = neighbors(fg)
+    adj = adjacency_list(fg)
     num_V = nv(fg)
     accu_edge = accumulated_edges(adj)
     num_E = accu_edge[end]

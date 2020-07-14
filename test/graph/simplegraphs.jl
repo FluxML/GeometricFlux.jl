@@ -81,12 +81,23 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
     end
 
     @testset "GATConv" begin
-        for heads in [1, 5], concat = [true, false]
-            gat = GATConv(ug, in_channel=>out_channel, heads=heads, concat=concat)
-            @test graph(gat.fg) == ug
-            @test size(gat.weight) == (out_channel * heads, in_channel)
-            @test size(gat.bias) == (out_channel * heads,)
-            @test size(gat.a) == (2*out_channel, heads, 1)
+        @testset "concat=true" begin
+            for heads in [1, 5], concat = [true, false]
+                gat = GATConv(ug, in_channel=>out_channel, heads=heads, concat=true)
+                @test graph(gat.fg) == ug
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel * heads,)
+                @test size(gat.a) == (2*out_channel, heads, 1)
+            end
+        end
+        @testset "concat=false" begin
+            for heads in [1, 5]
+                gat = GATConv(ug, in_channel=>out_channel, heads=heads, concat=false)
+                @test graph(gat.fg) == ug
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel,)
+                @test size(gat.a) == (2*out_channel, heads, 1)
+            end
         end
     end
 

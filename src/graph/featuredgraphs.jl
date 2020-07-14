@@ -81,12 +81,12 @@ has_global_feature(::NullGraph) = false
 has_global_feature(fg::FeaturedGraph) = fg.gf[] != zeros(0)
 
 """
-    neighbors(::AbstractFeaturedGraph)
+    adjacency_list(::AbstractFeaturedGraph)
 
 Get adjacency list of graph.
 """
-neighbors(::NullGraph) = [zeros(0)]
-neighbors(fg::FeaturedGraph) = neighbors(fg.graph[])
+adjacency_list(::NullGraph) = [zeros(0)]
+adjacency_list(fg::FeaturedGraph) = adjacency_list(fg.graph[])
 
 """
     nv(::AbstractFeaturedGraph)
