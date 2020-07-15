@@ -289,8 +289,7 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     α = reshape(sum(α, dims=1), g.heads)
     α = leakyrelu.(α, g.negative_slope)
     α = _softmax(α)
-    x_j .*= reshape(α, 1, g.heads)
-    reshape(x_j, n*g.heads)
+    reshape(x_j .* reshape(α, 1, g.heads), n*g.heads)
 end
 
 # The same as update function in batch manner
