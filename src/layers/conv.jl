@@ -128,8 +128,7 @@ function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:R
     for k = 2:c.k
         Y += view(c.weight, :, :, k) * view(Z, :, :, k)
     end
-    Y .+= c.bias
-    return Y
+    return Y .+ c.bias
 end
 
 function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
