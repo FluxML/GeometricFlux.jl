@@ -115,7 +115,7 @@ adj = [0. 1. 0. 1.;
             @test_throws AssertionError gc(X)
 
             # Test that the gradient can be computed
-            Zygote.gradient(() -> sum(gc(fg)), params(gc))
+            Zygote.gradient(() -> sum(node_feature(gc(fg))), params(gc))
             @test true
         end
     end
