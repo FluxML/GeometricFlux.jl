@@ -41,9 +41,8 @@ value is accumulated numbers of edge (current vertex not included).
 """
 function accumulated_edges(adj::AbstractVector{<:AbstractVector{<:Integer}},
                            num_V=size(adj,1))
-    y = similar(adj[1], num_V+1)
-    y .= 0, cumsum(map(length, adj))...
-    y
+    
+    return [0, cumsum(map(length, adj))...]
 end
 
 Zygote.@nograd function generate_cluster(M::AbstractArray{T,N}, accu_edge, V, E) where {T,N}
