@@ -145,5 +145,7 @@ defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normal
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 """
 function scaled_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
-    T(2. / eigmax(adj)) * normalized_laplacian(adj, T) - I
+    @assert issymmetric(adj) "scaled_laplacian only works with symmetric matrices"
+    E = eigen(Symmetric(adj)).values
+    T(2. / maximum(E)) * normalized_laplacian(adj, T) - I
 end
