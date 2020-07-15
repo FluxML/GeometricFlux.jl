@@ -117,16 +117,13 @@ function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:R
     @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
     fout = c.out_channel
 
-    Z = similar(X, fin, N, c.k)
-    view(Z,:,:,1) .= X
-    view(Z,:,:,2) .= X * L̃
-    for k = 3:c.k
-        view(Z,:,:,k) .= 2*view(Z, :, :, k-1)*L̃ - view(Z, :, :, k-2)
-    end
-
-    Y = view(c.weight, :, :, 1) * view(Z, :, :, 1)
+    Z_k = X
+    Y = view(c.weight, :, :, 1) * Z_k
+    Z_kplus1 = X * L̃
+    Y += view(c.weight, :, :, 2) * Z_kplus1
     for k = 2:c.k
-        Y += view(c.weight, :, :, k) * view(Z, :, :, k)
+        Z_kplus1, Z_k = 2 * Z_kplus1 * L̃ - Z_k, Z_kplus1
+        Y += view(c.weight, :, :, k) * Z_kplus1
     end
     return Y .+ c.bias
 end
