@@ -142,13 +142,14 @@ defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normal
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 """
 function scaled_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
+    @assert adj == transpose(adj) "scaled_laplacian only works with symmetric matrices"
     E, U = symeigen(adj)
     T(2. / maximum(E)) * normalized_laplacian(adj, T) - I
 end
 
 """
 From https://github.com/GiggleLiu/BackwardsLinalg.jl/blob/master/src/symeigen.jl
-Only works with symetric matrixes
+Only works with symmetric matrices
 References:
     * Seeger, M., Hetzel, A., Dai, Z., Meissner, E., & Lawrence, N. D. (2018). Auto-Differentiating Linear Algebra.
 """
