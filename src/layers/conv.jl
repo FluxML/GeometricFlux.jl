@@ -284,7 +284,7 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     α = vcat(x_i, x_j+zero(x_j)) .* g.a
     α = reshape(sum(α, dims=1), g.heads)
     α = leakyrelu.(α, g.negative_slope)
-    α = _softmax(α)
+    α = Flux.softmax(α)
     reshape(x_j .* reshape(α, 1, g.heads), n*g.heads)
 end
 
@@ -304,13 +304,6 @@ function (g::GATConv)(X::AbstractMatrix)
     node_feature(fg_)
 end
 (g::GATConv)(fg::FeaturedGraph) = propagate(g, fg, :add)
-
-
-function _softmax(xs)
-    xs = exp.(xs)
-    s = sum(xs, dims=2)
-    return xs ./ s
-end
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
