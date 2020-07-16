@@ -111,19 +111,16 @@ end
 @functor ChebConv
 
 function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:Real, T<:Real}
-    fin = c.in_channel
-    @assert size(X, 1) == fin "Input feature size must match input channel size."
-    N = size(L̃, 1)
-    @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
-    fout = c.out_channel
+    @assert size(X, 1) == c.in_channel "Input feature size must match input channel size."
+    @assert size(X, 2) == size(L̃, 1) "Input vertex number must match Laplacian matrix size."
 
-    Z_k = X
-    Y = view(c.weight, :, :, 1) * Z_k
-    Z_kplus1 = X * L̃
-    Y += view(c.weight, :, :, 2) * Z_kplus1
-    for k = 2:c.k
-        Z_kplus1, Z_k = 2 * Z_kplus1 * L̃ - Z_k, Z_kplus1
-        Y += view(c.weight, :, :, k) * Z_kplus1
+    Z_prev = X
+    Z = X * L̃
+    Y = view(c.weight,:,:,1) * Z_prev
+    Y += view(c.weight,:,:,2) * Z
+    for k = 3:c.k
+        Z, Z_prev = 2*Z*L̃ - Z_prev, Z
+        Y += view(c.weight,:,:,k) * Z
     end
     return Y .+ c.bias
 end
