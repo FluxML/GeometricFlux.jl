@@ -1,5 +1,3 @@
-using LinearAlgebra
-
 ## Linear algebra API for adjacency matrix
 
 Zygote.@nograd issymmetric
@@ -142,38 +140,8 @@ defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normal
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 """
 function scaled_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
-    @assert adj == transpose(adj) "scaled_laplacian only works with symmetric matrices"
-    E, U = symeigen(adj)
+    @assert issymmetric(adj) "scaled_laplacian only works with symmetric matrices"
+    E, U = eigen(Symmetric(adj))
     T(2. / maximum(E)) * normalized_laplacian(adj, T) - I
 end
 
-"""
-From https://github.com/GiggleLiu/BackwardsLinalg.jl/blob/master/src/symeigen.jl
-Only works with symmetric matrices
-References:
-    * Seeger, M., Hetzel, A., Dai, Z., Meissner, E., & Lawrence, N. D. (2018). Auto-Differentiating Linear Algebra.
-"""
-function symeigen(A::AbstractMatrix)
-    E, U = LinearAlgebra.eigen(A)
-    E, Matrix(U)
-end
-@adjoint function symeigen(A)
-    E, U = symeigen(A)
-    (E, U), adjy -> (symeigen_back(E, U, adjy...),)
-end
-function symeigen_back(E::AbstractVector{T}, U, dE, dU; η=1e-40) where T
-    all(x->x isa Nothing, (dU, dE)) && return nothing
-    η = T(η)
-    if dU === nothing
-        D = LinearAlgebra.Diagonal(dE)
-    else
-        F = E .- E'
-        F .= F./(F.^2 .+ η)
-        dUU = dU' * U .* F
-        D = (dUU + dUU')/2
-        if dE !== nothing
-            D = D + LinearAlgebra.Diagonal(dE)
-        end
-    end
-    U * D * U'
-end
