@@ -4,9 +4,7 @@ authors = ["Yueh-Hua Tu <a504082002@gmail.com>"]
 version = "0.6.0"
 
 [deps]
-CUDAapi = "3895d2a7-ec45-59b8-82bb-cfc6a382f9b3"
-CUDAnative = "be33ccc6-a3ff-5ff2-a52e-74243cff1e17"
-CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
@@ -23,9 +21,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
-CUDAapi = "3, 4.0"
-CUDAnative = "2.10, 3.0, 3.1"
-CuArrays = "1.7.1, 1.7.2, 2.0, 2.1, 2.2"
+CUDA = "1.2"
 DataStructures = "~0.17"
 FillArrays = "^0.8.5"
 Flux = "~0.10, 0.11"
