@@ -141,7 +141,6 @@ defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normal
 """
 function scaled_laplacian(adj::AbstractMatrix, T::DataType=eltype(adj))
     @assert issymmetric(adj) "scaled_laplacian only works with symmetric matrices"
-    E, U = eigen(Symmetric(adj))
-    T(2. / maximum(E)) * normalized_laplacian(adj, T) - I
+    symm = Symmetric(adj)
+    T(2. / maximum(eigen(symm).values)) * normalized_laplacian(adj, T) - I
 end
-
