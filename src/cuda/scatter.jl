@@ -12,7 +12,7 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
             @inbounds if li <= length(xs) && i <= size(ys, 1)
                 ind = CartesianIndices(xs)[li]
                 j = Base._to_linear_index(ys, i, xs[li])
-                CUDAnative.$atm_op(pointer(ys, j), us[i, ind])
+                CUDA.$atm_op(pointer(ys, j), us[i, ind])
             end
 
             return
@@ -34,7 +34,7 @@ for op = [:add, :sub, :max, :min, :and, :or, :xor]
             @inbounds if li <= length(xs) && i <= size(ys, 1)
                 ind = CartesianIndices(xs)[li]
                 j = Base._to_linear_index(ys, i, xs[li]...)
-                CUDAnative.$atm_op(pointer(ys, j), us[i, ind])
+                CUDA.$atm_op(pointer(ys, j), us[i, ind])
             end
 
             return
@@ -62,7 +62,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
                 k = Base._to_linear_index(ys, i, xs[j])
-                CUDAnative.$atm_op(pointer(ys, k), us[i, ind])
+                CUDA.$atm_op(pointer(ys, k), us[i, ind])
             end
 
             return
@@ -72,7 +72,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
         thread_j = min(MAX_THREADS ÷ thread_i, length(xs))
         threads = (thread_i, thread_j)
         blocks = ceil.(Int, (size(ys, 1), length(xs)) ./ threads)
-        CuArrays.@cuda blocks=blocks threads=threads kernel!(ys, us, xs)
+        @cuda blocks=blocks threads=threads kernel!(ys, us, xs)
         return ys
     end
 
@@ -84,7 +84,7 @@ for op = [:add, :sub, :mul, :div, :max, :min]
             @inbounds if i <= size(ys, 1) && j <= length(xs)
                 ind = CartesianIndices(xs)[j]
                 k = Base._to_linear_index(ys, i, xs[j]...)
-                CUDAnative.$atm_op(pointer(ys, k), us[i, ind])
+                CUDA.$atm_op(pointer(ys, k), us[i, ind])
             end
 
             return
@@ -94,16 +94,16 @@ for op = [:add, :sub, :mul, :div, :max, :min]
         thread_j = min(MAX_THREADS ÷ thread_i, length(xs))
         threads = (thread_i, thread_j)
         blocks = ceil.(Int, (size(ys, 1), length(xs)) ./ threads)
-        CuArrays.@cuda blocks=blocks threads=threads kernel!(ys, us, xs)
+        @cuda blocks=blocks threads=threads kernel!(ys, us, xs)
         return ys
     end
 end
 
 
 function scatter_mean!(ys::CuMatrix{T}, us::CuArray{T}, xs::CuArray{Int}) where {T<:AbstractFloat}
-    yt = CuArrays.zero(ys)
-    ot = CuArrays.zero(ys)
-    os = CuArrays.one.(us)
+    yt = CUDA.zero(ys)
+    ot = CUDA.zero(ys)
+    os = CUDA.one.(us)
     scatter_add!(ot, os, xs)
     scatter_add!(yt, us, xs)
     ys .+= save_div.(yt, ot)

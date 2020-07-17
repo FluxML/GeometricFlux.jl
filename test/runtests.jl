@@ -9,19 +9,6 @@ using MetaGraphs: MetaGraph, MetaDiGraph
 using Zygote
 using Test
 
-using CUDAapi
-if has_cuda()
-    try
-        using CuArrays
-        @eval has_cuarrays() = true
-    catch ex
-        @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex,catch_backtrace())
-        @eval has_cuarrays() = false
-    end
-else
-    has_cuarrays() = false
-end
-
 cuda_tests = [
     "cuda/scatter",
     "cuda/pool",
@@ -47,9 +34,12 @@ tests = [
     "utils",
 ]
 
-if has_cuarrays()
+if Flux.use_cuda[]
+    using CUDA
     using Flux: gpu
     append!(tests, cuda_tests)
+else
+    @warn "CUDA unavailable, not testing GPU support"
 end
 
 @testset "GeometricFlux" begin
