@@ -109,19 +109,6 @@ export
     gather,
     topk_index
 
-using CUDAapi
-if has_cuda()
-    try
-        using CuArrays
-        @eval has_cuarrays() = true
-    catch ex
-        @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex,catch_backtrace())
-        @eval has_cuarrays() = false
-    end
-else
-    has_cuarrays() = false
-end
-
 const IntOrTuple = Union{Integer,Tuple}
 
 include("operations/scatter.jl")
@@ -145,16 +132,15 @@ include("graph/simplegraphs.jl")
 
 
 function __init__()
-    @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
-        using CUDAnative
-        using CuArrays: CuArray, CuMatrix, CuVector
-        import CuArrays: cu
+    @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
+        using CUDA
+        using CUDA: @cuda
+        import CUDA: cu
         include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
         include("cuda/pool.jl")
         include("cuda/utils.jl")
-        CuArrays.cu(x::Array{<:Integer}) = CuArray(x)
     end
     @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
         include("graph/weightedgraphs.jl")

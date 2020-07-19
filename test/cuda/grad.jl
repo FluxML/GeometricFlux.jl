@@ -1,5 +1,3 @@
-using CuArrays
-
 ys = cu([3. 3. 4. 4. 5.;
          5. 5. 6. 6. 7.])
 us = cu(2*ones(2, 3, 4))
