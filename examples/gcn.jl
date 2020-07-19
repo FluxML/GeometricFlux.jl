@@ -7,7 +7,7 @@ using Statistics: mean
 using SparseArrays
 using LightGraphs.SimpleGraphs
 using LightGraphs: adjacency_matrix
-using CuArrays
+using CUDA
 
 @load "data/cora_features.jld2" features
 @load "data/cora_labels.jld2" labels
