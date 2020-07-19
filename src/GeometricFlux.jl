@@ -133,7 +133,7 @@ include("graph/simplegraphs.jl")
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
-        using CUDA: CuArray, CuMatrix, CuVector, CuDeviceArray
+        using CUDA
         using CUDA: @cuda
         import CUDA: cu
         include("cuda/scatter.jl")
@@ -141,7 +141,6 @@ function __init__()
         include("cuda/conv.jl")
         include("cuda/pool.jl")
         include("cuda/utils.jl")
-        CUDA.cu(x::Array{<:Integer}) = CuArray(x)
     end
     @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
         include("graph/weightedgraphs.jl")
