@@ -32,13 +32,16 @@ test:v1.5:
     - nvidia
     - cuda_10.2
 
-# test:dev:
-#   extends:
-#     - .julia:nightly
-#     - .test
-#   allow_failure: true
-#   variables:
-#     CI_VERSION_TAG: 'v1.5'
+test:dev:
+  extends:
+    - .julia:nightly
+    - .test
+  allow_failure: true
+  variables:
+    CI_VERSION_TAG: 'v1.6'
+  tags:
+    - nvidia
+    - cuda_10.2
 
 coverage:
   stage: post
