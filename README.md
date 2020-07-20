@@ -23,11 +23,42 @@ Suggestions, issues and pull requsts are welcome.
 
 ## Features
 
-Construct layers from adjacency matrix or graph (maybe extend to other structures).
-Input features (including vertex, edge or graph features) of neural network may not need a structure or type.
-Labels or features for output of classification or regression are part of training data, they may not need a specific structure or type, too.
+* Extend Flux deep learning framework in Julia and compatible with Flux layers.
+* Support of CUDA GPU with CUDA.jl
+* Integrate with existing JuliaGraphs ecosystem
+* Support generic graph neural network architectures
+* Variable graph inputs are supported. You use it when diverse graph structures are prepared as inputs to the same model.
+* Integrate GNN benchmark datasets (WIP)
 
-* **NOTICE**: Scatter operations on CUDA are only supported in v1.3 (due to new feature in CUDAnative v2.8 which only supports julia v1.3). CPU version scatter operations are always available.
+## Graph convolutional layers
+
+Construct GCN layer:
+
+```
+graph = # can be adj_mat, adj_list, simple_graphs...
+GCNConv([graph, ]input_dim=>output_dim, relu)
+```
+
+## Use it as you use Flux
+
+```
+model = Chain(GCNConv(g, 1024=>512, relu),
+              Dropout(0.5),
+              GCNConv(g, 512=>128),
+              Dense(128, 10),
+              softmax)
+## Loss
+loss(x, y) = logitcrossentropy(model(x), y)
+accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
+
+## Training
+ps = Flux.params(model)
+train_data = [(train_X, train_y)]
+opt = ADAM(0.01)
+evalcb() = @show(accuracy(train_X, train_y))
+
+Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
+```
 
 ## Benchmark
 

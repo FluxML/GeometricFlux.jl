@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1]
+
+- Update to CUDA 1.2 and Flux 0.11
+- Refactor graph-related API
+- Improve learning rate in example
+
 ## [0.6.0]
 
 - Rewrite graph network `GraphNet` and message passing `MessagePassing` framework
