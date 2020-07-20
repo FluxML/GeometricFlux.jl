@@ -56,7 +56,7 @@ end
 end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
-    adj = neighbors(fg)
+    adj = adjacency_list(fg)
     num_V = nv(fg)
     accu_edge = accumulated_edges(adj)
     num_E = accu_edge[end]

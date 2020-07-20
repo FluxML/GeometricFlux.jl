@@ -2,7 +2,7 @@
 
 Zygote.@nograd issymmetric
 
-function adjacency_matrix(adj::AbstractMatrix, T::DataType=eltype(adj))
+Zygote.@nograd function adjacency_matrix(adj::AbstractMatrix, T::DataType=eltype(adj))
     m, n = size(adj)
     (m == n) || throw(DimensionMismatch("adjacency matrix is not a square matrix: ($m, $n)"))
     T.(adj)
@@ -33,6 +33,11 @@ julia> GeometricFlux.degrees(m)
 ```
 """
 function degrees(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
+    _degrees(T.(adj), dir)
+end
+
+# nograd can only used without keyword arguments
+Zygote.@nograd function _degrees(adj::AbstractMatrix, dir::Symbol=:out)
     if issymmetric(adj)
         d = vec(sum(adj, dims=1))
     else
@@ -90,7 +95,7 @@ The values other than diagonal are zeros.
 - `dir`: direction of degree; should be `:in`, `:out`, or `:both` (optional).
 """
 function inv_sqrt_degree_matrix(adj::AbstractMatrix, T::DataType=eltype(adj); dir::Symbol=:out)
-    d  = inv.(sqrt.(degrees(adj, T, dir=dir)))
+    d = inv.(sqrt.(degrees(adj, T, dir=dir)))
     return Diagonal(d)
 end
 

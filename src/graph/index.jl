@@ -1,9 +1,9 @@
 """
-    neighbors(adj)
+    adjacency_list(adj)
 
 Transform a adjacency matrix into a adjacency list.
 """
-function neighbors(adj::AbstractMatrix{T}) where {T}
+function adjacency_list(adj::AbstractMatrix{T}) where {T}
     n = size(adj,1)
     @assert n == size(adj,2) "adjacency matrix is not a square matrix."
     A = (adj .!= zero(T))
@@ -15,7 +15,9 @@ function neighbors(adj::AbstractMatrix{T}) where {T}
     return ne
 end
 
-neighbors(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
+adjacency_list(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
+
+Zygote.@nograd adjacency_list
 
 """
     accumulated_edges(adj[, num_V])
@@ -29,6 +31,8 @@ function accumulated_edges(adj::AbstractVector{<:AbstractVector{<:Integer}},
     y .= 0, cumsum(map(length, adj))...
     y
 end
+
+Zygote.@nograd accumulated_edges
 
 Zygote.@nograd function generate_cluster(M::AbstractArray{T,N}, accu_edge, V, E) where {T,N}
     cluster = similar(M, Int, E)
@@ -68,6 +72,8 @@ function vertex_pair_table(eidx::Dict)
     table
 end
 
+Zygote.@nograd vertex_pair_table
+
 """
     edge_index_table(adj[, num_E])
 
@@ -95,6 +101,8 @@ function edge_index_table(vpair::AbstractVector{<:Tuple})
     end
     table
 end
+
+Zygote.@nograd edge_index_table
 
 function transform(X::AbstractArray, vpair::AbstractVector{<:Tuple}, num_V)
     dims = size(X)[1:end-1]..., num_V, num_V

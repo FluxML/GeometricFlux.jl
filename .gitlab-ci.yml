@@ -1,11 +1,16 @@
 variables:
-  CI_IMAGE_TAG: 'cuda'
+  CI_APT_INSTALL: 'libgomp1'
   JULIA_NUM_THREADS: '4'
+  NVIDIA_VISIBLE_DEVICES: 'all'
+  NVIDIA_DRIVER_CAPABILITIES: 'compute,utility'
+  CI_THOROUGH: 'true'
+  JULIA_CUDA_VERSION: '10.2'
+  JULIA_CUDA_USE_BINARYBUILDER: 'true'
 
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
-image: nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
+image: ubuntu:bionic
 
 test:v1.4:
   extends:
@@ -13,6 +18,19 @@ test:v1.4:
     - .test
   variables:
     CI_VERSION_TAG: 'v1.4'
+  tags:
+    - nvidia
+    - cuda_10.2
+
+test:v1.5:
+  extends:
+    - .julia:1.5
+    - .test
+  variables:
+    CI_VERSION_TAG: 'v1.5'
+  tags:
+    - nvidia
+    - cuda_10.2
 
 # test:dev:
 #   extends:

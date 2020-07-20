@@ -198,7 +198,7 @@ function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, aggr=:add
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = FeaturedGraph(neighbors(adj))
+    fg = FeaturedGraph(adjacency_list(adj))
     GraphConv(fg, w1, w2, b, aggr)
 end
 
@@ -264,7 +264,7 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
     a = T.(init(2*ch[2], heads, 1))
-    fg = FeaturedGraph(neighbors(adj))
+    fg = FeaturedGraph(adjacency_list(adj))
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
 end
 
@@ -349,7 +349,7 @@ function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Intege
                         aggr=:add, init=glorot_uniform, T::DataType=Float32)
     w = T.(init(out_ch, out_ch, num_layers))
     gru = GRUCell(out_ch, out_ch)
-    fg = FeaturedGraph(neighbors(adj))
+    fg = FeaturedGraph(adjacency_list(adj))
     GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
 end
 
@@ -415,7 +415,7 @@ struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
 end
 
 function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
-    fg = FeaturedGraph(neighbors(adj))
+    fg = FeaturedGraph(adjacency_list(adj))
     EdgeConv(fg, nn, aggr)
 end
 
