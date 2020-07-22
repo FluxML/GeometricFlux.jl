@@ -111,25 +111,18 @@ end
 @functor ChebConv
 
 function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:Real, T<:Real}
-    fin = c.in_channel
-    @assert size(X, 1) == fin "Input feature size must match input channel size."
-    N = size(L̃, 1)
-    @assert size(X, 2) == N "Input vertex number must match Laplacian matrix size."
-    fout = c.out_channel
+    @assert size(X, 1) == c.in_channel "Input feature size must match input channel size."
+    @assert size(X, 2) == size(L̃, 1) "Input vertex number must match Laplacian matrix size."
 
-    Z = similar(X, fin, N, c.k)
-    view(Z,:,:,1) .= X
-    view(Z,:,:,2) .= X * L̃
+    Z_prev = X
+    Z = X * L̃
+    Y = view(c.weight,:,:,1) * Z_prev
+    Y += view(c.weight,:,:,2) * Z
     for k = 3:c.k
-        view(Z,:,:,k) .= 2*view(Z, :, :, k-1)*L̃ - view(Z, :, :, k-2)
+        Z, Z_prev = 2*Z*L̃ - Z_prev, Z
+        Y += view(c.weight,:,:,k) * Z
     end
-
-    Y = view(c.weight, :, :, 1) * view(Z, :, :, 1)
-    for k = 2:c.k
-        Y += view(c.weight, :, :, k) * view(Z, :, :, k)
-    end
-    Y .+= c.bias
-    return Y
+    return Y .+ c.bias
 end
 
 function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
@@ -286,9 +279,8 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     α = vcat(x_i, x_j+zero(x_j)) .* g.a
     α = reshape(sum(α, dims=1), g.heads)
     α = leakyrelu.(α, g.negative_slope)
-    α = _softmax(α)
-    x_j .*= reshape(α, 1, g.heads)
-    reshape(x_j, n*g.heads)
+    α = Flux.softmax(α)
+    reshape(x_j .* reshape(α, 1, g.heads), n*g.heads)
 end
 
 # The same as update function in batch manner
@@ -304,13 +296,6 @@ function (g::GATConv)(X::AbstractMatrix)
     node_feature(fg_)
 end
 (g::GATConv)(fg::FeaturedGraph) = propagate(g, fg, :add)
-
-
-function _softmax(xs)
-    xs = exp.(xs)
-    s = sum(xs, dims=2)
-    return xs ./ s
-end
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
