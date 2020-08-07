@@ -58,6 +58,9 @@ export
     InnerProductDecoder,
     VariationalEncoder,
 
+    # layer/selector
+    FeatureSelector,
+
     # operations/linalg
     degree_matrix,
     laplacian_matrix,
@@ -124,6 +127,7 @@ include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
+include("layers/selector.jl")
 
 include("graph/simplegraphs.jl")
 
