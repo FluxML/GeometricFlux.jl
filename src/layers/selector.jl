@@ -12,7 +12,7 @@ function FeatureSelector(feature::Symbol)
     elseif feature == :global
         return FeatureSelector(false, false, true)
     else
-        ArgumentError("only accept :node, :edge and :global while got $feature")
+        throw(ArgumentError("only accept :node, :edge and :global while got $feature"))
     end
 end
 

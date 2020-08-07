@@ -22,6 +22,7 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
+    "layers/selector",
     "grad",
     "models",
     "operations/linalg",
