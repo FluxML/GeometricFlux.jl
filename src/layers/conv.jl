@@ -53,7 +53,7 @@ end
 function (g::GCNConv)(fg::FeaturedGraph)
     X = node_feature(fg)
     A = adjacency_matrix(fg)
-    g.fg isa NullGraph || (g.fg.graph[] = A)
+    g.fg isa NullGraph || (g.fg.graph = A)
     L = normalized_laplacian(A, eltype(X); selfloop=true)
     X_ = g.σ.(g.weight * X * L .+ g.bias)
     FeaturedGraph(A, X_)
@@ -136,7 +136,7 @@ end
 function (c::ChebConv)(fg::FeaturedGraph)
     @assert has_graph(fg) "A given FeaturedGraph must contain a graph."
     g = graph(fg)
-    c.fg isa NullGraph || (c.fg.graph[] = g)
+    c.fg isa NullGraph || (c.fg.graph = g)
     X = node_feature(fg)
     L̃ = scaled_laplacian(adjacency_matrix(fg))
     L̃ = convert(typeof(X), L̃)
