@@ -19,15 +19,11 @@ References to graph or features are hold in this type.
 - `edge_feature`: edge features attached to graph.
 - `gloabl_feature`: gloabl graph features attached to graph.
 """
-struct FeaturedGraph{T,S,R,Q} <: AbstractFeaturedGraph
-    graph::Ref{T}
-    nf::Ref{S}
-    ef::Ref{R}
-    gf::Ref{Q}
-
-    function FeaturedGraph(graph::T, nf::S, ef::R, gf::Q) where {T,S<:AbstractMatrix,R<:AbstractMatrix,Q<:AbstractVector}
-        new{T,S,R,Q}(Ref(graph), Ref(nf), Ref(ef), Ref(gf))
-    end
+mutable struct FeaturedGraph{T,S,R,Q} <: AbstractFeaturedGraph
+    graph::T
+    nf::S
+    ef::R
+    gf::Q
 end
 
 FeaturedGraph() = FeaturedGraph(zeros(0,0), zeros(0,0), zeros(0,0), zeros(0))
@@ -42,7 +38,7 @@ FeaturedGraph(graph::T, nf::AbstractMatrix) where {T} = FeaturedGraph(graph, nf,
 Get referenced graph.
 """
 graph(::NullGraph) = nothing
-graph(fg::FeaturedGraph) = fg.graph[]
+graph(fg::FeaturedGraph) = fg.graph
 
 """
     node_feature(::AbstractFeaturedGraph)
@@ -50,7 +46,7 @@ graph(fg::FeaturedGraph) = fg.graph[]
 Get node feature attached to graph.
 """
 node_feature(::NullGraph) = nothing
-node_feature(fg::FeaturedGraph) = fg.nf[]
+node_feature(fg::FeaturedGraph) = fg.nf
 
 """
     edge_feature(::AbstractFeaturedGraph)
@@ -58,7 +54,7 @@ node_feature(fg::FeaturedGraph) = fg.nf[]
 Get edge feature attached to graph.
 """
 edge_feature(::NullGraph) = nothing
-edge_feature(fg::FeaturedGraph) = fg.ef[]
+edge_feature(fg::FeaturedGraph) = fg.ef
 
 """
     global_feature(::AbstractFeaturedGraph)
@@ -66,19 +62,19 @@ edge_feature(fg::FeaturedGraph) = fg.ef[]
 Get global feature attached to graph.
 """
 global_feature(::NullGraph) = nothing
-global_feature(fg::FeaturedGraph) = fg.gf[]
+global_feature(fg::FeaturedGraph) = fg.gf
 
 has_graph(::NullGraph) = false
-has_graph(fg::FeaturedGraph) = fg.graph[] != zeros(0,0)
+has_graph(fg::FeaturedGraph) = fg.graph != zeros(0,0)
 
 has_node_feature(::NullGraph) = false
-has_node_feature(fg::FeaturedGraph) = fg.nf[] != zeros(0,0)
+has_node_feature(fg::FeaturedGraph) = fg.nf != zeros(0,0)
 
 has_edge_feature(::NullGraph) = false
-has_edge_feature(fg::FeaturedGraph) = fg.ef[] != zeros(0,0)
+has_edge_feature(fg::FeaturedGraph) = fg.ef != zeros(0,0)
 
 has_global_feature(::NullGraph) = false
-has_global_feature(fg::FeaturedGraph) = fg.gf[] != zeros(0)
+has_global_feature(fg::FeaturedGraph) = fg.gf != zeros(0)
 
 """
     adjacency_list(::AbstractFeaturedGraph)
@@ -86,7 +82,7 @@ has_global_feature(fg::FeaturedGraph) = fg.gf[] != zeros(0)
 Get adjacency list of graph.
 """
 adjacency_list(::NullGraph) = [zeros(0)]
-adjacency_list(fg::FeaturedGraph) = adjacency_list(fg.graph[])
+adjacency_list(fg::FeaturedGraph) = adjacency_list(fg.graph)
 
 """
     nv(::AbstractFeaturedGraph)
@@ -94,9 +90,9 @@ adjacency_list(fg::FeaturedGraph) = adjacency_list(fg.graph[])
 Get node number of graph.
 """
 nv(::NullGraph) = 0
-nv(fg::FeaturedGraph) = nv(fg.graph[])
-nv(fg::FeaturedGraph{T}) where {T<:AbstractMatrix} = size(fg.graph[], 1)
-nv(fg::FeaturedGraph{T}) where {T<:AbstractVector} = length(fg.graph[])
+nv(fg::FeaturedGraph) = nv(fg.graph)
+nv(fg::FeaturedGraph{T}) where {T<:AbstractMatrix} = size(fg.graph, 1)
+nv(fg::FeaturedGraph{T}) where {T<:AbstractVector} = length(fg.graph)
 
 """
     ne(::AbstractFeaturedGraph)
@@ -104,35 +100,35 @@ nv(fg::FeaturedGraph{T}) where {T<:AbstractVector} = length(fg.graph[])
 Get edge number of graph.
 """
 ne(::NullGraph) = 0
-ne(fg::FeaturedGraph) = ne(fg.graph[])
-ne(fg::FeaturedGraph{T}) where {T<:AbstractVector} = sum(map(length, fg.graph[]))÷2
+ne(fg::FeaturedGraph) = ne(fg.graph)
+ne(fg::FeaturedGraph{T}) where {T<:AbstractVector} = sum(map(length, fg.graph))÷2
 
 
 
 ## Linear algebra API for AbstractFeaturedGraph
 
-adjacency_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph[])) = adjacency_matrix(fg.graph[], T)
+adjacency_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph)) = adjacency_matrix(fg.graph, T)
 
-function degrees(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); dir::Symbol=:out)
-    degrees(fg.graph[], T; dir=dir)
+function degrees(fg::FeaturedGraph, T::DataType=eltype(fg.graph); dir::Symbol=:out)
+    degrees(fg.graph, T; dir=dir)
 end
 
-function degree_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); dir::Symbol=:out)
-    degree_matrix(fg.graph[], T; dir=dir)
+function degree_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph); dir::Symbol=:out)
+    degree_matrix(fg.graph, T; dir=dir)
 end
 
-function inv_sqrt_degree_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); dir::Symbol=:out)
-    inv_sqrt_degree_matrix(fg.graph[], T; dir=dir)
+function inv_sqrt_degree_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph); dir::Symbol=:out)
+    inv_sqrt_degree_matrix(fg.graph, T; dir=dir)
 end
 
-function laplacian_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); dir::Symbol=:out)
-    laplacian_matrix(fg.graph[], T; dir=dir)
+function laplacian_matrix(fg::FeaturedGraph, T::DataType=eltype(fg.graph); dir::Symbol=:out)
+    laplacian_matrix(fg.graph, T; dir=dir)
 end
 
-function normalized_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]); selfloop::Bool=false)
-    normalized_laplacian(fg.graph[], T; selfloop=selfloop)
+function normalized_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph); selfloop::Bool=false)
+    normalized_laplacian(fg.graph, T; selfloop=selfloop)
 end
 
 function scaled_laplacian(fg::FeaturedGraph, T::DataType=eltype(fg.graph[]))
-    scaled_laplacian(fg.graph[], T)
+    scaled_laplacian(fg.graph, T)
 end
