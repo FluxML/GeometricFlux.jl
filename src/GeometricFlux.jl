@@ -1,19 +1,18 @@
 module GeometricFlux
 
 using Statistics: mean
-using StaticArrays: StaticArray
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint, Diagonal, eigen, Symmetric
 
-using Requires
-using DataStructures: DefaultDict
+using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
 using LightGraphs
+using Requires
+using ScatterNNlib
 using Zygote
 using ZygoteRules
-using FillArrays: Fill
 
 import Flux: maxpool, meanpool
 import LightGraphs: nv, ne, adjacency_matrix
@@ -67,16 +66,6 @@ export
     normalized_laplacian,
     scaled_laplacian,
 
-    # operations/scatter
-    scatter_add!,
-    scatter_sub!,
-    scatter_max!,
-    scatter_min!,
-    scatter_mul!,
-    scatter_div!,
-    scatter_mean!,
-    scatter!,
-
     # operations/pool
     sumpool,
     subpool,
@@ -106,12 +95,10 @@ export
     nv,
 
     # utils
-    gather,
     topk_index
 
 const IntOrTuple = Union{Integer,Tuple}
 
-include("operations/scatter.jl")
 include("operations/pool.jl")
 include("operations/linalg.jl")
 
@@ -135,13 +122,9 @@ include("graph/simplegraphs.jl")
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
         using CUDA
-        using CUDA: @cuda
-        import CUDA: cu
-        include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
         include("cuda/pool.jl")
-        include("cuda/utils.jl")
     end
     @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
         include("graph/weightedgraphs.jl")

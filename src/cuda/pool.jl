@@ -79,7 +79,7 @@ meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
 
 @adjoint function prodpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
     prodpool(cluster, X), function (Δ)
-        rev_cluster = gather_indices(cluster)
+        rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
             ind = Tuple(ind)
@@ -98,7 +98,7 @@ end
 
 @adjoint function divpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
     divpool(cluster, X), function (Δ)
-        rev_cluster = gather_indices(cluster)
+        rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = -gather(zero(Δ)+Δ, cluster)
         ∇X ./= X.^2
         @inbounds for ind = CartesianIndices(cluster)

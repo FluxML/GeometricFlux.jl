@@ -365,6 +365,12 @@ git-tree-sha1 = "67ae90a18aa8c22bf159318300e765fbd89ddf6e"
 uuid = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 version = "0.5.5"
 
+[[ScatterNNlib]]
+deps = ["CUDA", "DataStructures", "FillArrays", "StaticArrays", "Statistics", "Zygote", "ZygoteRules"]
+git-tree-sha1 = "4e1d9dcde9d934fc2e38013d4d49277f09556529"
+uuid = "b1168b60-8710-48c1-88d2-5c53ae207dd0"
+version = "0.1.1"
+
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 

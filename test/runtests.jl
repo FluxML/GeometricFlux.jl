@@ -10,7 +10,6 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/scatter",
     "cuda/pool",
     "cuda/grad",
     "cuda/conv",
@@ -26,7 +25,6 @@ tests = [
     "grad",
     "models",
     "operations/linalg",
-    "operations/scatter",
     "operations/pool",
     "graph/featuredgraphs",
     "graph/simplegraphs",
