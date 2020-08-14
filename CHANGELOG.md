@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2]
+
+- Add FeatureSelector
+- Correct ChebConv computation
+- Make scaled_laplacian differentiable
+- Add ScatterNNlib and GraphSignals as deps
+- Improve GAT example
+- Upgrade to CUDA
+- Maintain Travis CI
+
 ## [0.6.1]
 
 - Update to CUDA 1.2 and Flux 0.11
