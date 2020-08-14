@@ -1,22 +1,21 @@
 module GeometricFlux
 
 using Statistics: mean
-using StaticArrays: StaticArray
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint, Diagonal, eigen, Symmetric
+using LinearAlgebra: Adjoint, norm
 
-using Requires
-using DataStructures: DefaultDict
+using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
+using GraphSignals
 using LightGraphs
+using Requires
+using ScatterNNlib
 using Zygote
 using ZygoteRules
-using FillArrays: Fill
 
 import Flux: maxpool, meanpool
-import LightGraphs: nv, ne, adjacency_matrix
 
 export
     # layers/gn
@@ -61,22 +60,6 @@ export
     # layer/selector
     FeatureSelector,
 
-    # operations/linalg
-    degree_matrix,
-    laplacian_matrix,
-    normalized_laplacian,
-    scaled_laplacian,
-
-    # operations/scatter
-    scatter_add!,
-    scatter_sub!,
-    scatter_max!,
-    scatter_min!,
-    scatter_mul!,
-    scatter_div!,
-    scatter_mean!,
-    scatter!,
-
     # operations/pool
     sumpool,
     subpool,
@@ -88,36 +71,16 @@ export
     pool,
 
     # graph/index
-    adjacency_list,
     generate_cluster,
 
-    # graph/featuredgraphs
-    AbstractFeaturedGraph,
-    NullGraph,
-    FeaturedGraph,
-    graph,
-    node_feature,
-    edge_feature,
-    global_feature,
-    has_graph,
-    has_node_feature,
-    has_edge_feature,
-    has_global_feature,
-    nv,
-
     # utils
-    gather,
     topk_index
 
 const IntOrTuple = Union{Integer,Tuple}
 
-include("operations/scatter.jl")
-include("operations/pool.jl")
-include("operations/linalg.jl")
+include("pool.jl")
 
 include("graph/index.jl")
-include("graph/featuredgraphs.jl")
-include("graph/linalg.jl")
 
 include("utils.jl")
 
@@ -135,13 +98,9 @@ include("graph/simplegraphs.jl")
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
         using CUDA
-        using CUDA: @cuda
-        import CUDA: cu
-        include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
         include("cuda/pool.jl")
-        include("cuda/utils.jl")
     end
     @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
         include("graph/weightedgraphs.jl")

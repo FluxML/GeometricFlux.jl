@@ -75,7 +75,7 @@ Dims(xs::AbstractArray{Int}, us::AbstractArray) = Dims(size(xs), size(us))
 
 @adjoint function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     prodpool(cluster, X), function (Δ)
-        rev_cluster = gather_indices(cluster)
+        rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind]])
@@ -89,7 +89,7 @@ end
 
 @adjoint function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
     divpool(cluster, X), function (Δ)
-        rev_cluster = gather_indices(cluster)
+        rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = -gather(zero(Δ)+Δ, cluster) ./ X.^2
         @inbounds for ind = CartesianIndices(cluster)
             inds = filter(x -> x != ind, rev_cluster[cluster[ind]])

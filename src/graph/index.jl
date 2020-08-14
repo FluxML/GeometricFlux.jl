@@ -1,25 +1,4 @@
 """
-    adjacency_list(adj)
-
-Transform a adjacency matrix into a adjacency list.
-"""
-function adjacency_list(adj::AbstractMatrix{T}) where {T}
-    n = size(adj,1)
-    @assert n == size(adj,2) "adjacency matrix is not a square matrix."
-    A = (adj .!= zero(T))
-    if !issymmetric(adj)
-        A = A .| A'
-    end
-    indecies = collect(1:n)
-    ne = Vector{Int}[indecies[view(A, :, i)] for i = 1:n]
-    return ne
-end
-
-adjacency_list(adj::AbstractVector{<:AbstractVector{<:Integer}}) = adj
-
-Zygote.@nograd adjacency_list
-
-"""
     accumulated_edges(adj[, num_V])
 
 Return a vector which acts as a mapping table. The index is the vertex index,
@@ -27,7 +6,7 @@ value is accumulated numbers of edge (current vertex not included).
 """
 function accumulated_edges(adj::AbstractVector{<:AbstractVector{<:Integer}},
                            num_V=size(adj,1))
-    
+
     return [0, cumsum(map(length, adj))...]
 end
 

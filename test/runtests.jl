@@ -1,7 +1,7 @@
 using GeometricFlux
-using GeometricFlux: neighbors, laplacian_matrix
 using Flux
 using Flux: @functor
+using GraphSignals
 using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
@@ -10,7 +10,6 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/scatter",
     "cuda/pool",
     "cuda/grad",
     "cuda/conv",
@@ -25,10 +24,7 @@ tests = [
     "layers/selector",
     "grad",
     "models",
-    "operations/linalg",
-    "operations/scatter",
-    "operations/pool",
-    "graph/featuredgraphs",
+    "pool",
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/metagraphs",
