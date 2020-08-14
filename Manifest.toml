@@ -146,9 +146,9 @@ version = "0.1.1"
 
 [[FileIO]]
 deps = ["Pkg"]
-git-tree-sha1 = "f354b2087a3b01c1d7152c19f45886c8a036fa5e"
+git-tree-sha1 = "1e7e88a949b52e6f7f589041bd60928322414997"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.4.0"
+version = "1.4.1"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
@@ -164,9 +164,9 @@ version = "0.8.4"
 
 [[Flux]]
 deps = ["AbstractTrees", "Adapt", "CUDA", "CodecZlib", "Colors", "DelimitedFiles", "Functors", "Juno", "LinearAlgebra", "MacroTools", "NNlib", "Pkg", "Printf", "Random", "Reexport", "SHA", "Statistics", "StatsBase", "Test", "ZipFile", "Zygote"]
-git-tree-sha1 = "a95bba0ee46dc320b34969fa246cc965c20c2c10"
+git-tree-sha1 = "ceb09ce8510ef31fd86a791bbd0e1d72a60f27d7"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-version = "0.11.0"
+version = "0.11.1"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "NaNMath", "Random", "SpecialFunctions", "StaticArrays"]
@@ -195,6 +195,18 @@ deps = ["DataStructures", "InteractiveUtils", "LLVM", "Libdl", "TimerOutputs", "
 git-tree-sha1 = "d6db068d8373bb45ac17e14744cc1d3681d0dbc7"
 uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
 version = "0.5.5"
+
+[[GraphLaplacians]]
+deps = ["LightGraphs", "LinearAlgebra", "MetaGraphs", "SimpleWeightedGraphs", "SparseArrays", "Zygote"]
+git-tree-sha1 = "83881eb8eda839992f6310d9c4514b7ffb5498fe"
+uuid = "a1251efa-393a-423f-9d7b-faaecba535dc"
+version = "0.1.0"
+
+[[GraphSignals]]
+deps = ["GraphLaplacians", "LightGraphs", "LinearAlgebra", "SimpleWeightedGraphs", "Zygote"]
+git-tree-sha1 = "6e62e16c779458412951a71f4d535f05a1e0bb89"
+uuid = "3ebe565e-a4b5-49c6-aed2-300248c3a9c1"
+version = "0.1.1"
 
 [[IRTools]]
 deps = ["InteractiveUtils", "MacroTools", "Test"]
@@ -251,9 +263,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[LoopVectorization]]
 deps = ["DocStringExtensions", "LinearAlgebra", "OffsetArrays", "SIMDPirates", "SLEEFPirates", "UnPack", "VectorizationBase"]
-git-tree-sha1 = "5d1d5fb3e9a4c18ae1aa8cb16b0fbdbfeb7db5ed"
+git-tree-sha1 = "df625d1ac07cb4b630ec1c024a42b8bc6ee9927f"
 uuid = "bdcacae8-1622-11e9-2a5c-532679323890"
-version = "0.8.22"
+version = "0.8.23"
 
 [[MacroTools]]
 deps = ["Markdown", "Random"]
@@ -355,9 +367,9 @@ uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
 [[SIMDPirates]]
 deps = ["VectorizationBase"]
-git-tree-sha1 = "884df77ee290b45bcf9d2edcdb186afaf1281c39"
+git-tree-sha1 = "26ccdd1466f3071e27e81b43216ea238b62c0c42"
 uuid = "21efa798-c60a-11e8-04d3-e1a92915a26a"
-version = "0.8.23"
+version = "0.8.24"
 
 [[SLEEFPirates]]
 deps = ["Libdl", "SIMDPirates", "VectorizationBase"]
@@ -446,18 +458,18 @@ deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [[UnPack]]
-git-tree-sha1 = "d4bfa022cd30df012700cf380af2141961bb3bfb"
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
 uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
-version = "1.0.1"
+version = "1.0.2"
 
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[VectorizationBase]]
 deps = ["CpuId", "Libdl", "LinearAlgebra"]
-git-tree-sha1 = "09a4d4896aac75199b332eb26a8d0a9e4655e34a"
+git-tree-sha1 = "314bf15162034f846720ee1c3c3300dffd462253"
 uuid = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
-version = "0.12.30"
+version = "0.12.31"
 
 [[ZipFile]]
 deps = ["Libdl", "Printf", "Zlib_jll"]

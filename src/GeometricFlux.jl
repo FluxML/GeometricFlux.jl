@@ -2,12 +2,13 @@ module GeometricFlux
 
 using Statistics: mean
 using SparseArrays: SparseMatrixCSC
-using LinearAlgebra: I, issymmetric, diagm, eigmax, norm, Adjoint, Diagonal, eigen, Symmetric
+using LinearAlgebra: Adjoint, norm
 
 using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
+using GraphSignals
 using LightGraphs
 using Requires
 using ScatterNNlib
@@ -15,7 +16,6 @@ using Zygote
 using ZygoteRules
 
 import Flux: maxpool, meanpool
-import LightGraphs: nv, ne, adjacency_matrix
 
 export
     # layers/gn
@@ -60,12 +60,6 @@ export
     # layer/selector
     FeatureSelector,
 
-    # operations/linalg
-    degree_matrix,
-    laplacian_matrix,
-    normalized_laplacian,
-    scaled_laplacian,
-
     # operations/pool
     sumpool,
     subpool,
@@ -77,34 +71,16 @@ export
     pool,
 
     # graph/index
-    adjacency_list,
     generate_cluster,
-
-    # graph/featuredgraphs
-    AbstractFeaturedGraph,
-    NullGraph,
-    FeaturedGraph,
-    graph,
-    node_feature,
-    edge_feature,
-    global_feature,
-    has_graph,
-    has_node_feature,
-    has_edge_feature,
-    has_global_feature,
-    nv,
 
     # utils
     topk_index
 
 const IntOrTuple = Union{Integer,Tuple}
 
-include("operations/pool.jl")
-include("operations/linalg.jl")
+include("pool.jl")
 
 include("graph/index.jl")
-include("graph/featuredgraphs.jl")
-include("graph/linalg.jl")
 
 include("utils.jl")
 

@@ -1,7 +1,7 @@
 using GeometricFlux
-using GeometricFlux: neighbors, laplacian_matrix
 using Flux
 using Flux: @functor
+using GraphSignals
 using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
@@ -24,9 +24,7 @@ tests = [
     "layers/selector",
     "grad",
     "models",
-    "operations/linalg",
-    "operations/pool",
-    "graph/featuredgraphs",
+    "pool",
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/metagraphs",
