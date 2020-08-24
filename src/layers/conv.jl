@@ -42,20 +42,23 @@ end
 
 @functor GCNConv
 
+function (g::GCNConv)(A::AbstractMatrix, X::AbstractMatrix)
+    L = normalized_laplacian(A, eltype(X); selfloop=true)
+    L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+    g.σ.(g.weight * X * L .+ g.bias)
+end
+
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
     @assert has_graph(g.fg) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
-    W, b, σ = g.weight, g.bias, g.σ
-    L = normalized_laplacian(g.fg, float(T); selfloop=true)
-    L = convert(typeof(X), L)
-    σ.(W * X * L .+ b)
+    A = adjacency_matrix(g.fg)
+    g(A, X)
 end
 
 function (g::GCNConv)(fg::FeaturedGraph)
     X = node_feature(fg)
     A = adjacency_matrix(fg)
     g.fg isa NullGraph || (g.fg.graph = A)
-    L = normalized_laplacian(A, eltype(X); selfloop=true)
-    X_ = g.σ.(g.weight * X * L .+ g.bias)
+    X_ = g(A, X)
     FeaturedGraph(A, X_)
 end
 
