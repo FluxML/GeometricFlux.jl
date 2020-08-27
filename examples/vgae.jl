@@ -1,4 +1,5 @@
 using GeometricFlux
+using GraphSignals
 using Flux
 using Flux: throttle
 using Flux.Losses: logitbinarycrossentropy
@@ -22,11 +23,11 @@ epochs = 200
 
 ## Preprocessing data
 adj_mat = Matrix{Float32}(adjacency_matrix(g))
-train_data = [(Matrix{Float32}(features), adj_mat)]
+train_data = [(FeaturedGraph(adj_mat, Matrix{Float32}(features)), adj_mat)]
 
 ## Model
-encoder = Chain(GCNConv(adj_mat, num_features=>hidden1, relu),
-                GCNConv(adj_mat, hidden1=>hidden2))
+encoder = Chain(GCNConv(num_features=>hidden1, relu; cache=false),
+                GCNConv(hidden1=>hidden2; cache=false))
 model = VGAE(encoder, hidden2, z_dim)
 encoder = model.encoder
 decoder = model.decoder
@@ -34,9 +35,9 @@ ps = Flux.params(model)
 
 l2_norm(p) = sum(abs2, p)
 
-function loss(X, Y, T=eltype(X), β=one(T), λ=T(0.01); debug=false)
-    μ̂, logσ̂ = summarize(encoder, X)
-    Z = encoder(X)
+function loss(fg, Y, X=node_feature(fg), T=eltype(X), β=one(T), λ=T(0.01); debug=false)
+    μ̂, logσ̂ = summarize(encoder, fg)
+    Z = node_feature(encoder(fg))
     kl_q_p = -T(0.5) * sum(one(T) .+ T(2).*logσ̂ .- μ̂.^2 .- exp.(T(2).*logσ̂))
     logp_y_z = -sum(logitbinarycrossentropy(decoder(Z), Y, agg=identity)) / size(Y,2)
     l2reg = sum(l2_norm, ps)
@@ -50,6 +51,6 @@ end
 
 ## Training
 opt = ADAM(0.001)
-evalcb() = @show(loss(train_data[1]...))
+evalcb() = @show(loss(train_data[1]...; debug=true))
 
 @epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))

@@ -32,6 +32,12 @@ function (g::VGAE)(X::AbstractMatrix)
     A
 end
 
+function (g::VGAE)(fg::FeaturedGraph)
+    Z = g.encoder(X)
+    A = g.decoder(Z)
+    A
+end
+
 
 
 struct InnerProductDecoder
@@ -40,7 +46,13 @@ end
 
 @functor InnerProductDecoder
 
-(i::InnerProductDecoder)(Z::AbstractArray) = i.σ(Z'*Z)
+(i::InnerProductDecoder)(Z::AbstractMatrix)::AbstractMatrix = i.σ(Z'*Z)
+
+function (i::InnerProductDecoder)(fg::FeaturedGraph)::FeaturedGraph
+    Z = node_feature(fg)
+    A = i(Z)
+    FeaturedGraph(graph(fg), A)
+end
 
 
 
@@ -57,14 +69,26 @@ end
 
 @functor VariationalEncoder
 
-function (ve::VariationalEncoder)(X::AbstractMatrix)
+function (ve::VariationalEncoder)(X::AbstractMatrix)::AbstractMatrix
     μ, logσ = summarize(ve, X)
     Z = sample(μ, logσ)
     Z
 end
 
+function (ve::VariationalEncoder)(fg::FeaturedGraph)::FeaturedGraph
+    μ, logσ = summarize(ve, fg)
+    Z = sample(μ, logσ)
+    FeaturedGraph(graph(fg), Z)
+end
+
 function summarize(ve::VariationalEncoder, X::AbstractMatrix)
     h = ve.nn(X)
+    ve.μ(h), ve.logσ(h)
+end
+
+function summarize(ve::VariationalEncoder, fg::FeaturedGraph)
+    fg_ = ve.nn(fg)
+    h = node_feature(fg_)
     ve.μ(h), ve.logσ(h)
 end
 
