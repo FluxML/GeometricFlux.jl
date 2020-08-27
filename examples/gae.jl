@@ -1,6 +1,6 @@
 using GeometricFlux
 using Flux
-using Flux: onehotbatch, onecold, mse, throttle
+using Flux: mse, throttle
 using Flux: @epochs
 using JLD2  # use v0.1.2
 using Statistics: mean
