@@ -4,8 +4,8 @@ using Flux
 using Flux: throttle
 using Flux.Losses: logitbinarycrossentropy
 using Flux: @epochs
-using JLD2  # use v0.1.2
-using Distributions
+using JLD2
+using Statistics
 using SparseArrays
 using LightGraphs.SimpleGraphs
 using LightGraphs: adjacency_matrix
@@ -50,8 +50,10 @@ function loss(fg, Y, X=node_feature(fg), T=eltype(X), β=one(T), λ=T(0.01); deb
     -logp_y_z + β*kl_q_p + λ*l2reg
 end
 
+average_loss(data) = mean(map(x -> loss(x...), data))
+
 ## Training
 opt = ADAM(0.01)
-evalcb() = @show(loss(train_data[1]...))
+evalcb() = @show(average_loss(train_data))
 
 @epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
