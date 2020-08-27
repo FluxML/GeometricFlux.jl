@@ -56,7 +56,8 @@ export
     VGAE,
     InnerProductDecoder,
     VariationalEncoder,
-    sampling,
+    summarize,
+    sample,
 
     # layer/selector
     FeatureSelector,

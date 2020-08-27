@@ -58,11 +58,15 @@ end
 @functor VariationalEncoder
 
 function (ve::VariationalEncoder)(X::AbstractMatrix)
-    h = ve.nn(X)
-    μ, logσ = summarize(ve, h)
-    Z = sampling(ve, μ, logσ)
+    μ, logσ = summarize(ve, X)
+    Z = sample(μ, logσ)
     Z
 end
 
-summarize(ve::VariationalEncoder, h::AbstractMatrix) = (ve.μ(h), ve.logσ(h))
-sampling(::VariationalEncoder, μ, logσ) = μ .+ exp.(logσ) .* randn(size(logσ)) # TODO: gradient
+function summarize(ve::VariationalEncoder, X::AbstractMatrix)
+    h = ve.nn(X)
+    ve.μ(h), ve.logσ(h)
+end
+
+sample(μ::AbstractArray{T}, logσ::AbstractArray{T}) where {T<:Real} =
+    μ + exp.(logσ) .* randn(T, size(logσ))
