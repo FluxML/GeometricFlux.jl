@@ -22,13 +22,14 @@ target_catg = 7
 epochs = 200
 
 ## Preprocessing data
+masks = [rand(Float32, num_nodes, num_nodes).>0.1 for i in 1:10]
 adj_mat = Matrix{Float32}(adjacency_matrix(g))
-train_data = [(FeaturedGraph(adj_mat, Matrix{Float32}(features)), adj_mat)]
+train_data = [(FeaturedGraph(adj_mat.*M, Matrix{Float32}(features)), adj_mat) for M in masks]
 
 ## Model
 encoder = Chain(GCNConv(num_features=>hidden1, relu; cache=false),
                 GCNConv(hidden1=>hidden2; cache=false))
-model = VGAE(encoder, hidden2, z_dim)
+model = VGAE(encoder, hidden2, z_dim, σ)
 encoder = model.encoder
 decoder = model.decoder
 ps = Flux.params(model)
@@ -50,7 +51,7 @@ function loss(fg, Y, X=node_feature(fg), T=eltype(X), β=one(T), λ=T(0.01); deb
 end
 
 ## Training
-opt = ADAM(0.001)
-evalcb() = @show(loss(train_data[1]...; debug=true))
+opt = ADAM(0.01)
+evalcb() = @show(loss(train_data[1]...))
 
 @epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))

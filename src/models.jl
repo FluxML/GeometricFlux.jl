@@ -46,7 +46,7 @@ end
 
 @functor InnerProductDecoder
 
-(i::InnerProductDecoder)(Z::AbstractMatrix)::AbstractMatrix = i.σ(Z'*Z)
+(i::InnerProductDecoder)(Z::AbstractMatrix)::AbstractMatrix = i.σ.(Z'*Z)
 
 function (i::InnerProductDecoder)(fg::FeaturedGraph)::FeaturedGraph
     Z = node_feature(fg)
