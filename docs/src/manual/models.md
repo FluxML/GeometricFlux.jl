@@ -22,11 +22,12 @@ Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
 ### Variational Graph Autoencoder
 
 ```math
-X' = \sigma(\hat{D}^{-1/2} \hat{A} \hat{D}^{-1/2} X \Theta)
+H = enc(X, A) \\
+Z_{\mu}, Z_{logσ} = GCN_{\mu}(H, A), GCN_{\sigma}(H, A) \\
+\hat{A} = \sigma (ZZ^T)
 ```
 
-where ``\hat{A} = A + I``, ``A`` denotes the adjacency matrix, and
-``\hat{D} = [\hat{d}_{ij}] = \sum_{j=0} [\hat{a}_{ij}]`` is degree matrix.
+where ``A`` denotes the adjacency matrix, ``X`` denotes node features.
 
 ```@docs
 VGAE
@@ -57,8 +58,8 @@ Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
 ### Variational Encoder
 
 ```math
-H = f(X)
-μ, logσ = μ(H), Σ(H)
+H = enc(X, A) \\
+Z_{\mu}, Z_{logσ} = GCN_{\mu}(H, A), GCN_{\sigma}(H, A)
 ```
 
 ```@docs
