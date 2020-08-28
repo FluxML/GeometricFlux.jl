@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.3]
+
+- GDE, GAE VGAE examples available
+- Correct GCNConv show
+
 ## [0.6.2]
 
 - Add FeatureSelector
