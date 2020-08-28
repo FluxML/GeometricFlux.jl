@@ -2,21 +2,21 @@
 
 
 ```@docs
-GeometricFlux.degrees
+GraphSignals.degrees
 ```
 
 ```@docs
-GeometricFlux.degree_matrix
+GraphSignals.degree_matrix
 ```
 
 ```@docs
-GeometricFlux.inv_sqrt_degree_matrix
+GraphSignals.inv_sqrt_degree_matrix
 ```
 
 ```@docs
-GeometricFlux.laplacian_matrix
+GraphSignals.laplacian_matrix
 ```
 
 ```@docs
-GeometricFlux.normalized_laplacian
+GraphSignals.normalized_laplacian
 ```

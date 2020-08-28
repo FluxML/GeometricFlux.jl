@@ -1,3 +1,13 @@
+"""
+    GAE(enc[, σ])
+
+Graph autoencoder.
+
+# Arguments
+- `enc`: encoder. It can be any graph convolutional layer.
+
+Encoder is specified by user and decoder will be `InnerProductDecoder` layer.
+"""
 struct GAE{T,S}
     encoder::T
     decoder::S
@@ -14,7 +24,16 @@ function (g::GAE)(X::AbstractMatrix)
 end
 
 
+"""
+    VGAE(enc[, σ])
 
+Variational graph autoencoder.
+
+# Arguments
+- `enc`: encoder. It can be any graph convolutional layer.
+
+Encoder is specified by user and decoder will be `InnerProductDecoder` layer.
+"""
 struct VGAE{T,S}
     encoder::T
     decoder::S
@@ -39,7 +58,14 @@ function (g::VGAE)(fg::FeaturedGraph)
 end
 
 
+"""
+    InnerProductDecoder(σ)
 
+Inner-product decoder layer.
+
+# Arguments
+- `σ`: activation function.
+"""
 struct InnerProductDecoder
     σ
 end
@@ -55,7 +81,18 @@ function (i::InnerProductDecoder)(fg::FeaturedGraph)::FeaturedGraph
 end
 
 
+"""
+    VariationalEncoder(nn, h_dim, z_dim)
 
+Variational encoder layer.
+
+# Arguments
+- `nn`: neural network. It can be any graph convolutional layer.
+- `h_dim`: dimension of hidden layer. This should fit the output dimension of `nn`.
+- `z_dim`: dimension of latent variable layer. This will be parametrized into `μ` and `logσ`.
+
+Encoder can be any graph convolutional layer.
+"""
 struct VariationalEncoder
     nn
     μ
