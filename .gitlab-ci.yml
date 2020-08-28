@@ -46,7 +46,7 @@ test:dev:
 coverage:
   stage: post
   extends:
-    - .julia:1.4
+    - .julia:1.5
   script:
     - julia -e 'using Pkg;
                 Pkg.instantiate();

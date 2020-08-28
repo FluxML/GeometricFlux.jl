@@ -11,7 +11,7 @@
 [![pipeline status](https://gitlab.com/JuliaGPU/GeometricFlux-jl/badges/master/pipeline.svg)](https://gitlab.com/JuliaGPU/GeometricFlux-jl/commits/master)
 [![coverage report](https://gitlab.com/JuliaGPU/GeometricFlux-jl/badges/master/coverage.svg)](https://gitlab.com/JuliaGPU/GeometricFlux-jl/commits/master)
 
-GeometricFlux is a geometric deep learning library for [Flux](https://github.com/FluxML/Flux.jl). This library aims to be compatible with packages from [JuliaGraphs](https://github.com/JuliaGraphs) ecosystem and have support of CUDA GPU acceleration with [CuArrays](https://github.com/JuliaGPU/CuArrays.jl). Message passing scheme is implemented as a flexbile framework and fused with Graph Network block scheme. GeometricFlux is compatible with other packages that are composable with Flux.
+GeometricFlux is a geometric deep learning library for [Flux](https://github.com/FluxML/Flux.jl). This library aims to be compatible with packages from [JuliaGraphs](https://github.com/JuliaGraphs) ecosystem and have support of CUDA GPU acceleration with [CUDA](https://github.com/JuliaGPU/CUDA.jl). Message passing scheme is implemented as a flexbile framework and fused with Graph Network block scheme. GeometricFlux is compatible with other packages that are composable with Flux.
 
 Suggestions, issues and pull requsts are welcome.
 
