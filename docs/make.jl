@@ -1,11 +1,10 @@
 using Documenter
 using GeometricFlux
-using GraphSignals
 
 makedocs(
     sitename = "GeometricFlux",
     format = Documenter.HTML(),
-    modules = [GeometricFlux, GraphSignals],
+    modules = [GeometricFlux],
     pages = ["Home" => "index.md",
              "Get started" => "start.md",
              "Basics" =>
