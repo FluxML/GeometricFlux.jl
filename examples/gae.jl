@@ -1,8 +1,9 @@
 using GeometricFlux
 using Flux
-using Flux: mse, throttle
+using Flux: throttle
+using Flux.Losses: logitbinarycrossentropy
 using Flux: @epochs
-using JLD2  # use v0.1.2
+using JLD2
 using Statistics: mean
 using SparseArrays
 using LightGraphs.SimpleGraphs
@@ -27,10 +28,10 @@ train_y = adj_mat  # dim: num_nodes * num_nodes
 ## Model
 encoder = Chain(GCNConv(adj_mat, num_features=>hidden1, relu),
                 GCNConv(adj_mat, hidden1=>hidden2))
-model = Chain(GAE(encoder)) |> gpu
+model = Chain(GAE(encoder, σ)) |> gpu
 
 ## Loss
-loss(x, y) = mse(model(x), y)
+loss(x, y) = logitbinarycrossentropy(model(x), y)
 
 ## Training
 ps = Flux.params(model)
