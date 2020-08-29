@@ -45,16 +45,10 @@ end
 
 @functor VGAE
 
-function (g::VGAE)(X::AbstractMatrix)
-    Z = g.encoder(X)
-    A = g.decoder(Z)
-    A
-end
-
 function (g::VGAE)(fg::FeaturedGraph)
-    Z = g.encoder(X)
-    A = g.decoder(Z)
-    A
+    fg_ = g.encoder(fg)
+    fg_ = g.decoder(fg_)
+    fg_
 end
 
 
@@ -101,16 +95,13 @@ struct VariationalEncoder
 end
 
 function VariationalEncoder(nn, h_dim::Integer, z_dim::Integer)
-    VariationalEncoder(nn, Dense(h_dim, z_dim), Dense(h_dim, z_dim), z_dim)
+    VariationalEncoder(nn,
+                       GCNConv(h_dim=>z_dim; cache=false),
+                       GCNConv(h_dim=>z_dim; cache=false),
+                       z_dim)
 end
 
 @functor VariationalEncoder
-
-function (ve::VariationalEncoder)(X::AbstractMatrix)::AbstractMatrix
-    μ, logσ = summarize(ve, X)
-    Z = sample(μ, logσ)
-    Z
-end
 
 function (ve::VariationalEncoder)(fg::FeaturedGraph)::FeaturedGraph
     μ, logσ = summarize(ve, fg)
@@ -118,15 +109,10 @@ function (ve::VariationalEncoder)(fg::FeaturedGraph)::FeaturedGraph
     FeaturedGraph(graph(fg), Z)
 end
 
-function summarize(ve::VariationalEncoder, X::AbstractMatrix)
-    h = ve.nn(X)
-    ve.μ(h), ve.logσ(h)
-end
-
 function summarize(ve::VariationalEncoder, fg::FeaturedGraph)
     fg_ = ve.nn(fg)
-    h = node_feature(fg_)
-    ve.μ(h), ve.logσ(h)
+    fg_μ, fg_logσ = ve.μ(fg_), ve.logσ(fg_)
+    node_feature(fg_μ), node_feature(fg_logσ)
 end
 
 sample(μ::AbstractArray{T}, logσ::AbstractArray{T}) where {T<:Real} =
