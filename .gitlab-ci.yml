@@ -6,6 +6,7 @@ variables:
   CI_THOROUGH: 'true'
   JULIA_CUDA_VERSION: '10.2'
   JULIA_CUDA_USE_BINARYBUILDER: 'true'
+  DATADEPS_ALWAYS_ACCEPT: 'true'
 
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
