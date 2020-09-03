@@ -24,7 +24,7 @@ ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
 CUDA = "1.2"
-DataStructures = "0.17"
+DataStructures = "0.17, 0.18"
 FillArrays = "0.8 - 0.9"
 Flux = "0.10 - 0.11"
 GraphSignals = "0.1"
