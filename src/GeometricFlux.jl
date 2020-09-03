@@ -19,6 +19,10 @@ using ZygoteRules
 import Flux: maxpool, meanpool
 
 export
+    # datasets
+    traindata,
+    testdata,
+
     # layers/gn
     GraphNet,
     update_edge,

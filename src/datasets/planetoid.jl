@@ -1,7 +1,7 @@
 const PLANETOID_URL = "https://github.com/kimiyoung/planetoid/raw/master/data"
-const DATASETS = ["citeseer", "cora", "pubmed"]
+const PLANETOID_DATASETS = [:citeseer, :cora, :pubmed]
 const EXTS = ["allx", "ally", "graph", "test.index", "tx", "ty", "x", "y"]
-const DATAURLS = [joinpath(PLANETOID_URL, "ind.$(dataset).$(ext)") for dataset in DATASETS, ext in EXTS]
+const DATAURLS = [joinpath(PLANETOID_URL, "ind.$(d).$(ext)") for d in PLANETOID_DATASETS, ext in EXTS]
 
 planetoid_init() = register(DataDep(
     "Planetoid",
@@ -12,26 +12,29 @@ planetoid_init() = register(DataDep(
     Nodes represent documents and edges represent citation links.
     """,
     reshape(DATAURLS, :),
-    # "58984da6e25012ee40ecc927e9f0fa7c0245a18ef0f4cc759dd657f83ec60bf8";
-    # post_fetch_method=preprocess,
+    "f52b3d47f5993912d7509b51e8090b6807228c4ba8c7d906f946868005c61c18";
+    post_fetch_method=preprocess,
 ))
 
 function preprocess(local_path)
-    dataset = "cora"
-    # for dataset in DATASETS
-    graph_file = datadep"Planetoid/ind.cora.graph"
-    X_file = datadep"Planetoid/ind.cora.allx"
-    y_file = datadep"Planetoid/ind.cora.ally"
-    test_file = datadep"Planetoid/ind.cora.test.index"
+    for dataset in PLANETOID_DATASETS
+        graph_file = @datadep_str "Planetoid/ind.$(dataset).graph"
+        trainX_file = @datadep_str "Planetoid/ind.$(dataset).x"
+        trainy_file = @datadep_str "Planetoid/ind.$(dataset).y"
+        testX_file = @datadep_str "Planetoid/ind.$(dataset).tx"
+        testy_file = @datadep_str "Planetoid/ind.$(dataset).ty"
 
-    X = read_data(X_file)
-    y = read_data(y_file)
-    testindex = read_index(test_file)
-    graph = read_graph(graph_file)
+        train_X = read_data(trainX_file)
+        train_y = read_data(trainy_file)
+        test_X = read_data(testX_file)
+        test_y = read_data(testy_file)
+        graph = read_graph(graph_file)
 
-    @save "$(datasets).train.jld2" g train_X train_y
-    @save "$(datasets).test.jld2" g test_X test_y
-    # end
+        trainfile = replace(graph_file, "ind.$(dataset).graph"=>"$(dataset).train.jld2")
+        testfile = replace(graph_file, "ind.$(dataset).graph"=>"$(dataset).test.jld2")
+        @save trainfile graph train_X train_y
+        @save testfile graph test_X test_y
+    end
 end
 
 function read_data(filename)
@@ -65,18 +68,16 @@ function read_graph(filename)
 end
 
 
-function trainfile(dataset::Symbol)
-    if !(dataset in [:citeseer, :cora, :pubmed])
-        error("`dataset` should be one of citeseer, cora, pubmed.")
-    end
-    @load datadep"Planetoid/$(datasets).train.jld2" g train_X train_y
-    g, train_X, train_y
+function traindata(dataset::Symbol)
+    dataset in PLANETOID_DATASETS || throw(error("`dataset` should be one of citeseer, cora, pubmed."))
+    file = @datadep_str "Planetoid/$(dataset).train.jld2"
+    @load file graph train_X train_y
+    graph, train_X, train_y
 end
 
-function testfile(dataset::Symbol)
-    if !(dataset in [:citeseer, :cora, :pubmed])
-        error("`dataset` should be one of citeseer, cora, pubmed.")
-    end
-    @load datadep"Planetoid/$(datasets).test.jld2" g test_X test_y
-    g, test_X, test_y
+function testdata(dataset::Symbol)
+    dataset in PLANETOID_DATASETS || throw(error("`dataset` should be one of citeseer, cora, pubmed."))
+    file = @datadep_str "Planetoid/$(dataset).test.jld2"
+    @load file graph test_X test_y
+    graph, test_X, test_y
 end
