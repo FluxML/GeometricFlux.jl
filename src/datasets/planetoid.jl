@@ -13,10 +13,10 @@ planetoid_init() = register(DataDep(
     """,
     reshape(DATAURLS, :),
     "f52b3d47f5993912d7509b51e8090b6807228c4ba8c7d906f946868005c61c18";
-    post_fetch_method=preprocess,
+    post_fetch_method=preprocess_planetoid,
 ))
 
-function preprocess(local_path)
+function preprocess_planetoid(local_path)
     for dataset in PLANETOID_DATASETS
         graph_file = @datadep_str "Planetoid/ind.$(dataset).graph"
         trainX_file = @datadep_str "Planetoid/ind.$(dataset).x"
@@ -67,17 +67,24 @@ function read_graph(filename)
     return Dict(py"data")
 end
 
+struct Planetoid <: Dataset
+    dataset::Symbol
 
-function traindata(dataset::Symbol)
-    dataset in PLANETOID_DATASETS || throw(error("`dataset` should be one of citeseer, cora, pubmed."))
-    file = @datadep_str "Planetoid/$(dataset).train.jld2"
+    function Planetoid(ds::Symbol)
+        ds in PLANETOID_DATASETS || throw(error("`dataset` should be one of citeseer, cora, pubmed."))
+        new(ds)
+    end
+end
+
+
+function traindata(pla::Planetoid)
+    file = @datadep_str "Planetoid/$(pla.dataset).train.jld2"
     @load file graph train_X train_y
     graph, train_X, train_y
 end
 
-function testdata(dataset::Symbol)
-    dataset in PLANETOID_DATASETS || throw(error("`dataset` should be one of citeseer, cora, pubmed."))
-    file = @datadep_str "Planetoid/$(dataset).test.jld2"
+function testdata(pla::Planetoid)
+    file = @datadep_str "Planetoid/$(pla.dataset).test.jld2"
     @load file graph test_X test_y
     graph, test_X, test_y
 end
