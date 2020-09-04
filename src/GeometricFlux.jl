@@ -4,6 +4,7 @@ using Statistics: mean
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: Adjoint, norm
 
+using DataDeps: DataDep, register
 using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
@@ -18,6 +19,10 @@ using ZygoteRules
 import Flux: maxpool, meanpool
 
 export
+    # datasets
+    traindata,
+    testdata,
+
     # layers/gn
     GraphNet,
     update_edge,
@@ -80,6 +85,8 @@ export
 
 const IntOrTuple = Union{Integer,Tuple}
 
+include("datasets/Datasets.jl")
+
 include("pool.jl")
 
 include("graph/index.jl")
@@ -96,6 +103,8 @@ include("layers/selector.jl")
 
 include("graph/simplegraphs.jl")
 
+
+using .Datasets
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin

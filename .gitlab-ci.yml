@@ -6,6 +6,7 @@ variables:
   CI_THOROUGH: 'true'
   JULIA_CUDA_VERSION: '10.2'
   JULIA_CUDA_USE_BINARYBUILDER: 'true'
+  DATADEPS_ALWAYS_ACCEPT: 'true'
 
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
@@ -18,6 +19,20 @@ test:v1.4:
     - .test
   variables:
     CI_VERSION_TAG: 'v1.4'
+  script:
+    - |
+      julia --project -e '
+        using Pkg; Pkg.add("PyCall");
+        Pkg.instantiate();
+        ENV["PYTHON"] = ""; Pkg.build();
+        using PyCall; pyimport_conda("scipy", "scipy")'
+    - julia --project -e 'using PyCall; pyimport_conda("scipy", "scipy")' # retry
+    - |
+      julia --project -e '
+        using Pkg;
+        Pkg.instantiate();
+        Pkg.build();
+        Pkg.test(; coverage=true);'
   tags:
     - nvidia
     - cuda_10.2
@@ -28,6 +43,20 @@ test:v1.5:
     - .test
   variables:
     CI_VERSION_TAG: 'v1.5'
+  script:
+    - |
+      julia --project -e '
+        using Pkg; Pkg.add("PyCall");
+        Pkg.instantiate();
+        ENV["PYTHON"] = ""; Pkg.build();
+        using PyCall; pyimport_conda("scipy", "scipy")'
+    - julia --project -e 'using PyCall; pyimport_conda("scipy", "scipy")' # retry
+    - |
+      julia --project -e '
+        using Pkg;
+        Pkg.instantiate();
+        Pkg.build();
+        Pkg.test(; coverage=true);'
   tags:
     - nvidia
     - cuda_10.2
@@ -39,6 +68,20 @@ test:dev:
   allow_failure: true
   variables:
     CI_VERSION_TAG: 'v1.6'
+  script:
+    - |
+      julia --project -e '
+        using Pkg; Pkg.add("PyCall");
+        Pkg.instantiate();
+        ENV["PYTHON"] = ""; Pkg.build();
+        using PyCall; pyimport_conda("scipy", "scipy")'
+    - julia --project -e 'using PyCall; pyimport_conda("scipy", "scipy")' # retry
+    - |
+      julia --project -e '
+        using Pkg;
+        Pkg.instantiate();
+        Pkg.build();
+        Pkg.test(; coverage=true);'
   tags:
     - nvidia
     - cuda_10.2

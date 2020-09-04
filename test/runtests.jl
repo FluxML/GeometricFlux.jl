@@ -1,10 +1,12 @@
 using GeometricFlux
+using GeometricFlux.Datasets
 using Flux
 using Flux: @functor
 using GraphSignals
 using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
+using SparseArrays: SparseMatrixCSC
 using MetaGraphs: MetaGraph, MetaDiGraph
 using Zygote
 using Test
@@ -17,6 +19,8 @@ cuda_tests = [
 ]
 
 tests = [
+    "datasets/planetoid",
+    "datasets/cora",
     "layers/gn",
     "layers/msgpass",
     "layers/conv",
