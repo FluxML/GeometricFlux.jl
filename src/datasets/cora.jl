@@ -29,7 +29,7 @@ function preprocess_cora(local_path)
     # @save trainfile graph train_X train_y
     # @save testfile graph test_X test_y
 
-    datafile = replace(cora_file, "cora.npz"=>"cora.all.jld2")
+    datafile = replace(local_path, "cora.npz"=>"cora.all.jld2")
     @save datafile graph X y
 end
 
