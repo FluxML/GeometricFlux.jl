@@ -20,6 +20,7 @@ cuda_tests = [
 
 tests = [
     "datasets/planetoid",
+    "datasets/cora",
     "layers/gn",
     "layers/msgpass",
     "layers/conv",

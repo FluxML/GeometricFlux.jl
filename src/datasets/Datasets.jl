@@ -8,6 +8,8 @@ module Datasets
     export
         Dataset,
         Planetoid,
+        Cora,
+        dataset,
         traindata,
         testdata
 
@@ -23,5 +25,6 @@ module Datasets
 
     function __init__()
         planetoid_init()
+        cora_init()
     end
 end
