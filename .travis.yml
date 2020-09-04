@@ -17,6 +17,12 @@ branches:
   - master
   - develop
 
+script: 
+ - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+ - julia --project -e 'using Pkg; Pkg.add("PyCall"); Pkg.instantiate(); ENV["PYTHON"] = ""; Pkg.build(); using PyCall; pyimport_conda("scipy", "scipy")'
+ - julia --project -e 'using PyCall; pyimport_conda("scipy", "scipy")' # retry
+ - julia --project -e 'using Pkg; Pkg.test(; coverage=true)';
+
 after_success:
   - julia -e 'using Pkg; cd(Pkg.dir("GeometricFlux")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
 
