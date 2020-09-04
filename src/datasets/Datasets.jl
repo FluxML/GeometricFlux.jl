@@ -2,7 +2,6 @@ module Datasets
     using DataDeps: DataDep, register, @datadep_str
     using HTTP
     using JLD2
-    using NPZ: npzread
     using PyCall
     using SparseArrays: SparseMatrixCSC
 
