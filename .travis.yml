@@ -24,8 +24,7 @@ notifications:
   email: false
 
 env:
-  - JULIA_CUDA_SILENT=true
-  - DATADEPS_ALWAYS_ACCEPT=true
+  - JULIA_CUDA_SILENT=true DATADEPS_ALWAYS_ACCEPT=true
 
 jobs:
   allow_failures:
