@@ -26,9 +26,9 @@ version = "0.0.4"
 
 [[ArrayLayouts]]
 deps = ["FillArrays", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "e3e0a1e7dcbfdb1fc1061bfd889581a1d942cfcb"
+git-tree-sha1 = "2d8ac01e2d62d6bc9172e71ddcc9c904d478633f"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "0.4.5"
+version = "0.4.6"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -515,9 +515,9 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[VectorizationBase]]
 deps = ["CpuId", "Libdl", "LinearAlgebra"]
-git-tree-sha1 = "c2a34c8065076a867fc36522c1a3441156a63445"
+git-tree-sha1 = "03e2fbb479a1ea350398195b6fbf439bae0f8260"
 uuid = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
-version = "0.12.32"
+version = "0.12.33"
 
 [[VersionParsing]]
 git-tree-sha1 = "80229be1f670524750d905f8fc8148e5a8c4537f"
@@ -538,9 +538,9 @@ version = "1.2.11+16"
 
 [[Zygote]]
 deps = ["AbstractFFTs", "ArrayLayouts", "ChainRules", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "Future", "IRTools", "InteractiveUtils", "LinearAlgebra", "LoopVectorization", "MacroTools", "NNlib", "NaNMath", "Random", "Requires", "SpecialFunctions", "Statistics", "ZygoteRules"]
-git-tree-sha1 = "fa45127afd117fca6a8540f92d5e3799daf8339a"
+git-tree-sha1 = "b0a948a0a78e3e41515714fa1ef4f40a284ffa06"
 uuid = "e88e6eb3-aa80-5325-afca-941959d7151f"
-version = "0.5.5"
+version = "0.5.6"
 
 [[ZygoteRules]]
 deps = ["MacroTools"]
