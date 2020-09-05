@@ -1,5 +1,5 @@
 reddit_init() = register(DataDep(
-    "Cora full datasets",
+    "Reddit",
     """
     The Reddit dataset from the `"Inductive Representation Learning on
     Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper, containing

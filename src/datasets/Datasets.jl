@@ -2,19 +2,23 @@ module Datasets
     using DataDeps: DataDep, register, @datadep_str
     using HTTP
     using JLD2
+    using JSON
+    using LightGraphs: SimpleDiGraph, add_edge!
     using PyCall
     using SparseArrays: SparseMatrixCSC
+    using ZipFile
 
     export
         Dataset,
         Planetoid,
         Cora,
+        PPI,
         dataset,
         traindata,
+        validdata,
         testdata
 
-    abstract type Dataset end
-
+    include("./dataset.jl")
     include("./planetoid.jl")
     include("./cora.jl")
     include("./ppi.jl")
@@ -26,5 +30,6 @@ module Datasets
     function __init__()
         planetoid_init()
         cora_init()
+        ppi_init()
     end
 end

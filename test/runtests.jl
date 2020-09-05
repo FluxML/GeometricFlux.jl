@@ -4,7 +4,7 @@ using Flux
 using Flux: @functor
 using GraphSignals
 using StaticArrays: @MMatrix, @MArray
-using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!
+using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
 using MetaGraphs: MetaGraph, MetaDiGraph
@@ -19,8 +19,7 @@ cuda_tests = [
 ]
 
 tests = [
-    "datasets/planetoid",
-    "datasets/cora",
+    "datasets/datasets",
     "layers/gn",
     "layers/msgpass",
     "layers/conv",
