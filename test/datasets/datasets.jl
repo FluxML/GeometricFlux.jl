@@ -2,6 +2,7 @@ tests = [
     "planetoid",
     "cora",
     "ppi",
+    "reddit",
 ]
 
 @testset "datasets" begin

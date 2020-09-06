@@ -5,7 +5,7 @@ module Datasets
     using JSON
     using LightGraphs: SimpleDiGraph, add_edge!
     using PyCall
-    using SparseArrays: SparseMatrixCSC
+    using SparseArrays: SparseMatrixCSC, sparse
     using ZipFile
 
     export
@@ -13,6 +13,7 @@ module Datasets
         Planetoid,
         Cora,
         PPI,
+        Reddit,
         dataset,
         traindata,
         validdata,
@@ -31,5 +32,6 @@ module Datasets
         planetoid_init()
         cora_init()
         ppi_init()
+        reddit_init()
     end
 end
