@@ -3,6 +3,7 @@ tests = [
     "cora",
     "ppi",
     "reddit",
+    "qm7b",
 ]
 
 @testset "datasets" begin

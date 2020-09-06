@@ -4,6 +4,7 @@ module Datasets
     using JLD2
     using JSON
     using LightGraphs: SimpleDiGraph, add_edge!
+    using MAT
     using PyCall
     using SparseArrays: SparseMatrixCSC, sparse
     using ZipFile
@@ -14,6 +15,7 @@ module Datasets
         Cora,
         PPI,
         Reddit,
+        QM7b,
         dataset,
         traindata,
         validdata,
@@ -24,7 +26,7 @@ module Datasets
     include("./cora.jl")
     include("./ppi.jl")
     include("./reddit.jl")
-    # include("./qm7b.jl")
+    include("./qm7b.jl")
     # include("./entities.jl")
     include("./datautils.jl")
 
@@ -33,5 +35,6 @@ module Datasets
         cora_init()
         ppi_init()
         reddit_init()
+        qm7b_init()
     end
 end
