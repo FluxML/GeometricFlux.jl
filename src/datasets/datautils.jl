@@ -7,13 +7,6 @@ function download_file(url, path)
 end
 
 function unzip(zipfile::String)
-    zipreader = ZipFile.Reader(zipfile)
-    dir = dirname(zipfile)
-    for f in zipreader.files
-        filename = joinpath(dir, f.name)
-        open(filename, "w") do file
-            write(file, read(f))
-        end
-    end
-    close(zipreader)
+    f = replace(zipfile, ".zip"=>"")
+    run(`unzip $f`)
 end

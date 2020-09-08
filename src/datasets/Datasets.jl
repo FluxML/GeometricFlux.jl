@@ -7,7 +7,6 @@ module Datasets
     using MAT
     using PyCall
     using SparseArrays: SparseMatrixCSC, sparse
-    using ZipFile
 
     export
         Dataset,
@@ -16,6 +15,7 @@ module Datasets
         PPI,
         Reddit,
         QM7b,
+        # Entities,
         dataset,
         traindata,
         validdata,
@@ -36,5 +36,6 @@ module Datasets
         ppi_init()
         reddit_init()
         qm7b_init()
+        # entities_init()
     end
 end
