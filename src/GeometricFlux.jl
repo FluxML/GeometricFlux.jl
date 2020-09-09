@@ -19,8 +19,9 @@ using ZygoteRules
 import Flux: maxpool, meanpool
 
 export
-    # datasets
+    datasets,
     traindata,
+    validdata,
     testdata,
 
     # layers/gn

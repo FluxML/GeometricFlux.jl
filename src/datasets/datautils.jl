@@ -5,3 +5,8 @@ function download_file(url, path)
         end
     end
 end
+
+function unzip(zipfile::String)
+    f = replace(zipfile, ".zip"=>"")
+    run(`unzip $f`)
+end
