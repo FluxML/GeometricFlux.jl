@@ -70,15 +70,15 @@ version = "1.3.3"
 
 [[ChainRules]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Random", "Reexport", "Requires", "Statistics"]
-git-tree-sha1 = "dded7909a68d11a813a05bd70a7e728093742b56"
+git-tree-sha1 = "6e7424bc42e222570cc8d588c501349070802b3f"
 uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
-version = "0.7.17"
+version = "0.7.18"
 
 [[ChainRulesCore]]
 deps = ["MuladdMacro"]
-git-tree-sha1 = "8013d73583b79df2b5d8fc71e3c43f9246477fea"
+git-tree-sha1 = "cd464e38276e956cd1112c5df96851659f888b11"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.7"
+version = "0.9.8"
 
 [[CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -374,10 +374,10 @@ uuid = "e89f7d12-3494-54d1-8411-f7d8b9ae1f27"
 version = "0.5.0"
 
 [[MetaGraphs]]
-deps = ["JLD2", "LightGraphs"]
-git-tree-sha1 = "c6a4c88304e1ecef6fc372f12d3b8e427e128c1a"
+deps = ["JLD2", "LightGraphs", "Random"]
+git-tree-sha1 = "8900d368fa44bd61c7e598d6a0f577e347f3cf67"
 uuid = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
-version = "0.6.3"
+version = "0.6.5"
 
 [[Missings]]
 deps = ["DataAPI"]
