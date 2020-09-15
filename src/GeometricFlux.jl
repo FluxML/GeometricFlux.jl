@@ -86,7 +86,7 @@ export
 
 const IntOrTuple = Union{Integer,Tuple}
 
-include("datasets/Datasets.jl")
+include("datasets.jl")
 
 include("pool.jl")
 
