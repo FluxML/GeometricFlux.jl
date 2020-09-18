@@ -19,7 +19,6 @@ cuda_tests = [
 ]
 
 tests = [
-    "datasets/datasets",
     "layers/gn",
     "layers/msgpass",
     "layers/conv",

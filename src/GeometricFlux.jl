@@ -4,7 +4,6 @@ using Statistics: mean
 using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: Adjoint, norm
 
-using DataDeps: DataDep, register
 using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
@@ -19,11 +18,6 @@ using ZygoteRules
 import Flux: maxpool, meanpool
 
 export
-    datasets,
-    traindata,
-    validdata,
-    testdata,
-
     # layers/gn
     GraphNet,
     update_edge,
