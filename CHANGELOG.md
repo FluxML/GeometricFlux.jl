@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1]
+
+- Add GraphMLDatasets as dependency to provide datasets
+
 ## [0.7.0]
 
- - VGAE example available
- - Add Planetoid and Cora dataset
+- VGAE example available
+- Add Planetoid and Cora dataset
 
 ## [0.6.3]
 

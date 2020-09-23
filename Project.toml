@@ -1,7 +1,7 @@
 name = "GeometricFlux"
 uuid = "7e08b658-56d3-11e9-2997-919d5b31e4ea"
 authors = ["Yueh-Hua Tu <a504082002@gmail.com>"]
-version = "0.7.0"
+version = "0.7.1"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -26,7 +26,7 @@ ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
 [compat]
 CUDA = "1.2"
-DataStructures = "0.17, 0.18"
+DataStructures = "0.17 - 0.18"
 FillArrays = "0.8 - 0.9"
 Flux = "0.10 - 0.11"
 GraphMLDatasets = "0.1"
