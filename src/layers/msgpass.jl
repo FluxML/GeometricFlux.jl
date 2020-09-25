@@ -28,25 +28,18 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 @inline update(mp::T, m, x) where {T<:MessagePassing} = m
 
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+    n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    E_ = Vector[]
-    for (i, js) = enumerate(adj)
-        for j = js
-            k = edge_idx[(i,j)]
-            m = message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, k))
-            push!(E_, m)
-        end
-    end
-    hcat(E_...)
+    
+    hcat([update_batch_edge_from_vertex(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
+end
+
+@inline function update_batch_edge_from_vertex(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+    hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
 end
 
 @inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
-    X_ = Vector[]
-    for i = 1:size(X,2)
-        x = update(mp, get_feature(M, i), get_feature(X, i))
-        push!(X_, x)
-    end
-    hcat(X_...)
+    hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i in 1:size(X,2)]...)
 end
 
 @inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge, num_V, num_E) where {T<:MessagePassing}
