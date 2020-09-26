@@ -30,11 +30,10 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    
-    hcat([update_batch_edge_from_vertex(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
+    hcat([_apply_batch_message(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
 end
 
-@inline function update_batch_edge_from_vertex(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function _apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
     hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
 end
 
