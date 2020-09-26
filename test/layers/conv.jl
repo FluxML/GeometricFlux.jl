@@ -20,6 +20,9 @@ adj = [0. 1. 0. 1.;
 
             Y = gc(X)
             @test size(Y) == (out_channel, N)
+            
+            g = Zygote.gradient(() -> sum(gc(X)), params(gc))
+            @test length(g.grads) == 2
         end
 
         @testset "layer without graph" begin
@@ -32,6 +35,9 @@ adj = [0. 1. 0. 1.;
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError gc(X)
+
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), params(gc))
+            @test length(g.grads) == 4
         end
     end
 
@@ -50,6 +56,9 @@ adj = [0. 1. 0. 1.;
 
             Y = cc(X)
             @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(cc(X)), params(cc))
+            @test length(g.grads) == 3
         end
 
         @testset "layer without graph" begin
@@ -65,6 +74,9 @@ adj = [0. 1. 0. 1.;
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError cc(X)
+
+            g = Zygote.gradient(() -> sum(node_feature(cc(fg))), params(cc))
+            @test length(g.grads) == 4
         end
     end
 
@@ -79,6 +91,10 @@ adj = [0. 1. 0. 1.;
             X = rand(in_channel, N)
             Y = gc(X)
             @test size(Y) == (out_channel, N)
+
+            # Test that the gradient can be computed
+            g = Zygote.gradient(() -> sum(gc(X)), params(gc))
+            @test length(g.grads) == 5
         end
 
         @testset "layer without graph" begin
@@ -93,6 +109,9 @@ adj = [0. 1. 0. 1.;
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError gc(X)
+
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), params(gc))
+            @test length(g.grads) == 5
         end
     end
 
@@ -110,6 +129,9 @@ adj = [0. 1. 0. 1.;
 
                     Y = gat(X)
                     @test size(Y) == (out_channel * heads, N)
+
+                    g = Zygote.gradient(() -> sum(gat(X)), params(gat))
+                    @test length(g.grads) == 5
                 end
             end
 
@@ -123,6 +145,9 @@ adj = [0. 1. 0. 1.;
 
                     Y = gat(X)
                     @test size(Y) == (out_channel * heads, 1)
+
+                    g = Zygote.gradient(() -> sum(gat(X)), params(gat))
+                    @test length(g.grads) == 5
                 end
             end
         end
@@ -141,6 +166,9 @@ adj = [0. 1. 0. 1.;
                     Y = node_feature(fg_)
                     @test size(Y) == (out_channel * heads, N)
                     @test_throws AssertionError gat(X)
+
+                    g = Zygote.gradient(() -> sum(node_feature(gat(fg))), params(gat))
+                    @test length(g.grads) == 5
                 end
             end
 
@@ -155,6 +183,9 @@ adj = [0. 1. 0. 1.;
                     Y = node_feature(fg_)
                     @test size(Y) == (out_channel * heads, 1)
                     @test_throws AssertionError gat(X)
+
+                    g = Zygote.gradient(() -> sum(node_feature(gat(fg))), params(gat))
+                    @test length(g.grads) == 5
                 end
             end
         end
@@ -170,6 +201,9 @@ adj = [0. 1. 0. 1.;
             X = rand(in_channel, N)
             Y = ggc(X)
             @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(ggc(X)), params(ggc))
+            @test length(g.grads) == 13
         end
 
         @testset "layer without graph" begin
@@ -181,6 +215,9 @@ adj = [0. 1. 0. 1.;
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError ggc(X)
+
+            g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), params(ggc))
+            @test length(g.grads) == 13
         end
     end
 
@@ -192,6 +229,9 @@ adj = [0. 1. 0. 1.;
             X = rand(in_channel, N)
             Y = ec(X)
             @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(ec(X)), params(ec))
+            @test length(g.grads) == 4
         end
 
         @testset "layer without graph" begin
@@ -202,6 +242,9 @@ adj = [0. 1. 0. 1.;
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError ec(X)
+
+            g = Zygote.gradient(() -> sum(node_feature(ec(fg))), params(ec))
+            @test length(g.grads) == 4
         end
     end
 end
