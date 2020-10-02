@@ -27,16 +27,16 @@ struct GCNConv{T,F,S<:AbstractFeaturedGraph}
 end
 
 function GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = cache ? FeaturedGraph() : NullGraph()
+    fg = NullGraph()
     GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
 end
 
 function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = cache ? FeaturedGraph(adj) : NullGraph()
+    fg = FeaturedGraph(adj)
     GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
 end
 
@@ -56,8 +56,10 @@ end
 
 function (g::GCNConv)(fg::FeaturedGraph)
     X = node_feature(fg)
-    A = adjacency_matrix(fg)
-    g.fg isa NullGraph || (g.fg.graph = A)
+    A = adjacency_matrix(fg) # TODO: choose graph from g or fg
+    Zygote.ignore() do
+        g.fg isa NullGraph || (g.fg.graph = A)
+    end
     X_ = g(A, X)
     FeaturedGraph(A, X_)
 end
@@ -97,16 +99,16 @@ struct ChebConv{T,S<:AbstractFeaturedGraph}
 end
 
 function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    fg = cache ? FeaturedGraph(adj) : NullGraph()
+    fg = FeaturedGraph(adj)
     ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
 end
 
 function ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true, cache::Bool=true)
+                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    fg = cache ? FeaturedGraph() : NullGraph()
+    fg = NullGraph()
     ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
 end
 
@@ -138,7 +140,9 @@ end
 function (c::ChebConv)(fg::FeaturedGraph)
     @assert has_graph(fg) "A given FeaturedGraph must contain a graph."
     g = graph(fg)
-    c.fg isa NullGraph || (c.fg.graph = g)
+    Zygote.ignore() do
+        c.fg isa NullGraph || (c.fg.graph = g)
+    end
     X = node_feature(fg)
     L̃ = scaled_laplacian(adjacency_matrix(fg))
     L̃ = convert(typeof(X), L̃)

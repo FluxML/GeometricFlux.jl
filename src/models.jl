@@ -96,8 +96,8 @@ end
 
 function VariationalEncoder(nn, h_dim::Integer, z_dim::Integer)
     VariationalEncoder(nn,
-                       GCNConv(h_dim=>z_dim; cache=false),
-                       GCNConv(h_dim=>z_dim; cache=false),
+                       GCNConv(h_dim=>z_dim),
+                       GCNConv(h_dim=>z_dim),
                        z_dim)
 end
 
