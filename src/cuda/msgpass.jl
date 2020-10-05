@@ -1,5 +1,5 @@
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::CuMatrix) where {T<:MessagePassing}
-    E = convert(typeof(X), E)
+    E = convert(typeof(X), Matrix(E))
     update_batch_edge(mp, adj, E, X)
 end
 
