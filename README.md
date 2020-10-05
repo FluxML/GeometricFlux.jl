@@ -19,6 +19,7 @@ Suggestions, issues and pull requsts are welcome.
 
 ```
 ]add GeometricFlux
+]add GraphSignals@0.1.1
 ```
 
 ## Features
