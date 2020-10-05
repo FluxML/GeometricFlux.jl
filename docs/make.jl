@@ -3,7 +3,9 @@ using GeometricFlux
 
 makedocs(
     sitename = "GeometricFlux",
-    format = Documenter.HTML(),
+    format = Documenter.HTML(
+      canonical = "https://yuehhua.github.io/GeometricFlux.jl/stable"
+    ),
     modules = [GeometricFlux],
     pages = ["Home" => "index.md",
              "Get started" => "start.md",
