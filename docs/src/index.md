@@ -6,7 +6,7 @@ GeometricFlux is a framework for geometric deep learning/machine learning.
 * It supports of CUDA GPU with CUDA.jl
 * It integrates with JuliaGraphs ecosystems.
 * It supports generic graph neural network architectures (i.g. message passing scheme and graph network block)
-* It contains built-in GNN benchmark datasets (WIP)
+* It contains built-in GNN benchmark datasets (provided by GraphMLDatasets)
 
 ## Installation
 
