@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.2]
+
+- Differentiability test
+- Refactor GN for differentiability
+- Remove cache argument from layer
+- Add docs
+- Bump CUDA to v2.0
+- Add paper
+
 ## [0.7.1]
 
 - Add GraphMLDatasets as dependency to provide datasets
