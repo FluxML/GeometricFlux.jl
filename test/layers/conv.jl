@@ -26,7 +26,7 @@ adj = [0. 1. 0. 1.;
         end
 
         @testset "layer without graph" begin
-            gc = GCNConv(in_channel=>out_channel, cache=false)
+            gc = GCNConv(in_channel=>out_channel)
             @test size(gc.weight) == (out_channel, in_channel)
             @test size(gc.bias) == (out_channel,)
             @test !has_graph(gc.fg)
@@ -62,7 +62,7 @@ adj = [0. 1. 0. 1.;
         end
 
         @testset "layer without graph" begin
-            cc = ChebConv(in_channel=>out_channel, k, cache=false)
+            cc = ChebConv(in_channel=>out_channel, k)
             @test size(cc.weight) == (out_channel, in_channel, k)
             @test size(cc.bias) == (out_channel,)
             @test !has_graph(cc.fg)
