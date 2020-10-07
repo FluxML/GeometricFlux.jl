@@ -20,12 +20,12 @@ function ChebConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer},
 end
 
 
-function GraphConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, aggr=:add;
+function GraphConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add;
                    init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    GraphConv(FeaturedGraph(g), w1, w2, b, aggr)
+    GraphConv(FeaturedGraph(g), w1, w2, b, σ, aggr)
 end
 
 

@@ -10,8 +10,8 @@ ChebConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs
     ChebConv(g.graph, ch, k; kwargs...)
 
 
-GraphConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, aggr=:add; kwargs...) =
-    GraphConv(g.graph, ch, aggr; kwargs...)
+GraphConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add; kwargs...) =
+    GraphConv(g.graph, ch, σ, aggr; kwargs...)
 
 
 GATConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}; kwargs...) =
