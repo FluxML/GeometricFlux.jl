@@ -44,7 +44,7 @@ Reference: [Convolutional Neural Networks on Graphs with Fast Localized Spectral
 ## Graph Neural Network Layer
 
 ```math
-\textbf{x}_i' = \Theta_1 \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \Theta_2 \textbf{x}_j
+\textbf{x}_i' = \sigma (\Theta_1 \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \Theta_2 \textbf{x}_j)
 ```
 
 ```@docs
