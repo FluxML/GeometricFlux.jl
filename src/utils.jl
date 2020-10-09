@@ -11,8 +11,9 @@ topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
 
 ## Get feature with defaults
 
-get_feature(::Nothing, i::Integer) = zeros(0)
-get_feature(A::AbstractMatrix, i::Integer) = (i ≤ size(A,2)) ? view(A, :, i) : zeros(0)
+get_feature(::Nothing, i) = nothing
+get_feature(::Fill{T,2,Axes}, i::Integer) where {T,Axes} = nothing
+get_feature(A::AbstractMatrix, i::Integer) = view(A, :, i)
 
 """
     bypass_graph(nf_func, ef_func, gf_func)
