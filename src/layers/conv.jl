@@ -44,7 +44,11 @@ end
 
 function (g::GCNConv)(A::AbstractMatrix, X::AbstractMatrix)
     L = normalized_laplacian(A, eltype(X); selfloop=true)
-    # L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+
+    if isa(X, CuArray)
+        L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+    end
+    
     g.σ.(g.weight * X * L .+ g.bias)
 end
 
@@ -133,7 +137,11 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     @assert has_graph(c.fg) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
     g = graph(c.fg)
     L̃ = scaled_laplacian(g, T)
-    L̃ = convert(typeof(X), L̃)
+
+    if isa(X, CuArray)
+        L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+    end
+    
     c(L̃, X)
 end
 
@@ -145,7 +153,11 @@ function (c::ChebConv)(fg::FeaturedGraph)
     end
     X = node_feature(fg)
     L̃ = scaled_laplacian(adjacency_matrix(fg))
-    L̃ = convert(typeof(X), L̃)
+
+    if isa(X, CuArray)
+        L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+    end
+    
     X_ = c(L̃, X)
     FeaturedGraph(g, X_)
 end
