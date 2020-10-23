@@ -44,7 +44,7 @@ end
 
 function (g::GCNConv)(A::AbstractMatrix, X::AbstractMatrix)
     L = normalized_laplacian(A, eltype(X); selfloop=true)
-    L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+    # L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
     g.σ.(g.weight * X * L .+ g.bias)
 end
 
