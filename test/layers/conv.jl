@@ -23,6 +23,11 @@ adj = [0. 1. 0. 1.;
             
             g = Zygote.gradient(() -> sum(gc(X)), params(gc))
             @test length(g.grads) == 2
+
+            # Test with transposed features
+            X_ = rand(N, in_channel)
+            Y = gc(transpose(X_))
+            @test size(Y) == (out_channel, N)
         end
 
         @testset "layer without graph" begin
