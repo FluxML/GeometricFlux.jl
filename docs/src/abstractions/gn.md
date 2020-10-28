@@ -18,10 +18,10 @@ GN block is realized into a abstract type `GraphNet`. User can make a subtype of
 
 ## Aggregate functions
 
-An aggregate function `aggregate_neighbors` aggregates edge states for edges incident to some node `i` into node-level information. Aggregate function `aggregate_edges` aggregates all edge states into global-level information. The last aggregate function `aggregate_vertices` aggregates all vertex states into global-level information. It is avaible for assigning aggregate function by assigning aggregate operations to `propagate` function.
+An aggregate function `aggregate_neighbors` aggregates edge states for edges incident to some node `i` into node-level information. Aggregate function `aggregate_edges` aggregates all edge states into global-level information. The last aggregate function `aggregate_vertices` aggregates all vertex states into global-level information. It is available for assigning aggregate function by assigning aggregate operations to `propagate` function.
 
 ```
 propagate(gn, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing)
 ```
 
-`naggr`, `eaggr` and `vaggr` are arguments for `aggregate_neighbors`, `aggregate_edges` and `aggregate_vertices`, respectively. Avaible aggregate functions are assigned by following symbols to them: `:add`, `:sub`, `:mul`, `:div`, `:max`, `:min` and `:mean`.
+`naggr`, `eaggr` and `vaggr` are arguments for `aggregate_neighbors`, `aggregate_edges` and `aggregate_vertices`, respectively. Available aggregate functions are assigned by following symbols to them: `:add`, `:sub`, `:mul`, `:div`, `:max`, `:min` and `:mean`.
