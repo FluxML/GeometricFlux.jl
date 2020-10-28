@@ -33,7 +33,8 @@ model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
 
 ## Loss
 loss(x, y) = logitcrossentropy(model(x), y)
-accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
+accuracy(x, y) = mean(onecold(cpu(model(x))) .== onecold(cpu(y)))
+
 
 ## Training
 ps = Flux.params(model)
