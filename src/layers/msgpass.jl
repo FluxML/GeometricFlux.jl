@@ -13,6 +13,7 @@ First argument should be message-passing layer, the rest of arguments can be `x_
 - `e_ij`: the feature of edge (`x_i`, `x_j`).
 """
 @inline message(mp::T, x_i, x_j, e_ij) where {T<:MessagePassing} = x_j
+@inline message(mp::T, i::Integer, j::Integer, x_i, x_j, e_ij) where {T<:MessagePassing} = x_j
 
 """
     update(mp, m, x)
@@ -26,14 +27,15 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 - `x`: the single node feature.
 """
 @inline update(mp::T, m, x) where {T<:MessagePassing} = m
+@inline update(mp::T, i::Integer, m, x) where {T<:MessagePassing} = m
 
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([_apply_batch_message(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
+    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
 end
 
-@inline function _apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
     hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
 end
 
