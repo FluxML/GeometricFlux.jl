@@ -26,7 +26,7 @@ adj_mat = Matrix{Float32}(adjacency_matrix(g))
 train_data = [(FeaturedGraph(adj_mat.*M, Matrix{Float32}(features)), adj_mat) for M in masks]
 
 ## Model
-model = VGAE(GCNConv(num_features=>h_dim, relu; cache=false), h_dim, z_dim, σ)
+model = VGAE(GCNConv(num_features=>h_dim, relu;), h_dim, z_dim, σ)
 encoder = model.encoder
 decoder = model.decoder
 ps = Flux.params(model)

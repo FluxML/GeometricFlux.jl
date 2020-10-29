@@ -40,6 +40,12 @@ function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identi
     GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
 end
 
+function GCNConv(fg::FeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
+                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
+    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
+    GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
+end
+
 @functor GCNConv
 
 function (g::GCNConv)(A::AbstractMatrix, X::AbstractMatrix)
