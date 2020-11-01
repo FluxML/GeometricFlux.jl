@@ -12,7 +12,7 @@ topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
 ## Get feature with defaults
 
 get_feature(::Nothing, i) = nothing
-get_feature(::Fill{T,2,Axes}, i::Integer) where {T,Axes} = nothing
+get_feature(A::Fill{T,2,Axes}, i::Integer) where {T,Axes} = view(A, :, 1)
 get_feature(A::AbstractMatrix, i::Integer) = view(A, :, i)
 
 """
