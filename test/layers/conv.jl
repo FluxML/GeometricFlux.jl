@@ -252,7 +252,6 @@ adj = [0. 1. 0. 1.;
 
             g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
             @test size(g.weight) == size(ggc.weight)
-            # @test size(g.gru) == size(ggc.gru)
         end
 
         @testset "layer without graph" begin
@@ -270,7 +269,6 @@ adj = [0. 1. 0. 1.;
 
             g = Zygote.gradient(model -> sum(node_feature(model(fg))), ggc)[1]
             @test size(g.weight) == size(ggc.weight)
-            # @test size(g.gru) == size(ggc.gru)
         end
     end
 
