@@ -5,6 +5,7 @@ using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: Adjoint, norm
 using Reexport
 
+using CUDA
 using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
@@ -105,7 +106,6 @@ using .Datasets
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
-        using CUDA
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
         include("cuda/pool.jl")

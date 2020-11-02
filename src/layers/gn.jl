@@ -10,11 +10,11 @@ abstract type GraphNet end
 @inline function update_batch_edge(gn::T, adj, E, V, u) where {T<:GraphNet}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    E_ = [_apply_batch_message(gn, i, adj[i], edge_idx, E, V, u) for i in 1:n]
+    E_ = [apply_batch_message(gn, i, adj[i], edge_idx, E, V, u) for i in 1:n]
     hcat(E_...)
 end
 
-@inline function _apply_batch_message(gn::T, i, js, edge_idx, E, V, u) where {T<:GraphNet}
+@inline function apply_batch_message(gn::T, i, js, edge_idx, E, V, u) where {T<:GraphNet}
     E_ = [update_edge(gn, get_feature(E, edge_idx[(i,j)]), get_feature(V, i), get_feature(V, j), u) for j = js]
     hcat(E_...)
 end

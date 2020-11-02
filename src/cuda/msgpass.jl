@@ -9,16 +9,13 @@ end
 end
 
 @inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::CuMatrix) where {T<:MessagePassing}
+    n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    E_ = Vector[]
-    for (i, js) = enumerate(adj)
-        for j = js
-            k = edge_idx[(i,j)]
-            m = message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, k))
-            push!(E_, m)
-        end
-    end
-    hcat(E_...)
+    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
+end
+
+@inline function apply_batch_message(mp::T, i, js, edge_idx, E::CuMatrix, X::CuMatrix) where {T<:MessagePassing}
+    hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
 end
 
 @inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::CuMatrix) where {T<:MessagePassing}
@@ -32,10 +29,6 @@ end
 end
 
 @inline function update_batch_vertex(mp::T, M::CuMatrix, X::CuMatrix) where {T<:MessagePassing}
-    X_ = Vector[]
-    for i = 1:size(X,2)
-        x = update(mp, get_feature(M, i), get_feature(X, i))
-        push!(X_, x)
-    end
+    X_ = [update(mp, get_feature(M, i), get_feature(X, i)) for i = 1:size(X,2)]
     hcat(X_...)
 end
