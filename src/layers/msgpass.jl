@@ -43,32 +43,22 @@ end
     hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i in 1:size(X,2)]...)
 end
 
-@inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge, num_V, num_E) where {T<:MessagePassing}
+@inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
-    cluster = generate_cluster(M, accu_edge, num_V, num_E)
+    cluster = generate_cluster(M, accu_edge)
     pool(aggr, cluster, M)
 end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
-    adj = adjacency_list(fg)
-    num_V = nv(adj)
-    num_E = ne(adj, fg.directed)
-    E = edge_feature(fg)
-    X = node_feature(fg)
-
-    E, X = propagate(mp, adj, E, X, aggr, num_V, num_E)
-
+    E, X = propagate(mp, adjacency_list(fg), edge_feature(fg), node_feature(fg), aggr)
     FeaturedGraph(graph(fg), X, E, zeros(0))
 end
 
-function propagate(mp::T, adj::AbstractVector{S}, E::R, X::R, aggr::Symbol,
-                   num_V::Int=nv(adj), num_E::Int=ne(adj)) where {T<:MessagePassing,S<:AbstractVector,R<:AbstractMatrix}
+function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr::Symbol) where {T<:MessagePassing,S<:AbstractVector,R,Q}
     accu_edge = accumulated_edges(adj)
 
     E = update_batch_edge(mp, adj, E, X)
-
-    M = aggregate_neighbors(mp, aggr, E, accu_edge, num_V, num_E)
-
+    M = aggregate_neighbors(mp, aggr, E, accu_edge)
     X = update_batch_vertex(mp, M, X)
 
     E, X
