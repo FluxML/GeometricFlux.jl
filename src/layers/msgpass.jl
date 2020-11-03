@@ -50,7 +50,7 @@ end
 end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
-    E, X = propagate(mp, adjacency_list(fg), edge_feature(fg), node_feature(fg), aggr)
+    E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
     FeaturedGraph(graph(fg), X, E, zeros(0))
 end
 

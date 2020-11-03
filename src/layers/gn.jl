@@ -24,13 +24,13 @@ end
     hcat(V_...)
 end
 
-@inline function aggregate_neighbors(gn::T, aggr::Symbol, E, accu_edge, num_V, num_E) where {T<:GraphNet}
+@inline function aggregate_neighbors(gn::T, aggr::Symbol, E, accu_edge) where {T<:GraphNet}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
-    cluster = generate_cluster(E, accu_edge, num_V, num_E)
+    cluster = generate_cluster(E, accu_edge)
     pool(aggr, cluster, E)
 end
 
-@inline function aggregate_neighbors(gn::T, aggr::Nothing, E, accu_edge, num_V, num_E) where {T<:GraphNet}
+@inline function aggregate_neighbors(gn::T, aggr::Nothing, E, accu_edge) where {T<:GraphNet}
     @nospecialize E accu_edge num_V num_E
 end
 
@@ -57,25 +57,20 @@ end
 end
 
 function propagate(gn::T, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet}
-    adj = adjacency_list(fg)
-    num_V = nv(fg)
+    E, V, u = propagate(gn, adjacency_list(fg), fg.ef, fg.nf, fg.gf, naggr, eaggr, vaggr)
+    FeaturedGraph(graph(fg), V, E, u)
+end
+
+function propagate(gn::T, adj::AbstractVector{S}, E::R, V::Q, u::P,
+                   naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet,S<:AbstractVector,R,Q,P}
     accu_edge = accumulated_edges(adj)
-    num_E = accu_edge[end]
-    E = edge_feature(fg)
-    V = node_feature(fg)
-    u = global_feature(fg)
 
     E = update_batch_edge(gn, adj, E, V, u)
-
-    Ē = aggregate_neighbors(gn, naggr, E, accu_edge, num_V, num_E)
-
+    Ē = aggregate_neighbors(gn, naggr, E, accu_edge)
     V = update_batch_vertex(gn, Ē, V, u)
-
     ē = aggregate_edges(gn, eaggr, E)
-
     v̄ = aggregate_vertices(gn, vaggr, V)
-
     u = update_global(gn, ē, v̄, u)
 
-    FeaturedGraph(graph(fg), V, E, u)
+    E, V, u
 end
