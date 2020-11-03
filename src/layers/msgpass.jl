@@ -29,17 +29,17 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 @inline update(mp::T, m, x) where {T<:MessagePassing} = m
 @inline update(mp::T, i::Integer, m, x) where {T<:MessagePassing} = m
 
-@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
+    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
 end
 
-@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
 end
 
-@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i in 1:size(X,2)]...)
 end
 
@@ -51,15 +51,10 @@ end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
     E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
-    FeaturedGraph(graph(fg), X, E, zeros(0))
+    FeaturedGraph(graph(fg), X, E, Fill(0.f0, 0))
 end
 
 function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr::Symbol) where {T<:MessagePassing,S<:AbstractVector,R,Q}
-    accu_edge = accumulated_edges(adj)
-
-    E = update_batch_edge(mp, adj, E, X)
-    M = aggregate_neighbors(mp, aggr, E, accu_edge)
-    X = update_batch_vertex(mp, M, X)
-
+    E, X, u = propagate(mp, adj, E, X, Fill(0.f0, 0), aggr, nothing, nothing)
     E, X
 end
