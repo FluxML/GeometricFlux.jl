@@ -300,7 +300,7 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
 end
 
 # The same as update function in batch manner
-function update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix)
+function update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix, u)
     g.concat || (M = mean(M, dims=2))
     return M .+ g.bias
 end
