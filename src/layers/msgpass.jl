@@ -51,11 +51,19 @@ end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
     adj = adjacency_list(fg)
-    num_V = nv(fg)
-    accu_edge = accumulated_edges(adj)
-    num_E = accu_edge[end]
+    num_V = nv(adj)
+    num_E = ne(adj, fg.directed)
     E = edge_feature(fg)
     X = node_feature(fg)
+
+    E, X = propagate(mp, adj, E, X, aggr, num_V, num_E)
+
+    FeaturedGraph(graph(fg), X, E, zeros(0))
+end
+
+function propagate(mp::T, adj::AbstractVector{S}, E::R, X::R, aggr::Symbol,
+                   num_V::Int=nv(adj), num_E::Int=ne(adj)) where {T<:MessagePassing,S<:AbstractVector,R<:AbstractMatrix}
+    accu_edge = accumulated_edges(adj)
 
     E = update_batch_edge(mp, adj, E, X)
 
@@ -63,5 +71,5 @@ function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:Messag
 
     X = update_batch_vertex(mp, M, X)
 
-    FeaturedGraph(graph(fg), X, E, zeros(0))
+    E, X
 end
