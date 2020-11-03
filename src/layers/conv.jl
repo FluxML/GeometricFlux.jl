@@ -383,7 +383,7 @@ function (g::GatedGraphConv{V,T})(fg::FeaturedGraph) where {V,T<:Real}
         M = view(g.weight, :, :, i) * H
         fg_ = propagate(g, FeaturedGraph(graph(fg), M), g.aggr)
         M = node_feature(fg_)
-        H, _ = g.gru(H, M)
+        H, _ = g.gru(H, M)  # BUG: FluxML/Flux.jl#1381
     end
     FeaturedGraph(graph(fg), H)
 end

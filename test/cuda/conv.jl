@@ -19,6 +19,13 @@ adj = [0 1 0 1;
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
         @test size(Y) == (out_channel, N)
+
+        g = Zygote.gradient(x -> sum(gc(x)), X)[1]
+        @test size(g) == size(X)
+
+        g = Zygote.gradient(model -> sum(model(X)), gc)[1]
+        @test size(g.weight) == size(gc.weight)
+        @test size(g.bias) == size(gc.bias)
     end
 
 
@@ -35,6 +42,13 @@ adj = [0 1 0 1;
         X = rand(in_channel, N) |> gpu
         Y = cc(X)
         @test size(Y) == (out_channel, N)
+
+        g = Zygote.gradient(x -> sum(cc(x)), X)[1]
+        @test size(g) == size(X)
+
+        g = Zygote.gradient(model -> sum(model(X)), cc)[1]
+        @test size(g.weight) == size(cc.weight)
+        @test size(g.bias) == size(cc.bias)
     end
 
     @testset "GraphConv" begin
@@ -46,6 +60,14 @@ adj = [0 1 0 1;
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
         @test size(Y) == (out_channel, N)
+
+        g = Zygote.gradient(x -> sum(gc(x)), X)[1]
+        @test size(g) == size(X)
+
+        g = Zygote.gradient(model -> sum(model(X)), gc)[1]
+        @test size(g.weight1) == size(gc.weight1)
+        @test size(g.weight2) == size(gc.weight2)
+        @test size(g.bias) == size(gc.bias)
     end
 
     @testset "GATConv" begin
@@ -56,6 +78,14 @@ adj = [0 1 0 1;
         X = rand(in_channel, N) |> gpu
         Y = gat(X)
         @test size(Y) == (out_channel, N)
+
+        g = Zygote.gradient(x -> sum(gat(x)), X)[1]
+        @test size(g) == size(X)
+
+        g = Zygote.gradient(model -> sum(model(X)), gat)[1]
+        @test size(g.weight) == size(gat.weight)
+        @test size(g.bias) == size(gat.bias)
+        @test size(g.a) == size(gat.a)
     end
 
     @testset "GatedGraphConv" begin
@@ -66,6 +96,13 @@ adj = [0 1 0 1;
         X = rand(in_channel, N) |> gpu
         Y = ggc(X)
         @test size(Y) == (out_channel, N)
+
+        # BUG: FluxML/Flux.jl#1381
+        # g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
+        # @test size(g) == size(X)
+
+        # g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
+        # @test size(g.weight) == size(ggc.weight)
     end
 
     @testset "EdgeConv" begin
@@ -73,5 +110,12 @@ adj = [0 1 0 1;
         X = rand(in_channel, N) |> gpu
         Y = ec(X)
         @test size(Y) == (out_channel, N)
+
+        g = Zygote.gradient(x -> sum(ec(x)), X)[1]
+        @test size(g) == size(X)
+
+        g = Zygote.gradient(model -> sum(model(X)), ec)[1]
+        @test size(g.nn.W) == size(ec.nn.W)
+        @test size(g.nn.b) == size(ec.nn.b)
     end
 end

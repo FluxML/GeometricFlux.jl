@@ -1,5 +1,15 @@
+@inline function update_batch_edge(mp::T, adj, E::Fill{S,2,Axes}, X::CuMatrix) where {T<:MessagePassing,S,Axes}
+    E = fill(E.value, E.axes)
+    update_batch_edge(mp, adj, E, X)
+end
+
+@inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::Fill{S,2,Axes}) where {T<:MessagePassing,S,Axes}
+    X = fill(X.value, X.axes)
+    update_batch_edge(mp, adj, E, X)
+end
+
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::CuMatrix) where {T<:MessagePassing}
-    E = convert(typeof(X), Matrix(E))
+    E = convert(typeof(X), E)
     update_batch_edge(mp, adj, E, X)
 end
 
