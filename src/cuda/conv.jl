@@ -10,4 +10,5 @@ function update_batch_vertex(g::GATConv, M::CuMatrix, X::CuMatrix, u)
         N = size(M, 2)
         M = reshape(mean(reshape(M, :, g.heads, N), dims=2), :, N)
     end
+    return M
 end
