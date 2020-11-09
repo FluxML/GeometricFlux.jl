@@ -31,11 +31,11 @@ adj_mat = Matrix{Float32}(adjacency_matrix(g)) |> gpu
 model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
               Dropout(0.5),
               GCNConv(adj_mat, hidden=>target_catg),
-              softmax) |> gpu
+              ) |> gpu
 
 ## Loss
 loss(x, y) = logitcrossentropy(model(x), y)
-accuracy(x, y) = mean(onecold(cpu(model(x))) .== onecold(cpu(y)))
+accuracy(x, y) = mean(onecold(softmax(cpu(model(x)))) .== onecold(cpu(y)))
 
 
 ## Training
