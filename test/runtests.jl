@@ -2,6 +2,7 @@ using GeometricFlux
 using GeometricFlux.Datasets
 using Flux
 using Flux: @functor
+using FillArrays
 using GraphSignals
 using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne

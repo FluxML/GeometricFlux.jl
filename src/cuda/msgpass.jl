@@ -1,41 +1,43 @@
-@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::CuMatrix) where {T<:MessagePassing}
-    E = convert(typeof(X), Matrix(E))
-    update_batch_edge(mp, adj, E, X)
+@inline function update_batch_edge(mp::T, adj, E::Fill{S,2,Axes}, X::CuMatrix, u) where {T<:MessagePassing,S,Axes}
+    E = fill(E.value, E.axes)
+    update_batch_edge(mp, adj, E, X, u)
 end
 
-@inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::Fill{S,2,Axes}, u) where {T<:MessagePassing,S,Axes}
+    X = fill(X.value, X.axes)
+    update_batch_edge(mp, adj, E, X, u)
+end
+
+@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::CuMatrix, u) where {T<:MessagePassing}
+    E = convert(typeof(X), E)
+    update_batch_edge(mp, adj, E, X, u)
+end
+
+@inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     X = convert(typeof(E), X)
-    update_batch_edge(mp, adj, E, X)
+    update_batch_edge(mp, adj, E, X, u)
 end
 
-@inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::CuMatrix) where {T<:MessagePassing}
+@inline function update_batch_edge(mp::T, adj, E::CuMatrix, X::CuMatrix, u) where {T<:MessagePassing}
+    n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    E_ = Vector[]
-    for (i, js) = enumerate(adj)
-        for j = js
-            k = edge_idx[(i,j)]
-            m = message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, k))
-            push!(E_, m)
-        end
-    end
-    hcat(E_...)
+    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
 end
 
-@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::CuMatrix) where {T<:MessagePassing}
+@inline function apply_batch_message(mp::T, i, js, edge_idx, E::CuMatrix, X::CuMatrix, u) where {T<:MessagePassing}
+    hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
+end
+
+@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::CuMatrix, u) where {T<:MessagePassing}
     M = convert(typeof(X), M)
-    update_batch_vertex(mp, M, X)
+    update_batch_vertex(mp, M, X, u)
 end
 
-@inline function update_batch_vertex(mp::T, M::CuMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function update_batch_vertex(mp::T, M::CuMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     X = convert(typeof(M), X)
-    update_batch_vertex(mp, M, X)
+    update_batch_vertex(mp, M, X, u)
 end
 
-@inline function update_batch_vertex(mp::T, M::CuMatrix, X::CuMatrix) where {T<:MessagePassing}
-    X_ = Vector[]
-    for i = 1:size(X,2)
-        x = update(mp, get_feature(M, i), get_feature(X, i))
-        push!(X_, x)
-    end
-    hcat(X_...)
+@inline function update_batch_vertex(mp::T, M::CuMatrix, X::CuMatrix, u) where {T<:MessagePassing}
+    hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i = 1:size(X,2)]...)
 end

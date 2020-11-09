@@ -29,39 +29,32 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 @inline update(mp::T, m, x) where {T<:MessagePassing} = m
 @inline update(mp::T, i::Integer, m, x) where {T<:MessagePassing} = m
 
-@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X) for i in 1:n]...)
+    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
 end
 
-@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
 end
 
-@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix) where {T<:MessagePassing}
+@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i in 1:size(X,2)]...)
 end
 
-@inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge, num_V, num_E) where {T<:MessagePassing}
+@inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
-    cluster = generate_cluster(M, accu_edge, num_V, num_E)
+    cluster = generate_cluster(M, accu_edge)
     pool(aggr, cluster, M)
 end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
-    adj = adjacency_list(fg)
-    num_V = nv(fg)
-    accu_edge = accumulated_edges(adj)
-    num_E = accu_edge[end]
-    E = edge_feature(fg)
-    X = node_feature(fg)
+    E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
+    FeaturedGraph(graph(fg), X, E, Fill(0.f0, 0))
+end
 
-    E = update_batch_edge(mp, adj, E, X)
-
-    M = aggregate_neighbors(mp, aggr, E, accu_edge, num_V, num_E)
-
-    X = update_batch_vertex(mp, M, X)
-
-    FeaturedGraph(graph(fg), X, E, zeros(0))
+function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr::Symbol) where {T<:MessagePassing,S<:AbstractVector,R,Q}
+    E, X, u = propagate(mp, adj, E, X, Fill(0.f0, 0), aggr, nothing, nothing)
+    E, X
 end
