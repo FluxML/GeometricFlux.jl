@@ -49,13 +49,13 @@ end
 @functor GCNConv
 
 function (g::GCNConv)(A::AbstractMatrix, X::AbstractMatrix)
-    L = normalized_laplacian(A, eltype(X); selfloop=true)
+    L̃ = normalized_laplacian(A, eltype(X); selfloop=true)
 
     if isa(X, CuArray)
-        L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+        L̃ = convert(typeof(X), L̃)  # ensure L has the same type as X, especially X::CuArray
     end
     
-    g.σ.(g.weight * X * L .+ g.bias)
+    g.σ.(g.weight * X * L̃ .+ g.bias)
 end
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
@@ -145,7 +145,7 @@ function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     L̃ = scaled_laplacian(g, T)
 
     if isa(X, CuArray)
-        L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+        L̃ = convert(typeof(X), L̃)  # ensure L̃ has the same type as X, especially X::CuArray
     end
     
     c(L̃, X)
@@ -161,7 +161,7 @@ function (c::ChebConv)(fg::FeaturedGraph)
     L̃ = scaled_laplacian(adjacency_matrix(fg))
 
     if isa(X, CuArray)
-        L = convert(typeof(X), L)  # ensure L has the same type as X, especially X::CuArray
+        L̃ = convert(typeof(X), L̃)  # ensure L has the same type as X, especially X::CuArray
     end
     
     X_ = c(L̃, X)
