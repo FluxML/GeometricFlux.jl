@@ -174,7 +174,7 @@ adj = [0. 1. 0. 1.;
                     @test size(gat.a) == (2*out_channel, heads, 1)
 
                     Y = gat(X)
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test size(Y) == (out_channel, N)
 
                     g = Zygote.gradient(x -> sum(gat(x)), X)[1]
                     @test size(g) == size(X)
@@ -221,7 +221,7 @@ adj = [0. 1. 0. 1.;
 
                     fg_ = gat(fg)
                     Y = node_feature(fg_)
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test size(Y) == (out_channel, N)
                     @test_throws AssertionError gat(X)
 
                     g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg)[1]
