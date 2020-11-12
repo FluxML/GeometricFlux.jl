@@ -304,7 +304,8 @@ end
 function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u)
     alpha_messages = hcat([message(g, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
     alpha_messages = reshape(alpha_messages, :, size(alpha_messages, 2)*g.heads)
-    alphas = transpose(Flux.softmax(alpha_messages[1, :]))
+    alphas = Flux.softmax(alpha_messages[1, :])
+    alphas = reshape(alphas, 1, :) # We need a line so that every α will multiply a column
     messages = alpha_messages[2:end, :] .* alphas
     reshape(messages, size(messages, 1)*g.heads, :)
 end
