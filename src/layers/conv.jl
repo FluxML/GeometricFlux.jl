@@ -288,6 +288,7 @@ end
 
 @functor GATConv
 
+# Here the α that has not been softmaxed is the first number of the output message
 function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     x_i = reshape(g.weight*x_i, :, g.heads)
     x_j = reshape(g.weight*x_j, :, g.heads)
@@ -295,8 +296,17 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     α = vcat(x_i, x_j+zero(x_j)) .* g.a
     α = reshape(sum(α, dims=1), g.heads)
     α = leakyrelu.(α, g.negative_slope)
-    α = Flux.softmax(α)
-    reshape(x_j .* reshape(α, 1, g.heads), n*g.heads)
+    reshape(vcat(reshape(α, 1, g.heads), x_j), (n+1)*g.heads)
+end
+
+# After some reshaping due to the multihead, we get the α from each message, 
+# then get the softmax over every α, and eventually multiply the message by α
+function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u)
+    alpha_messages = hcat([message(g, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
+    alpha_messages = reshape(alpha_messages, :, size(alpha_messages, 2)*g.heads)
+    alphas = transpose(Flux.softmax(alpha_messages[1, :]))
+    messages = alpha_messages[2:end, :] .* alphas
+    reshape(messages, size(messages, 1)*g.heads, :)
 end
 
 # The same as update function in batch manner
