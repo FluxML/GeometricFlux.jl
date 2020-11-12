@@ -310,6 +310,20 @@ function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::
     reshape(messages, size(messages, 1)*g.heads, :)
 end
 
+function update_batch_edge(g::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u)
+    n = size(adj, 1)
+
+    # In GATConv, a vertex must always receive a message from itself
+    Zygote.ignore() do
+        for i in 1:length(adj)
+            adj[i] = vcat(i, adj[i])
+        end
+    end
+
+    edge_idx = edge_index_table(adj)
+    hcat([apply_batch_message(g, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
+end
+
 # The same as update function in batch manner
 function update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix, u)
     M = M .+ g.bias
