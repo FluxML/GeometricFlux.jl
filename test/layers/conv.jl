@@ -8,6 +8,11 @@ adj = [0. 1. 0. 1.;
        0. 1. 0. 1.;
        1. 0. 1. 0.]
 
+adj_single_vertex =   T[0. 0. 0. 1.;
+                        0. 0. 0. 0.;
+                        0. 0. 0. 1.;
+                        1. 0. 1. 0.]
+
 
 @testset "layer" begin
     @testset "GCNConv" begin
@@ -141,96 +146,112 @@ adj = [0. 1. 0. 1.;
     end
 
     @testset "GATConv" begin
+
         X = rand(in_channel, N)
 
-        @testset "layer with graph" begin
-            @testset "concat=true" begin
-                for heads = [1, 6]
-                    gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=true)
-                    @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
-                    @test size(gat.weight) == (out_channel * heads, in_channel)
-                    @test size(gat.bias) == (out_channel * heads,)
-                    @test size(gat.a) == (2*out_channel, heads, 1)
+        for adj_gat in [adj, adj_single_vertex]
 
-                    Y = gat(X)
-                    @test size(Y) == (out_channel * heads, N)
-                    
-                    g = Zygote.gradient(x -> sum(gat(x)), X)[1]
-                    @test size(g) == size(X)
+            @testset "layer with graph" begin
+                @testset "concat=true" begin
+                    for heads = [1, 6]
+                        gat = GATConv(adj_gat, in_channel=>out_channel, heads=heads, concat=true)
 
-                    g = Zygote.gradient(model -> sum(model(X)), gat)[1]
-                    @test size(g.weight) == size(gat.weight)
-                    @test size(g.bias) == size(gat.bias)
-                    @test size(g.a) == size(gat.a)
+                        if adj_gat == adj
+                            @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
+                        end
+                        if adj_gat == adj_single_vertex
+                            @test graph(gat.fg) == [[4], Int64[], [4], [1, 3]]
+                        end
+
+                        @test size(gat.weight) == (out_channel * heads, in_channel)
+                        @test size(gat.bias) == (out_channel * heads,)
+                        @test size(gat.a) == (2*out_channel, heads, 1)
+
+                        Y = gat(X)
+                        @test size(Y) == (out_channel * heads, N)
+                        
+                        g = Zygote.gradient(x -> sum(gat(x)), X)[1]
+                        @test size(g) == size(X)
+
+                        g = Zygote.gradient(model -> sum(model(X)), gat)[1]
+                        @test size(g.weight) == size(gat.weight)
+                        @test size(g.bias) == size(gat.bias)
+                        @test size(g.a) == size(gat.a)
+                    end
+                end
+
+                @testset "concat=false" begin
+                    for heads = [1, 6]
+                        gat = GATConv(adj_gat, in_channel=>out_channel, heads=heads, concat=false)
+                        if adj_gat == adj
+                            @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
+                        end
+                        if adj_gat == adj_single_vertex
+                            @test graph(gat.fg) == [[4], Int64[], [4], [1, 3]]
+                        end
+                        @test size(gat.weight) == (out_channel * heads, in_channel)
+                        @test size(gat.bias) == (out_channel * heads,)
+                        @test size(gat.a) == (2*out_channel, heads, 1)
+
+                        Y = gat(X)
+                        @test size(Y) == (out_channel, N)
+
+                        g = Zygote.gradient(x -> sum(gat(x)), X)[1]
+                        @test size(g) == size(X)
+
+                        g = Zygote.gradient(model -> sum(model(X)), gat)[1]
+                        @test size(g.weight) == size(gat.weight)
+                        @test size(g.bias) == size(gat.bias)
+                        @test size(g.a) == size(gat.a)
+                    end
                 end
             end
 
-            @testset "concat=false" begin
-                for heads = [1, 6]
-                    gat = GATConv(adj, in_channel=>out_channel, heads=heads, concat=false)
-                    @test graph(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
-                    @test size(gat.weight) == (out_channel * heads, in_channel)
-                    @test size(gat.bias) == (out_channel * heads,)
-                    @test size(gat.a) == (2*out_channel, heads, 1)
+            @testset "layer without graph" begin
+                fg = FeaturedGraph(adj_gat, X)
+                
+                @testset "concat=true" begin
+                    for heads = [1, 6]
+                        gat = GATConv(in_channel=>out_channel, heads=heads, concat=true)
+                        @test size(gat.weight) == (out_channel * heads, in_channel)
+                        @test size(gat.bias) == (out_channel * heads,)
+                        @test size(gat.a) == (2*out_channel, heads, 1)
 
-                    Y = gat(X)
-                    @test size(Y) == (out_channel, N)
+                        fg_ = gat(fg)
+                        Y = node_feature(fg_)
+                        @test size(Y) == (out_channel * heads, N)
+                        @test_throws AssertionError gat(X)
 
-                    g = Zygote.gradient(x -> sum(gat(x)), X)[1]
-                    @test size(g) == size(X)
+                        g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg)[1]
+                        @test size(g[].nf) == size(X)
 
-                    g = Zygote.gradient(model -> sum(model(X)), gat)[1]
-                    @test size(g.weight) == size(gat.weight)
-                    @test size(g.bias) == size(gat.bias)
-                    @test size(g.a) == size(gat.a)
+                        g = Zygote.gradient(model -> sum(node_feature(model(fg))), gat)[1]
+                        @test size(g.weight) == size(gat.weight)
+                        @test size(g.bias) == size(gat.bias)
+                        @test size(g.a) == size(gat.a)
+                    end
                 end
-            end
-        end
 
-        @testset "layer without graph" begin
-            fg = FeaturedGraph(adj, X)
-            
-            @testset "concat=true" begin
-                for heads = [1, 6]
-                    gat = GATConv(in_channel=>out_channel, heads=heads, concat=true)
-                    @test size(gat.weight) == (out_channel * heads, in_channel)
-                    @test size(gat.bias) == (out_channel * heads,)
-                    @test size(gat.a) == (2*out_channel, heads, 1)
+                @testset "concat=false" begin
+                    for heads = [1, 6]
+                        gat = GATConv(in_channel=>out_channel, heads=heads, concat=false)
+                        @test size(gat.weight) == (out_channel * heads, in_channel)
+                        @test size(gat.bias) == (out_channel * heads,)
+                        @test size(gat.a) == (2*out_channel, heads, 1)
 
-                    fg_ = gat(fg)
-                    Y = node_feature(fg_)
-                    @test size(Y) == (out_channel * heads, N)
-                    @test_throws AssertionError gat(X)
+                        fg_ = gat(fg)
+                        Y = node_feature(fg_)
+                        @test size(Y) == (out_channel, N)
+                        @test_throws AssertionError gat(X)
 
-                    g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg)[1]
-                    @test size(g[].nf) == size(X)
+                        g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg)[1]
+                        @test size(g[].nf) == size(X)
 
-                    g = Zygote.gradient(model -> sum(node_feature(model(fg))), gat)[1]
-                    @test size(g.weight) == size(gat.weight)
-                    @test size(g.bias) == size(gat.bias)
-                    @test size(g.a) == size(gat.a)
-                end
-            end
-
-            @testset "concat=false" begin
-                for heads = [1, 6]
-                    gat = GATConv(in_channel=>out_channel, heads=heads, concat=false)
-                    @test size(gat.weight) == (out_channel * heads, in_channel)
-                    @test size(gat.bias) == (out_channel * heads,)
-                    @test size(gat.a) == (2*out_channel, heads, 1)
-
-                    fg_ = gat(fg)
-                    Y = node_feature(fg_)
-                    @test size(Y) == (out_channel, N)
-                    @test_throws AssertionError gat(X)
-
-                    g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg)[1]
-                    @test size(g[].nf) == size(X)
-
-                    g = Zygote.gradient(model -> sum(node_feature(model(fg))), gat)[1]
-                    @test size(g.weight) == size(gat.weight)
-                    @test size(g.bias) == size(gat.bias)
-                    @test size(g.a) == size(gat.a)
+                        g = Zygote.gradient(model -> sum(node_feature(model(fg))), gat)[1]
+                        @test size(g.weight) == size(gat.weight)
+                        @test size(g.bias) == size(gat.bias)
+                        @test size(g.a) == size(gat.a)
+                    end
                 end
             end
         end
