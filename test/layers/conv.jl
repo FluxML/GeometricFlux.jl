@@ -216,7 +216,7 @@ adj = [0. 1. 0. 1.;
                     @test size(gat.a) == (2*out_channel, heads, 1)
 
                     Y = gat(X)
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test size(Y) == (out_channel, N)
 
                     
                     # Test with transposed features
@@ -276,7 +276,7 @@ adj = [0. 1. 0. 1.;
 
                     fg_ = gat(fg)
                     Y = node_feature(fg_)
-                    @test size(Y) == (out_channel * heads, 1)
+                    @test size(Y) == (out_channel, N)
                     @test_throws AssertionError gat(X)
 
                     
