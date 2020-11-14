@@ -267,7 +267,7 @@ struct GATConv{V<:AbstractFeaturedGraph, T <: Real} <: MessagePassing
     fg::V
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
-    a::AbstractArray{T,3}
+    a::AbstractMatrix{T}
     negative_slope::Real
     channel::Pair{<:Integer,<:Integer}
     heads::Integer
@@ -279,7 +279,7 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
                  bias::Bool=true, T::DataType=Float32)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads, 1))
+    a = T.(init(2*ch[2], heads))
     fg = FeaturedGraph(adjacency_list(adj))
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
 end
@@ -289,7 +289,7 @@ function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
                  bias::Bool=true, T::DataType=Float32)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads, 1))
+    a = T.(init(2*ch[2], heads))
     GATConv(NullGraph(), w, b, a, negative_slope, ch, heads, concat)
 end
 
@@ -300,10 +300,10 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     x_i = reshape(g.weight*x_i, :, g.heads)
     x_j = reshape(g.weight*x_j, :, g.heads)
     n = size(x_i, 1)
-    α = vcat(x_i, x_j+zero(x_j)) .* g.a
-    α = reshape(sum(α, dims=1), g.heads)
-    α = leakyrelu.(α, g.negative_slope)
-    reshape(vcat(reshape(α, 1, g.heads), x_j), (n+1)*g.heads)
+    e = vcat(x_i, x_j+zero(x_j))
+    e = sum(e .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
+    e = leakyrelu.(e, g.negative_slope)
+    reshape(vcat(e, x_j), (n+1)*g.heads)
 end
 
 # After some reshaping due to the multihead, we get the α from each message, 
