@@ -267,7 +267,7 @@ struct GATConv{V<:AbstractFeaturedGraph, T <: Real} <: MessagePassing
     fg::V
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
-    a::AbstractArray{T,3}
+    a::AbstractMatrix{T}
     negative_slope::Real
     channel::Pair{<:Integer,<:Integer}
     heads::Integer
@@ -279,7 +279,7 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
                  bias::Bool=true, T::DataType=Float32)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads, 1))
+    a = T.(init(2*ch[2], heads))
     fg = FeaturedGraph(adjacency_list(adj))
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
 end
@@ -289,21 +289,42 @@ function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
                  bias::Bool=true, T::DataType=Float32)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads, 1))
+    a = T.(init(2*ch[2], heads))
     GATConv(NullGraph(), w, b, a, negative_slope, ch, heads, concat)
 end
 
 @functor GATConv
 
+# Here the α that has not been softmaxed is the first number of the output message
 function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     x_i = reshape(g.weight*x_i, :, g.heads)
     x_j = reshape(g.weight*x_j, :, g.heads)
     n = size(x_i, 1)
-    α = vcat(x_i, x_j+zero(x_j)) .* g.a
-    α = reshape(sum(α, dims=1), g.heads)
-    α = leakyrelu.(α, g.negative_slope)
-    α = Flux.softmax(α)
-    reshape(x_j .* reshape(α, 1, g.heads), n*g.heads)
+    e = vcat(x_i, x_j+zero(x_j))
+    e = sum(e .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
+    e = leakyrelu.(e, g.negative_slope)
+    vcat(e, x_j)  # shape: (n+1, g.heads)
+end
+
+# After some reshaping due to the multihead, we get the α from each message, 
+# then get the softmax over every α, and eventually multiply the message by α
+function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u)
+    e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
+    n = size(e_ij, 1)
+    alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
+    msgs = view(e_ij, 2:n, :) .* reshape(alphas, 1, :)
+    reshape(msgs, (n-1)*g.heads, :)
+end
+
+function update_batch_edge(g::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u)
+    n = size(adj, 1)
+    # In GATConv, a vertex must always receive a message from itself
+    Zygote.ignore() do
+        add_self_loop!(adj, n)
+    end
+
+    edge_idx = edge_index_table(adj)
+    hcat([apply_batch_message(g, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
 end
 
 # The same as update function in batch manner

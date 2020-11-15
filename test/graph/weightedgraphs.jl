@@ -47,7 +47,7 @@ el_dg = Vector{Int64}[[3, 6], [3, 5], [4, 5], [], [], []]
                 @test graph(gat.fg) == ug
                 @test size(gat.weight) == (out_channel * heads, in_channel)
                 @test size(gat.bias) == (out_channel * heads,)
-                @test size(gat.a) == (2*out_channel, heads, 1)
+                @test size(gat.a) == (2*out_channel, heads)
             end
         end
     end
