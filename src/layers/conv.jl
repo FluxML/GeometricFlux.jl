@@ -318,12 +318,9 @@ end
 
 function update_batch_edge(g::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u)
     n = size(adj, 1)
-
     # In GATConv, a vertex must always receive a message from itself
     Zygote.ignore() do
-        for i in 1:length(adj)
-            adj[i] = vcat(i, adj[i])
-        end
+        add_self_loop!(adj, n)
     end
 
     edge_idx = edge_index_table(adj)

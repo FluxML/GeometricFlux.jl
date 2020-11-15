@@ -26,3 +26,10 @@ function bypass_graph(nf_func=identity, ef_func=identity, gf_func=identity)
                       gf_func(global_feature(fg)))
     end
 end
+
+function add_self_loop!(adj::AbstractVector{T}, n::Int=length(adj)) where {T<:AbstractVector}
+    for i = 1:n
+        i in adj[i] || push!(adj[i], i)
+    end
+    adj
+end
