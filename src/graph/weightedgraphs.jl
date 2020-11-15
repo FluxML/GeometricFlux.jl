@@ -34,7 +34,7 @@ function GATConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}; 
                  T::DataType=Float32, bias::Bool=true)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads, 1))
+    a = T.(init(2*ch[2], heads))
     GATConv(FeaturedGraph(g), w, b, a, negative_slope, ch, heads, concat)
 end
 
