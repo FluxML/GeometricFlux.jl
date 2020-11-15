@@ -200,7 +200,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
                         @test size(gat.weight) == (out_channel * heads, in_channel)
                         @test size(gat.bias) == (out_channel * heads,)
-                        @test size(gat.a) == (2*out_channel, heads, 1)
+                        @test size(gat.a) == (2*out_channel, heads)
 
                         Y = gat(X)
                         @test size(Y) == (out_channel * heads, N)
@@ -231,7 +231,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         end
                         @test size(gat.weight) == (out_channel * heads, in_channel)
                         @test size(gat.bias) == (out_channel * heads,)
-                        @test size(gat.a) == (2*out_channel, heads, 1)
+                        @test size(gat.a) == (2*out_channel, heads)
 
                         Y = gat(X)
                         @test size(Y) == (out_channel, N)
@@ -260,7 +260,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         gat = GATConv(in_channel=>out_channel, heads=heads, concat=true)
                         @test size(gat.weight) == (out_channel * heads, in_channel)
                         @test size(gat.bias) == (out_channel * heads,)
-                        @test size(gat.a) == (2*out_channel, heads, 1)
+                        @test size(gat.a) == (2*out_channel, heads)
 
                         fg_ = gat(fg)
                         Y = node_feature(fg_)
@@ -288,7 +288,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         gat = GATConv(in_channel=>out_channel, heads=heads, concat=false)
                         @test size(gat.weight) == (out_channel * heads, in_channel)
                         @test size(gat.bias) == (out_channel * heads,)
-                        @test size(gat.a) == (2*out_channel, heads, 1)
+                        @test size(gat.a) == (2*out_channel, heads)
 
                         fg_ = gat(fg)
                         Y = node_feature(fg_)
