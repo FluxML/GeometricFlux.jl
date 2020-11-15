@@ -310,10 +310,10 @@ end
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u)
     e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
+    n = size(e_ij, 1) - 1
     alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
-    alphas = reshape(alphas, 1, :) # We need a line so that every α will multiply a column
-    messages = e_ij[2:end, :] .* alphas
-    reshape(messages, size(messages, 1)*g.heads, :)
+    msgs = view(e_ij, 2:n, :) .* vec(alphas)
+    reshape(msgs, n*g.heads, :)
 end
 
 function update_batch_edge(g::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u)
