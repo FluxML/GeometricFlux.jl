@@ -303,15 +303,14 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
     e = vcat(x_i, x_j+zero(x_j))
     e = sum(e .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
     e = leakyrelu.(e, g.negative_slope)
-    reshape(vcat(e, x_j), (n+1)*g.heads)
+    vcat(e, x_j)  # shape: (n+1, g.heads)
 end
 
 # After some reshaping due to the multihead, we get the α from each message, 
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u)
     e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
-    e_ij = reshape(e_ij, :, size(e_ij, 2)*g.heads)
-    alphas = Flux.softmax(e_ij[1, :])
+    alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
     alphas = reshape(alphas, 1, :) # We need a line so that every α will multiply a column
     messages = e_ij[2:end, :] .* alphas
     reshape(messages, size(messages, 1)*g.heads, :)
