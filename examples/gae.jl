@@ -22,7 +22,7 @@ epochs = 200
 
 ## Preprocessing data
 adj_mat = Matrix{Float32}(adjacency_matrix(g)) |> gpu
-train_X = Float32.(features) |> gpu  # dim: num_features * num_nodes
+train_X = Matrix{Float32}(features) |> gpu  # dim: num_features * num_nodes
 train_y = adj_mat  # dim: num_nodes * num_nodes
 
 ## Model
