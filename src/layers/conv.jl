@@ -296,7 +296,7 @@ end
 @functor GATConv
 
 # Here the α that has not been softmaxed is the first number of the output message
-function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector, e_ij)
+function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector)
     x_i = reshape(g.weight*x_i, :, g.heads)
     x_j = reshape(g.weight*x_j, :, g.heads)
     n = size(x_i, 1)
@@ -308,27 +308,29 @@ end
 
 # After some reshaping due to the multihead, we get the α from each message, 
 # then get the softmax over every α, and eventually multiply the message by α
-function apply_batch_message(g::GATConv, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u)
-    e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
+function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
+    e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j)) for j = js]...)
     n = size(e_ij, 1)
     alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
     msgs = view(e_ij, 2:n, :) .* reshape(alphas, 1, :)
     reshape(msgs, (n-1)*g.heads, :)
 end
 
-function update_batch_edge(g::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u)
+update_batch_edge(g::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u) = update_batch_edge(g, adj, X)
+
+function update_batch_edge(g::GATConv, adj, X::AbstractMatrix)
     n = size(adj, 1)
-    # In GATConv, a vertex must always receive a message from itself
+    # a vertex must always receive a message from itself
     Zygote.ignore() do
         add_self_loop!(adj, n)
     end
-
-    edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(g, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
+    hcat([apply_batch_message(g, i, adj[i], X) for i in 1:n]...)
 end
 
 # The same as update function in batch manner
-function update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix, u)
+update_batch_vertex(g::GATConv, M::AbstractMatrix, X::AbstractMatrix, u) = update_batch_vertex(g, M)
+
+function update_batch_vertex(g::GATConv, M::AbstractMatrix)
     M = M .+ g.bias
     if !g.concat
         N = size(M, 2)
