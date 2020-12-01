@@ -4,7 +4,6 @@ using Flux
 using Flux: @functor
 using FillArrays
 using GraphSignals
-using StaticArrays: @MMatrix, @MArray
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
