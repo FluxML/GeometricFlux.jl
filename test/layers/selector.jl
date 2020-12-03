@@ -6,7 +6,7 @@ nf = rand(6, num_node)
 ef = rand(7, num_edge)
 gf = rand(8)
 
-fg = FeaturedGraph(A, nf, ef, gf)
+fg = FeaturedGraph(A, nf=nf, ef=ef, gf=gf)
 
 @testset "selector" begin
     fs = FeatureSelector(:node)

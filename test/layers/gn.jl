@@ -13,7 +13,7 @@ struct NewGNLayer <: GraphNet
 end
 
 V = rand(in_channel, num_V)
-E = rand(in_channel, 2*num_E)
+E = rand(in_channel, num_E)
 u = rand(in_channel)
 
 @testset "gn" begin
@@ -22,7 +22,7 @@ u = rand(in_channel)
     @testset "without aggregation" begin
         (l::NewGNLayer)(fg) = propagate(l, fg)
 
-        fg = FeaturedGraph(adj, V)
+        fg = FeaturedGraph(adj, nf=V)
         fg_ = l(fg)
 
         @test graph(fg_) === adj
@@ -34,7 +34,7 @@ u = rand(in_channel)
     @testset "with neighbor aggregation" begin
         (l::NewGNLayer)(fg) = propagate(l, fg, :add)
 
-        fg = FeaturedGraph(adj, V, E, zeros(0))
+        fg = FeaturedGraph(adj, nf=V, ef=E, gf=zeros(0))
         l = NewGNLayer()
         fg_ = l(fg)
 
@@ -48,7 +48,7 @@ u = rand(in_channel)
     @testset "update edge with neighbor aggregation" begin
         (l::NewGNLayer)(fg) = propagate(l, fg, :add)
 
-        fg = FeaturedGraph(adj, V, E, zeros(0))
+        fg = FeaturedGraph(adj, nf=V, ef=E, gf=zeros(0))
         l = NewGNLayer()
         fg_ = l(fg)
 
@@ -62,7 +62,7 @@ u = rand(in_channel)
     @testset "update edge/vertex with all aggregation" begin
         (l::NewGNLayer)(fg) = propagate(l, fg, :add, :add, :add)
 
-        fg = FeaturedGraph(adj, V, E, u)
+        fg = FeaturedGraph(adj, nf=V, ef=E, gf=u)
         l = NewGNLayer()
         fg_ = l(fg)
 

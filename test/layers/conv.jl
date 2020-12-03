@@ -45,14 +45,14 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(gc.bias) == (out_channel,)
             @test !has_graph(gc.fg)
 
-            fg = FeaturedGraph(adj, X)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError gc(X)
 
             # Test with transposed features
             Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=transpose(Xt))
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -103,14 +103,14 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test cc.in_channel == in_channel
             @test cc.out_channel == out_channel
 
-            fg = FeaturedGraph(adj, X)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError cc(X)
 
             # Test with transposed features
             Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=transpose(Xt))
             fgt_ = cc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -159,14 +159,14 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
 
             X = rand(in_channel, N)
-            fg = FeaturedGraph(adj, X)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError gc(X)
 
             # Test with transposed features
             Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=transpose(Xt))
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -269,7 +269,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
                         # Test with transposed features
                         Xt = rand(N, in_channel)
-                        fgt = FeaturedGraph(adj_gat, transpose(Xt))
+                        fgt = FeaturedGraph(adj_gat, nf=transpose(Xt))
                         fgt_ = gat(fgt)
                         @test size(node_feature(fgt_)) == (out_channel * heads, N)
 
@@ -297,7 +297,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
                         # Test with transposed features
                         Xt = rand(N, in_channel)
-                        fgt = FeaturedGraph(adj_gat, transpose(Xt))
+                        fgt = FeaturedGraph(adj_gat, nf=transpose(Xt))
                         fgt_ = gat(fgt)
                         @test size(node_feature(fgt_)) == (out_channel, N)
 
@@ -343,7 +343,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
             X = rand(in_channel, N)
-            fg = FeaturedGraph(adj, X)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError ggc(X)
@@ -351,7 +351,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             
             # Test with transposed features
             Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=transpose(Xt))
             fgt_ = ggc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -390,7 +390,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             ec = EdgeConv(Dense(2*in_channel, out_channel))
 
             X = rand(in_channel, N)
-            fg = FeaturedGraph(adj, X)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError ec(X)
@@ -398,7 +398,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             
             # Test with transposed features
             Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=transpose(Xt))
             fgt_ = ec(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             

@@ -18,8 +18,7 @@ NewLayer(m, n) = NewLayer(randn(m,n))
 (l::NewLayer)(fg) = propagate(l, fg, :add)
 
 X = Array{T}(reshape(1:num_V*in_channel, in_channel, num_V))
-fg = FeaturedGraph(adj, X)
-fg.ef = Fill(zero(T), 0, 2num_E)
+fg = FeaturedGraph(adj, nf=X, ef=Fill(zero(T), 0, num_E))
 
 l = NewLayer(out_channel, in_channel)
 

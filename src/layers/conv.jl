@@ -70,7 +70,7 @@ function (g::GCNConv)(fg::FeaturedGraph)
         g.fg isa NullGraph || (g.fg.graph = A)
     end
     X_ = g(A, X)
-    FeaturedGraph(A, X_)
+    FeaturedGraph(A, nf=X_)
 end
 
 function Base.show(io::IO, l::GCNConv)
@@ -160,7 +160,7 @@ function (c::ChebConv)(fg::FeaturedGraph)
     L̃ = convert(typeof(X), L̃)  # ensure L has the same type as X, especially X::CuArray
     
     X_ = c(L̃, X)
-    FeaturedGraph(g, X_)
+    FeaturedGraph(g, nf=X_)
 end
 
 function Base.show(io::IO, l::ChebConv)
@@ -408,7 +408,7 @@ end
 function (ggc::GatedGraphConv{V,T})(fg::FeaturedGraph) where {V,T<:Real}
     g = graph(fg)
     H = ggc(adjacency_list(g), node_feature(fg))
-    FeaturedGraph(g, H)
+    FeaturedGraph(g, nf=H)
 end
 
 function (ggc::GatedGraphConv)(adj::AbstractVector{T}, X::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
