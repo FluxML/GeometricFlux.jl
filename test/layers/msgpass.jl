@@ -3,6 +3,7 @@ out_channel = 5
 num_V = 6
 num_E = 7
 T = Float32
+
 adj = T[0. 1. 0. 0. 0. 0.;
        1. 0. 0. 1. 1. 1.;
        0. 0. 0. 0. 0. 1.;
@@ -13,7 +14,7 @@ adj = T[0. 1. 0. 0. 0. 0.;
 struct NewLayer <: MessagePassing
     weight
 end
-NewLayer(m, n) = NewLayer(randn(m,n))
+NewLayer(m, n) = NewLayer(randn(T, m,n))
 
 (l::NewLayer)(fg) = propagate(l, fg, :add)
 

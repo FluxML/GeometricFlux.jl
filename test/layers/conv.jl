@@ -16,7 +16,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
 @testset "layer" begin
     @testset "GCNConv" begin
-        X = rand(in_channel, N)
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
         @testset "layer with graph" begin
             gc = GCNConv(adj, in_channel=>out_channel)
             @test size(gc.weight) == (out_channel, in_channel)
@@ -27,8 +28,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(Y) == (out_channel, N)
             
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            Y = gc(transpose(Xt))
+            Y = gc(Xt)
             @test size(Y) == (out_channel, N)
             
             g = Zygote.gradient(x -> sum(gc(x)), X)[1]
@@ -51,8 +51,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test_throws AssertionError gc(X)
 
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, nf=transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -68,7 +67,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
     @testset "ChebConv" begin
         k = 6
-        X = rand(in_channel, N)
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
         @testset "layer with graph" begin
             cc = ChebConv(adj, in_channel=>out_channel, k)
             @test size(cc.weight) == (out_channel, in_channel, k)
@@ -82,8 +82,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(Y) == (out_channel, N)
 
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            Y = cc(transpose(Xt))
+            Y = cc(Xt)
             @test size(Y) == (out_channel, N)
             
             g = Zygote.gradient(x -> sum(cc(x)), X)[1]
@@ -109,8 +108,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test_throws AssertionError cc(X)
 
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, nf=transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = cc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -124,6 +122,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
     end
 
     @testset "GraphConv" begin
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
         @testset "layer with graph" begin
             gc = GraphConv(adj, in_channel=>out_channel)
             @test graph(gc.fg) == [[2,4], [1,3], [2,4], [1,3]]
@@ -131,15 +131,11 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(gc.weight2) == (out_channel, in_channel)
             @test size(gc.bias) == (out_channel,)
 
-            X = rand(in_channel, N)
             Y = gc(X)
             @test size(Y) == (out_channel, N)
 
-            
-
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            Y = gc(transpose(Xt))
+            Y = gc(Xt)
             @test size(Y) == (out_channel, N)
             
             g = Zygote.gradient(x -> sum(gc(x)), X)[1]
@@ -157,16 +153,13 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(gc.weight2) == (out_channel, in_channel)
             @test size(gc.bias) == (out_channel,)
 
-
-            X = rand(in_channel, N)
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws AssertionError gc(X)
 
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, nf=transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -182,7 +175,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
     @testset "GATConv" begin
 
-        X = rand(in_channel, N)
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
 
         for adj_gat in [adj, adj_single_vertex]
 
@@ -206,8 +200,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         @test size(Y) == (out_channel * heads, N)
 
                         # Test with transposed features
-                        Xt = rand(N, in_channel)
-                        Y = gat(transpose(Xt))
+                        Y = gat(Xt)
                         @test size(Y) == (out_channel * heads, N)
                             
                         g = Zygote.gradient(x -> sum(gat(x)), X)[1]
@@ -237,8 +230,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         @test size(Y) == (out_channel, N)
 
                         # Test with transposed features
-                        Xt = rand(N, in_channel)
-                        Y = gat(transpose(Xt))
+                        Y = gat(Xt)
                         @test size(Y) == (out_channel, N)
 
                         g = Zygote.gradient(x -> sum(gat(x)), X)[1]
@@ -268,8 +260,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         @test_throws AssertionError gat(X)
 
                         # Test with transposed features
-                        Xt = rand(N, in_channel)
-                        fgt = FeaturedGraph(adj_gat, nf=transpose(Xt))
+                        fgt = FeaturedGraph(adj_gat, nf=Xt)
                         fgt_ = gat(fgt)
                         @test size(node_feature(fgt_)) == (out_channel * heads, N)
 
@@ -296,8 +287,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
                         @test_throws AssertionError gat(X)
 
                         # Test with transposed features
-                        Xt = rand(N, in_channel)
-                        fgt = FeaturedGraph(adj_gat, nf=transpose(Xt))
+                        fgt = FeaturedGraph(adj_gat, nf=Xt)
                         fgt_ = gat(fgt)
                         @test size(node_feature(fgt_)) == (out_channel, N)
 
@@ -316,19 +306,19 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
     @testset "GatedGraphConv" begin
         num_layers = 3
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
         @testset "layer with graph" begin
             ggc = GatedGraphConv(adj, out_channel, num_layers)
             @test graph(ggc.fg) == [[2,4], [1,3], [2,4], [1,3]]
             @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-            X = rand(in_channel, N)
             Y = ggc(X)
             @test size(Y) == (out_channel, N)
 
             
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            Y = ggc(transpose(Xt))
+            Y = ggc(Xt)
             @test size(Y) == (out_channel, N)
             
             g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
@@ -342,7 +332,6 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             ggc = GatedGraphConv(out_channel, num_layers)
             @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-            X = rand(in_channel, N)
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
@@ -350,8 +339,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
             
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, nf=transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = ggc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             
@@ -364,18 +352,18 @@ adj_single_vertex =   T[0. 0. 0. 1.;
     end
 
     @testset "EdgeConv" begin
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
         @testset "layer with graph" begin
             ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
             @test graph(ec.fg) == [[2,4], [1,3], [2,4], [1,3]]
 
-            X = rand(in_channel, N)
             Y = ec(X)
             @test size(Y) == (out_channel, N)
 
             
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            Y = ec(transpose(Xt))
+            Y = ec(Xt)
             @test size(Y) == (out_channel, N)
             
             g = Zygote.gradient(x -> sum(ec(x)), X)[1]
@@ -389,7 +377,6 @@ adj_single_vertex =   T[0. 0. 0. 1.;
         @testset "layer without graph" begin
             ec = EdgeConv(Dense(2*in_channel, out_channel))
 
-            X = rand(in_channel, N)
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
@@ -397,8 +384,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
             
             # Test with transposed features
-            Xt = rand(N, in_channel)
-            fgt = FeaturedGraph(adj, nf=transpose(Xt))
+            fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = ec(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
             

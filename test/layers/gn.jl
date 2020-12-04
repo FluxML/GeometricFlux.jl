@@ -2,7 +2,9 @@ in_channel = 10
 out_channel = 5
 num_V = 6
 num_E = 7
-adj = [0. 1. 0. 0. 0. 0.;
+T = Float32
+
+adj = T[0. 1. 0. 0. 0. 0.;
        1. 0. 0. 1. 1. 1.;
        0. 0. 0. 0. 0. 1.;
        0. 1. 0. 0. 1. 0.;
@@ -12,9 +14,9 @@ adj = [0. 1. 0. 0. 0. 0.;
 struct NewGNLayer <: GraphNet
 end
 
-V = rand(in_channel, num_V)
-E = rand(in_channel, 2num_E)
-u = rand(in_channel)
+V = rand(T, in_channel, num_V)
+E = rand(T, in_channel, 2num_E)
+u = rand(T, in_channel)
 
 @testset "gn" begin
     l = NewGNLayer()
@@ -44,7 +46,7 @@ u = rand(in_channel)
         @test size(global_feature(fg_)) == (0,)
     end
 
-    GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = rand(out_channel)
+    GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = rand(T, out_channel)
     @testset "update edge with neighbor aggregation" begin
         (l::NewGNLayer)(fg) = propagate(l, fg, :add)
 
@@ -58,7 +60,7 @@ u = rand(in_channel)
         @test size(global_feature(fg_)) == (0,)
     end
 
-    GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = rand(out_channel)
+    GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = rand(T, out_channel)
     @testset "update edge/vertex with all aggregation" begin
         (l::NewGNLayer)(fg) = propagate(l, fg, :add, :add, :add)
 
