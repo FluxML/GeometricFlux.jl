@@ -253,7 +253,7 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             end
 
             @testset "layer without graph" begin
-                fg = FeaturedGraph(adj_gat, X)
+                fg = FeaturedGraph(adj_gat, nf=X)
                 
                 @testset "concat=true" begin
                     for heads = [1, 6]

@@ -48,19 +48,14 @@ end
 
 @functor GCNConv
 
-function (g::GCNConv)(A::AbstractMatrix, X::AbstractMatrix)
-    L̃ = normalized_laplacian(A, eltype(X); selfloop=true)
-    L̃ = convert(typeof(X), L̃)  # ensure L has the same type as X, especially X::CuArray
-    
-    g.σ.(g.weight * X * L̃ .+ g.bias)
-end
-
-(g::GCNConv)(A::AbstractMatrix, X::Transpose{S,R}) where {S,R<:AbstractMatrix} = g(A, R(X))
+(g::GCNConv)(L̃::T, X::T) where {T<:AbstractMatrix} = g.σ.(g.weight * X * L̃ .+ g.bias)
+(g::GCNConv)(L̃::AbstractMatrix, X::Transpose{T,R}) where {T<:Real,R<:AbstractMatrix} = g(L̃, R(X))
 
 function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
     @assert has_graph(g.fg) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
     A = adjacency_matrix(g.fg)
-    g(A, X)
+    L̃ = normalized_laplacian(A, eltype(X); selfloop=true)
+    g(L̃, X)
 end
 
 function (g::GCNConv)(fg::FeaturedGraph)
@@ -69,7 +64,8 @@ function (g::GCNConv)(fg::FeaturedGraph)
     Zygote.ignore() do
         g.fg isa NullGraph || (g.fg.graph = A)
     end
-    X_ = g(A, X)
+    L̃ = normalized_laplacian(A, eltype(X); selfloop=true)
+    X_ = g(L̃, X)
     FeaturedGraph(A, nf=X_)
 end
 
@@ -123,7 +119,7 @@ end
 
 @functor ChebConv
 
-function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:Real, T<:Real}
+function (c::ChebConv)(L̃::T, X::T) where {T<:AbstractMatrix}
     @assert size(X, 1) == c.in_channel "Input feature size must match input channel size."
     @assert size(X, 2) == size(L̃, 1) "Input vertex number must match Laplacian matrix size."
 
@@ -138,16 +134,14 @@ function (c::ChebConv)(L̃::AbstractMatrix{S}, X::AbstractMatrix{T}) where {S<:R
     return Y .+ c.bias
 end
 
+(c::ChebConv)(L̃::AbstractMatrix, X::Transpose{T,R}) where {T<:Real,R<:AbstractMatrix} = c(L̃, R(X))
+
 function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
     @assert has_graph(c.fg) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
     g = graph(c.fg)
     L̃ = scaled_laplacian(g, T)
-    L̃ = convert(typeof(X), L̃)  # ensure L̃ has the same type as X, especially X::CuArray
-    
     c(L̃, X)
 end
-
-(c::ChebConv)(X::Transpose{T,R}) where {T<:Real,R<:AbstractMatrix} = c(R(X))
 
 function (c::ChebConv)(fg::FeaturedGraph)
     @assert has_graph(fg) "A given FeaturedGraph must contain a graph."
@@ -157,8 +151,6 @@ function (c::ChebConv)(fg::FeaturedGraph)
     end
     X = node_feature(fg)
     L̃ = scaled_laplacian(adjacency_matrix(fg))
-    L̃ = convert(typeof(X), L̃)  # ensure L has the same type as X, especially X::CuArray
-    
     X_ = c(L̃, X)
     FeaturedGraph(g, nf=X_)
 end

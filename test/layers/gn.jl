@@ -13,7 +13,7 @@ struct NewGNLayer <: GraphNet
 end
 
 V = rand(in_channel, num_V)
-E = rand(in_channel, num_E)
+E = rand(in_channel, 2num_E)
 u = rand(in_channel)
 
 @testset "gn" begin
