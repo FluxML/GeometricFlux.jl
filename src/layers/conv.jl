@@ -298,7 +298,7 @@ function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector)
     vcat(e, x_j)  # shape: (n+1, g.heads)
 end
 
-# After some reshaping due to the multihead, we get the α from each message, 
+# After some reshaping due to the multihead, we get the α from each message,
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
     e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j)) for j = js]...)
