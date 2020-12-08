@@ -29,9 +29,9 @@ function GraphConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}
 end
 
 
-function GATConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}; heads=1,
-                 concat::Bool=true, negative_slope=0.2, init=glorot_uniform,
-                 T::DataType=Float32, bias::Bool=true)
+function GATConv(g::AbstractSimpleWeightedGraph, ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
+                 heads=1, concat::Bool=true, negative_slope=T(0.2),
+                 init=glorot_uniform, bias::Bool=true)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
     a = T.(init(2*ch[2], heads))

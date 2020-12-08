@@ -255,20 +255,20 @@ the layer instead of only the features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 - `negative_slope::Real=0.2`: keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{V<:AbstractFeaturedGraph, T <: Real} <: MessagePassing
+struct GATConv{V<:AbstractFeaturedGraph,T<:Real} <: MessagePassing
     fg::V
     weight::AbstractMatrix{T}
     bias::AbstractVector{T}
     a::AbstractMatrix{T}
-    negative_slope::Real
+    negative_slope::T
     channel::Pair{<:Integer,<:Integer}
     heads::Integer
     concat::Bool
 end
 
-function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
-                 concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
-                 bias::Bool=true, T::DataType=Float32)
+function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
+                 heads::Integer=1, concat::Bool=true, negative_slope::Real=T(0.2),
+                 init=glorot_uniform, bias::Bool=true)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
     a = T.(init(2*ch[2], heads))
@@ -276,9 +276,9 @@ function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; heads::Inte
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
 end
 
-function GATConv(ch::Pair{<:Integer,<:Integer}; heads::Integer=1,
-                 concat::Bool=true, negative_slope::Real=0.2, init=glorot_uniform,
-                 bias::Bool=true, T::DataType=Float32)
+function GATConv(ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
+                 heads::Integer=1, concat::Bool=true, negative_slope::Real=T(0.2),
+                 init=glorot_uniform, bias::Bool=true)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
     a = T.(init(2*ch[2], heads))
