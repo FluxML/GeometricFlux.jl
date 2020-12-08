@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.5]
+
+- FeaturedGraph API change
+- Refactor graph net and message passing framework
+- Improve differentiability test
+- Refactor GCNConv and ChebConv operator
+- Fix bug in GATConv layer
+- Update GAT example
+- Cast testing data to Float32
+- Support CUDA up to v2.2
+- Support transpose input of a layer
+- Replace Travis CI by Github Action CI
+
 ## [0.7.4]
 
 - Adjust edge_index_table API for directed
