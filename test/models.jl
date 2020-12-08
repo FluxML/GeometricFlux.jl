@@ -3,6 +3,7 @@ using Flux: Dense
 in_channel = 3
 out_channel = 5
 N = 4
+T = Float32
 adj = [0. 1. 0. 1.;
        1. 0. 1. 0.;
        0. 1. 0. 1.;
@@ -12,7 +13,7 @@ adj = [0. 1. 0. 1.;
     @testset "GAE" begin
         gc = GCNConv(adj, in_channel=>out_channel)
         gae = GAE(gc)
-        X = rand(in_channel, N)
+        X = rand(T, in_channel, N)
         Y = gae(X)
         @test size(Y) == (N, N)
     end
@@ -20,18 +21,18 @@ adj = [0. 1. 0. 1.;
     @testset "VGAE" begin
         @testset "InnerProductDecoder" begin
            ipd = InnerProductDecoder(identity)
-           X = rand(1, N)
+           X = rand(T, 1, N)
            Y = ipd(X)
            @test size(Y) == (N, N)
 
-           X = rand(1, N)
-           fg = FeaturedGraph(adj, X)
+           X = rand(T, 1, N)
+           fg = FeaturedGraph(adj, nf=X)
            fg_ = ipd(fg)
            Y = node_feature(fg_)
            @test size(Y) == (N, N)
 
-           X = rand(in_channel, N)
-           fg = FeaturedGraph(adj, X)
+           X = rand(T, in_channel, N)
+           fg = FeaturedGraph(adj, nf=X)
            fg_ = ipd(fg)
            Y = node_feature(fg_)
            @test size(Y) == (N, N)
@@ -41,8 +42,8 @@ adj = [0. 1. 0. 1.;
             z_dim = 2
             gc = GCNConv(in_channel=>out_channel)
             ve = VariationalEncoder(gc, out_channel, z_dim)
-            X = rand(in_channel, N)
-            fg = FeaturedGraph(adj, X)
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = ve(fg)
             Z = node_feature(fg_)
             @test size(Z) == (z_dim, N)
@@ -52,8 +53,8 @@ adj = [0. 1. 0. 1.;
             z_dim = 2
             gc = GCNConv(in_channel=>out_channel)
             vgae = VGAE(gc, out_channel, z_dim)
-            X = rand(in_channel, N)
-            fg = FeaturedGraph(adj, X)
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
             fg_ = vgae(fg)
             Y = node_feature(fg_)
             @test size(Y) == (N, N)

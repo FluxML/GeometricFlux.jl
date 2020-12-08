@@ -71,7 +71,7 @@ end
 function (i::InnerProductDecoder)(fg::FeaturedGraph)::FeaturedGraph
     Z = node_feature(fg)
     A = i(Z)
-    FeaturedGraph(graph(fg), A)
+    FeaturedGraph(graph(fg), nf=A)
 end
 
 
@@ -106,7 +106,7 @@ end
 function (ve::VariationalEncoder)(fg::FeaturedGraph)::FeaturedGraph
     μ, logσ = summarize(ve, fg)
     Z = sample(μ, logσ)
-    FeaturedGraph(graph(fg), Z)
+    FeaturedGraph(graph(fg), nf=Z)
 end
 
 function summarize(ve::VariationalEncoder, fg::FeaturedGraph)

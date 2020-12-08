@@ -17,7 +17,7 @@ gf = rand(7)
     end
 
     @testset "bypass_graph" begin
-        fg = FeaturedGraph(adj, nf, ef ,gf)
+        fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=gf)
         layer = bypass_graph(x -> x .+ 1.,
                              x -> x .+ 2.,
                              x -> x .+ 3.)

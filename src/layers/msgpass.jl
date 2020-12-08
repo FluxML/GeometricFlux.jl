@@ -51,7 +51,7 @@ end
 
 function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
     E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
-    FeaturedGraph(graph(fg), X, E, Fill(0.f0, 0))
+    FeaturedGraph(graph(fg), nf=X, ef=E, gf=Fill(0.f0, 0))
 end
 
 function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr::Symbol) where {T<:MessagePassing,S<:AbstractVector,R,Q}

@@ -55,7 +55,7 @@ end
 
 function propagate(gn::T, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet}
     E, V, u = propagate(gn, adjacency_list(fg), fg.ef, fg.nf, fg.gf, naggr, eaggr, vaggr)
-    FeaturedGraph(graph(fg), V, E, u)
+    FeaturedGraph(graph(fg), nf=V, ef=E, gf=u)
 end
 
 function propagate(gn::T, adj::AbstractVector{S}, E::R, V::Q, u::P,
