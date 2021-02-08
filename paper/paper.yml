@@ -1,0 +1,18 @@
+title: "GeometricFlux.jl: a geometric deep learning library in Julia"
+keywords:
+  - Julia
+  - Geometric deep learning
+  - Graph neural network
+  - Machine learning
+  - Geep learning
+authors:
+  - name: Yueh-Hua Tu
+    orcid: 0000-0002-1554-1753
+    affiliation: 1, 2
+affiliations:
+ - name: Bioinformatics Program, Taiwan International Graduate Program, Institute of Information Science, Academia Sinica, Taipei, 11529, Taiwan
+   index: 1
+ - name: Graduate Institute of Biomedical Electronics and Bioinformatics, National Taiwan University, Taipei, 10617, Taiwan
+   index: 2
+date: 29 September 2020
+bibliography: paper.bib
