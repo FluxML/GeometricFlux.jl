@@ -2,11 +2,12 @@ using Documenter
 using GeometricFlux
 
 makedocs(
-    sitename = "GeometricFlux",
+    sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
-      canonical = "https://yuehhua.github.io/GeometricFlux.jl/stable",
+      canonical = "https://yuehhua.github.io/GeometricFlux.jl/stable/",
       analytics = "G-M61P0B2Y8E",
     ),
+    clean = false,
     modules = [GeometricFlux],
     pages = ["Home" => "index.md",
              "Get started" => "start.md",
@@ -25,4 +26,7 @@ makedocs(
     ]
 )
 
-deploydocs(repo = "github.com/yuehhua/GeometricFlux.jl.git")
+deploydocs(
+  repo = "github.com/yuehhua/GeometricFlux.jl.git",
+  target = "build",
+)
