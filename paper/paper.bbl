@@ -1,0 +1,43 @@
+\begin{thebibliography}{1}
+
+\bibitem{battaglia2018}
+Peter~W. Battaglia, Jessica~B. Hamrick, Victor Bapst, Alvaro
+  Sanchez{-}Gonzalez, Vin{\'{\i}}cius~Flores Zambaldi, Mateusz Malinowski,
+  Andrea Tacchetti, David Raposo, Adam Santoro, Ryan Faulkner, {\c{C}}aglar
+  G{\"{u}}l{\c{c}}ehre, H.~Francis Song, Andrew~J. Ballard, Justin Gilmer,
+  George~E. Dahl, Ashish Vaswani, Kelsey~R. Allen, Charles Nash, Victoria
+  Langston, Chris Dyer, Nicolas Heess, Daan Wierstra, Pushmeet Kohli, Matthew
+  Botvinick, Oriol Vinyals, Yujia Li, and Razvan Pascanu.
+Relational inductive biases, deep learning, and graph networks.
+{\em CoRR}, abs/1806.01261, 2018.
+
+\bibitem{bojchevski2018deep}
+Aleksandar Bojchevski and Stephan Günnemann.
+Deep gaussian embedding of graphs: Unsupervised inductive learning via ranking.
+In {\em International Conference on Learning Representations}, 2018.
+
+\bibitem{gilmer2017}
+Justin Gilmer, Samuel~S. Schoenholz, Patrick~F. Riley, Oriol Vinyals, and
+  George~E. Dahl.
+Neural message passing for quantum chemistry.
+In {\em ICML}, pages 1263--1272, 2017.
+
+\bibitem{hamilton2017}
+William~L. Hamilton, Zhitao Ying, and Jure Leskovec.
+Inductive representation learning on large graphs.
+In {\em NIPS}, pages 1025--1035, 2017.
+
+\bibitem{montavon2013}
+Gr{\'{e}}goire Montavon, Matthias Rupp, Vivekanand Gobre, Alvaro
+  Vazquez-Mayagoitia, Katja Hansen, Alexandre Tkatchenko, Klaus-Robert Müller,
+  and O~Anatole von Lilienfeld.
+Machine learning of molecular electronic properties in chemical compound space.
+{\em New Journal of Physics}, 15(9):095003, sep 2013.
+
+\bibitem{sen2008}
+Prithviraj Sen, Galileo Namata, Mustafa Bilgic, Lise Getoor, Brian Galligher,
+  and Tina Eliassi-Rad.
+{Collective Classification in Network Data}.
+{\em AI Magazine}, 29(3):93, sep 2008.
+
+\end{thebibliography}
