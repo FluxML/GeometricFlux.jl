@@ -53,43 +53,39 @@
   \begin{picture}(1,0.37499999)%
     \lineheight{1}%
     \setlength\tabcolsep{0pt}%
-    \put(0.74077265,0.0285679){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Matrix Size\end{tabular}}}}%
-    \put(0.57529528,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}25\end{tabular}}}}%
-    \put(0.68560533,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}210\end{tabular}}}}%
-    \put(0.79591537,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}215\end{tabular}}}}%
-    \put(0.90622541,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}220\end{tabular}}}}%
-    \put(0.94259352,0.19982774){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}ScatterNNlib.jl\end{tabular}}}}%
-    \put(0.94259352,0.19089566){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Pytorch-scatter\end{tabular}}}}%
+    \put(0.74077265,0.0285679){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large Matrix Size\end{tabular}}}}%
+    \put(0.57529528,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^5$\end{tabular}}}}%
+    \put(0.68560533,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^{10}$\end{tabular}}}}%
+    \put(0.79591537,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^{15}$\end{tabular}}}}%
+    \put(0.90622541,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^{20}$\end{tabular}}}}%
+    \put(0.94259352,0.19682774){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\large ScatterNNlib.jl\end{tabular}}}}%
+    \put(0.94259352,0.18689566){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\large Pytorch-scatter\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{figures/scatter_mean.pdf}}%
-    \put(0.93567915,0.20922735){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}framework\end{tabular}}}}%
+    \put(0.93567915,0.20922735){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\large Framework\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{figures/scatter_mean.pdf}}%
-    \put(0.54584154,0.05565943){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}100\end{tabular}}}}%
-    \put(0.54584154,0.10371554){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}101\end{tabular}}}}%
-    \put(0.54584154,0.15177164){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}102\end{tabular}}}}%
-    \put(0.54584154,0.19982774){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}103\end{tabular}}}}%
-    \put(0.54584154,0.24785924){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}104\end{tabular}}}}%
-    \put(0.54584154,0.29591534){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}105\end{tabular}}}}%
-    \put(0.54584154,0.34397145){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}106\end{tabular}}}}%
-    \put(0.5167569,0.19982774){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Time (μs)\end{tabular}}}}}%
-    \put(0.74077265,0.36269684){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Scatter mean performance on GPU\end{tabular}}}}%
-    \put(0.24077264,0.0285679){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Matrix Size\end{tabular}}}}%
-    \put(0.07529528,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}25\end{tabular}}}}%
-    \put(0.18560532,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}210\end{tabular}}}}%
-    \put(0.29591536,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}215\end{tabular}}}}%
-    \put(0.4062254,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}220\end{tabular}}}}%
-    \put(0.44259351,0.19982774){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}ScatterNNlib.jl\end{tabular}}}}%
-    \put(0.44259351,0.19089566){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Pytorch-scatter\end{tabular}}}}%
-    \put(0,0){\includegraphics[width=\unitlength,page=3]{figures/scatter_mean.pdf}}%
-    \put(0.43567914,0.20922735){\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}framework\end{tabular}}}}%
+    \put(0.54584154,0.05565943){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^0$\end{tabular}}}}%
+    \put(0.54584154,0.10371554){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^1$\end{tabular}}}}%
+    \put(0.54584154,0.15177164){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^2$\end{tabular}}}}%
+    \put(0.54584154,0.19982774){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^3$\end{tabular}}}}%
+    \put(0.54584154,0.24785924){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^4$\end{tabular}}}}%
+    \put(0.54584154,0.29591534){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^5$\end{tabular}}}}%
+    \put(0.54584154,0.34397145){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^6$\end{tabular}}}}%
+    \put(0.5167569,0.19982774){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large Time ($\mu$ s)\end{tabular}}}}}%
+    \put(0.74077265,0.36269684){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large Scatter mean performance on GPU\end{tabular}}}}%
+    \put(0.24077264,0.0285679){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large Matrix Size\end{tabular}}}}%
+    \put(0.07529528,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^5$\end{tabular}}}}%
+    \put(0.18560532,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^{10}$\end{tabular}}}}%
+    \put(0.29591536,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^{15}$\end{tabular}}}}%
+    \put(0.4062254,0.04827754){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large $2^{20}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=4]{figures/scatter_mean.pdf}}%
-    \put(0.04584154,0.05565943){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}100\end{tabular}}}}%
-    \put(0.04584154,0.10371554){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}101\end{tabular}}}}%
-    \put(0.04584154,0.15177164){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}102\end{tabular}}}}%
-    \put(0.04584154,0.19982774){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}103\end{tabular}}}}%
-    \put(0.04584154,0.24785924){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}104\end{tabular}}}}%
-    \put(0.04584154,0.29591534){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}105\end{tabular}}}}%
-    \put(0.04584154,0.34397145){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}106\end{tabular}}}}%
-    \put(0.01675689,0.19982774){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Time (μs)\end{tabular}}}}}%
-    \put(0.24077264,0.36269684){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Scatter mean performance on CPU\end{tabular}}}}%
+    \put(0.04584154,0.05565943){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^0$\end{tabular}}}}%
+    \put(0.04584154,0.10371554){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^1$\end{tabular}}}}%
+    \put(0.04584154,0.15177164){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^2$\end{tabular}}}}%
+    \put(0.04584154,0.19982774){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^3$\end{tabular}}}}%
+    \put(0.04584154,0.24785924){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^4$\end{tabular}}}}%
+    \put(0.04584154,0.29591534){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^5$\end{tabular}}}}%
+    \put(0.04584154,0.34397145){\makebox(0,0)[rt]{\lineheight{1.25}\smash{\begin{tabular}[t]{r}\Large $10^6$\end{tabular}}}}%
+    \put(0.01675689,0.19982774){\rotatebox{90}{\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large Time ($\mu$ s)\end{tabular}}}}}%
+    \put(0.24077264,0.36269684){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}\Large Scatter mean performance on CPU\end{tabular}}}}%
   \end{picture}%
 \endgroup%
