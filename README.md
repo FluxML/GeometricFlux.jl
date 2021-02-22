@@ -17,7 +17,7 @@ Suggestions, issues and pull requsts are welcome.
 
 ## Installation
 
-```
+```julia
 ]add GeometricFlux
 ```
 
@@ -34,14 +34,14 @@ Suggestions, issues and pull requsts are welcome.
 
 Construct GCN layer:
 
-```
+```julia
 graph = # can be adj_mat, adj_list, simple_graphs...
 GCNConv([graph, ]input_dim=>output_dim, relu)
 ```
 
 ## Use it as you use Flux
 
-```
+```julia
 model = Chain(GCNConv(g, 1024=>512, relu),
               Dropout(0.5),
               GCNConv(g, 512=>128),
