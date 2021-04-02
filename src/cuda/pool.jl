@@ -83,7 +83,7 @@ meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
         ∇X = ScatterNNlib.gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
             ind = Tuple(ind)
-            inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
+            inds = [x for x in rev_cluster[cluster[ind...]] if x != ind]
             for i = 1:size(X, 1)
                 multiplier = one(T)
                 for j = inds
@@ -103,7 +103,7 @@ end
         ∇X ./= X.^2
         @inbounds for ind = CartesianIndices(cluster)
             ind = Tuple(ind)
-            inds = filter(x -> x != ind, rev_cluster[cluster[ind...]])
+            inds = [x for x in rev_cluster[cluster[ind...]] if x != ind]
             for i = 1:size(X, 1)
                 denom = one(T)
                 for j = inds
