@@ -2,7 +2,7 @@ function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = zeros(T, dims.us_dims[1], c)
-    scatter_add!(Y, X, cluster)
+    ScatterNNlib.scatter_add!(Y, X, cluster)
     Y
 end
 
@@ -10,7 +10,7 @@ function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = zeros(T, dims.us_dims[1], c)
-    scatter_sub!(Y, X, cluster)
+    ScatterNNlib.scatter_sub!(Y, X, cluster)
     Y
 end
 
@@ -18,7 +18,7 @@ function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = ones(T, dims.us_dims[1], c)
-    scatter_mul!(Y, X, cluster)
+    ScatterNNlib.scatter_mul!(Y, X, cluster)
     Y
 end
 
@@ -27,7 +27,7 @@ function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     dims = Dims(cluster, X)
     FT = float(T)
     Y = ones(FT, dims.us_dims[1], c)
-    scatter_div!(Y, FT.(X), cluster)
+    ScatterNNlib.scatter_div!(Y, FT.(X), cluster)
     Y
 end
 
@@ -35,7 +35,7 @@ function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = fill(typemin(T), dims.us_dims[1], c)
-    scatter_max!(Y, X, cluster)
+    ScatterNNlib.scatter_max!(Y, X, cluster)
     Y
 end
 
@@ -43,7 +43,7 @@ function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = fill(typemax(T), dims.us_dims[1], c)
-    scatter_min!(Y, X, cluster)
+    ScatterNNlib.scatter_min!(Y, X, cluster)
     Y
 end
 
@@ -52,7 +52,7 @@ function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     dims = Dims(cluster, X)
     FT = float(T)
     Y = zeros(FT, dims.us_dims[1], c)
-    scatter_mean!(Y, FT.(X), cluster)
+    ScatterNNlib.scatter_mean!(Y, FT.(X), cluster)
     Y
 end
 
