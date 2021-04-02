@@ -5,6 +5,7 @@ using Flux: @functor
 using FillArrays
 using GraphSignals
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
+using PkgVersion
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
 using MetaGraphs: MetaGraph, MetaDiGraph

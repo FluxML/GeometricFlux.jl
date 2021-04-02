@@ -41,7 +41,8 @@ ZygoteRules = "0.2"
 julia = "1.4 - 1.6"
 
 [extras]
+PkgVersion = "eebad327-c553-4316-9ea0-9fa01ccd7688"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["PkgVersion", "Test"]
