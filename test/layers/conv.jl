@@ -370,8 +370,13 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(g) == size(X)
 
             g = Zygote.gradient(model -> sum(model(X)), ec)[1]
-            @test size(g.nn.W) == size(ec.nn.W)
-            @test size(g.nn.b) == size(ec.nn.b)
+            if PkgVersion.Version(Flux)  ≥ v"0.12"
+                @test size(g.nn.weight) == size(ec.nn.weight)
+                @test size(g.nn.bias) == size(ec.nn.bias)
+            else
+                @test size(g.nn.W) == size(ec.nn.W)
+                @test size(g.nn.b) == size(ec.nn.b)
+            end
         end
 
         @testset "layer without graph" begin
@@ -392,8 +397,13 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             @test size(g[].nf) == size(X)
 
             g = Zygote.gradient(model -> sum(node_feature(model(fg))), ec)[1]
-            @test size(g.nn.W) == size(ec.nn.W)
-            @test size(g.nn.b) == size(ec.nn.b)
+            if PkgVersion.Version(Flux)  ≥ v"0.12"
+                @test size(g.nn.weight) == size(ec.nn.weight)
+                @test size(g.nn.bias) == size(ec.nn.bias)
+            else
+                @test size(g.nn.W) == size(ec.nn.W)
+                @test size(g.nn.b) == size(ec.nn.b)
+            end
         end
     end
 end
