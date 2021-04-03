@@ -13,7 +13,7 @@ jobs:
           - '1.4'
           - '1.5'
           - '1.6'
-          - 'nightly'
+          # - 'nightly'
         os:
           - ubuntu-latest
           - macOS-latest
