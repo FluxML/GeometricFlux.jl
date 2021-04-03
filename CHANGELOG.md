@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.6]
+
+- Add dimensional check for each layer
+- Support Flux up to v0.12
+- Support CUDA up to v2.6
+- Support Zygote up to v0.6
+
 ## [0.7.5]
 
 - FeaturedGraph API change
