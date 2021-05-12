@@ -11,26 +11,26 @@ xs = CuArray{Int64}([1 2 3 4;
               [.25 .5 .5; .25 .5 .5], [.5 .25 .25; .5 .25 .25], dims=3)
 
 @testset "cuda/grad" begin
-    @testset "pool" begin
-        @test Zygote.gradient(x -> sum(sumpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(sumpool(xs, x)), us) == (ones(2, 3, 4),)
+    @testset "scatter" begin
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(+, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(+, xs, x)), us) == (ones(2, 3, 4),)
 
-        @test Zygote.gradient(x -> sum(subpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(subpool(xs, x)), us) == (-ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(-, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(-, xs, x)), us) == (-ones(2, 3, 4),)
 
-        @test Zygote.gradient(x -> sum(maxpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(maxpool(xs, x)), us) == (ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(max, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(max, xs, x)), us) == (ones(2, 3, 4),)
 
-        @test Zygote.gradient(x -> sum(minpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(minpool(xs, x)), us) == (ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(min, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(min, xs, x)), us) == (ones(2, 3, 4),)
 
-        @test Zygote.gradient(x -> sum(prodpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(prodpool(xs, x)), us) == (2048*ones(2, 3, 4),)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(*, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(*, xs, x)), us) == (2048*ones(2, 3, 4),)
 
-        @test Zygote.gradient(x -> sum(divpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(divpool(xs, x)), us) == (-ones(2, 3, 4)/8192,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(/, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(/, xs, x)), us) == (-ones(2, 3, 4)/8192,)
 
-        @test Zygote.gradient(x -> sum(meanpool(x, us)), xs) == (nothing,)
-        @test Zygote.gradient(x -> sum(meanpool(xs, x)), us) == (∇u_mean,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(mean, x, us)), xs) == (nothing,)
+        @test Zygote.gradient(x -> sum(GeometricFlux.scatter(mean, xs, x)), us) == (∇u_mean,)
     end
 end

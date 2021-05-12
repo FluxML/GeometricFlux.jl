@@ -1,4 +1,4 @@
-function sumpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(+), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = CUDA.zeros(T, dims.us_dims[1], c)
@@ -6,10 +6,10 @@ function sumpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-sumpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    sumpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(+), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
 
-function subpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(-), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = CUDA.zeros(T, dims.us_dims[1], c)
@@ -17,10 +17,10 @@ function subpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-subpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    subpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(-), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
 
-function prodpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(*), cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = CUDA.ones(T, dims.us_dims[1], c)
@@ -28,10 +28,10 @@ function prodpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-prodpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    prodpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(*), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
 
-function divpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(/), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     FT = float(T)
@@ -40,10 +40,10 @@ function divpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-divpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    divpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(/), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
 
-function maxpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(max), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = CUDA.fill(typemin(T), dims.us_dims[1], c)
@@ -51,10 +51,10 @@ function maxpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-maxpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    maxpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(max), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
 
-function minpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(min), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = CUDA.fill(typemax(T), dims.us_dims[1], c)
@@ -62,10 +62,10 @@ function minpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-minpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    minpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(min), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
 
-function meanpool(cluster::CuArray{Int}, X::CuArray{T},
+function scatter(op::typeof(mean), cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     FT = float(T)
@@ -74,11 +74,11 @@ function meanpool(cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    meanpool(CuArray{Int64}(cluster), X, c)
+scatter(op::typeof(mean), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op::typeof(mean), CuArray{Int64}(cluster), X, c)
 
-@adjoint function prodpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
-    prodpool(cluster, X), function (Δ)
+@adjoint function scatter(op::typeof(*), cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    scatter(op, cluster, X), function (Δ)
         rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = ScatterNNlib.gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
@@ -92,12 +92,12 @@ meanpool(cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) wh
                 ∇X[i, ind...] *= multiplier
             end
         end
-        (nothing, ∇X)
+        (nothing, nothing, ∇X)
     end
 end
 
-@adjoint function divpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
-    divpool(cluster, X), function (Δ)
+@adjoint function scatter(op::typeof(/), cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    scatter(op, cluster, X), function (Δ)
         rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = -ScatterNNlib.gather(zero(Δ)+Δ, cluster)
         ∇X ./= X.^2
@@ -112,24 +112,24 @@ end
                 ∇X[i, ind...] /= denom
             end
         end
-        (nothing, ∇X)
+        (nothing, nothing, ∇X)
     end
 end
 
-@adjoint function maxpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
-    max = maxpool(cluster, X)
+@adjoint function scatter(op::typeof(max), cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    max = scatter(op, cluster, X)
     max, function (Δ)
        Δu = (X .== ScatterNNlib.gather(max, cluster))
        Δu .*= ScatterNNlib.gather(zero(Δ)+Δ, cluster)
-       (nothing, Δu)
+       (nothing, nothing, Δu)
     end
 end
 
-@adjoint function minpool(cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
-    min = minpool(cluster, X)
+@adjoint function scatter(op::typeof(min), cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
+    min = scatter(op, cluster, X)
     min, function (Δ)
        Δu = (X .== ScatterNNlib.gather(min, cluster))
        Δu .*= ScatterNNlib.gather(zero(Δ)+Δ, cluster)
-       (nothing, Δu)
+       (nothing, nothing, Δu)
     end
 end

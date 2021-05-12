@@ -1,4 +1,4 @@
-function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+function scatter(op::typeof(+), cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = zeros(T, dims.us_dims[1], c)
@@ -6,7 +6,7 @@ function sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     Y
 end
 
-function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+function scatter(op::typeof(-), cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = zeros(T, dims.us_dims[1], c)
@@ -14,7 +14,7 @@ function subpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     Y
 end
 
-function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+function scatter(op::typeof(*), cluster::AbstractArray{Int}, X::AbstractArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = ones(T, dims.us_dims[1], c)
@@ -22,7 +22,7 @@ function prodpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     Y
 end
 
-function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+function scatter(op::typeof(/), cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     FT = float(T)
@@ -31,7 +31,7 @@ function divpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     Y
 end
 
-function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+function scatter(op::typeof(max), cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = fill(typemin(T), dims.us_dims[1], c)
@@ -39,7 +39,7 @@ function maxpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     Y
 end
 
-function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
+function scatter(op::typeof(min), cluster::AbstractArray{Int}, X::AbstractArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     Y = fill(typemax(T), dims.us_dims[1], c)
@@ -47,8 +47,8 @@ function minpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
     Y
 end
 
-function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T},
-                  c::Integer=length(Set(cluster))) where {T<:Real}
+function scatter(op::typeof(mean), cluster::AbstractArray{Int}, X::AbstractArray{T},
+                 c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
     FT = float(T)
     Y = zeros(FT, dims.us_dims[1], c)
@@ -68,13 +68,13 @@ end
 
 Dims(xs::AbstractArray{Int}, us::AbstractArray) = Dims(size(xs), size(us))
 
-@adjoint sumpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
-    sumpool(cluster, X), Δ -> (nothing, ScatterNNlib.gather(zero(Δ)+Δ, cluster))
-@adjoint subpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
-    subpool(cluster, X), Δ -> (nothing, -ScatterNNlib.gather(zero(Δ)+Δ, cluster))
+@adjoint scatter(op::typeof(+), cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
+    scatter(op, cluster, X), Δ -> (nothing, nothing, ScatterNNlib.gather(zero(Δ)+Δ, cluster))
+@adjoint scatter(op::typeof(-), cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real} =
+    scatter(op, cluster, X), Δ -> (nothing, nothing, -ScatterNNlib.gather(zero(Δ)+Δ, cluster))
 
-@adjoint function prodpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
-    prodpool(cluster, X), function (Δ)
+@adjoint function scatter(op::typeof(*), cluster::Array{Int}, X::Array{T}) where {T<:Real}
+    scatter(op, cluster, X), function (Δ)
         rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = ScatterNNlib.gather(zero(Δ)+Δ, cluster)
         @inbounds for ind = CartesianIndices(cluster)
@@ -83,12 +83,12 @@ Dims(xs::AbstractArray{Int}, us::AbstractArray) = Dims(size(xs), size(us))
                 ∇X[i, ind] *= prod(j -> X[i, j], inds)
             end
         end
-        (nothing, ∇X)
+        (nothing, nothing, ∇X)
     end
 end
 
-@adjoint function divpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
-    divpool(cluster, X), function (Δ)
+@adjoint function scatter(op::typeof(/), cluster::Array{Int}, X::Array{T}) where {T<:Real}
+    scatter(op, cluster, X), function (Δ)
         rev_cluster = ScatterNNlib.gather_indices(cluster)
         ∇X = -ScatterNNlib.gather(zero(Δ)+Δ, cluster) ./ X.^2
         @inbounds for ind = CartesianIndices(cluster)
@@ -97,28 +97,28 @@ end
                 ∇X[i, ind] /= prod(j -> X[i, j], inds)
             end
         end
-        (nothing, ∇X)
+        (nothing, nothing, ∇X)
     end
 end
 
-@adjoint function maxpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
-    max = maxpool(cluster, X)
+@adjoint function scatter(op::typeof(max), cluster::Array{Int}, X::Array{T}) where {T<:Real}
+    max = scatter(op, cluster, X)
     max, function (Δ)
        Δu = (X .== ScatterNNlib.gather(max, cluster)) .* ScatterNNlib.gather(zero(Δ)+Δ, cluster)
-       (nothing, Δu)
+       (nothing, nothing, Δu)
     end
 end
 
-@adjoint function minpool(cluster::Array{Int}, X::Array{T}) where {T<:Real}
-    min = minpool(cluster, X)
+@adjoint function scatter(op::typeof(min), cluster::Array{Int}, X::Array{T}) where {T<:Real}
+    min = scatter(op, cluster, X)
     min, function (Δ)
        Δu = (X .== ScatterNNlib.gather(min, cluster)) .* ScatterNNlib.gather(zero(Δ)+Δ, cluster)
-       (nothing, Δu)
+       (nothing, nothing, Δu)
     end
 end
 
-@adjoint function meanpool(cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
-    m = meanpool(cluster, X)
+@adjoint function scatter(op::typeof(mean), cluster::AbstractArray{Int}, X::AbstractArray{T}) where {T<:Real}
+    m = scatter(op, cluster, X)
     m, function (Δ)
         ΔX = ScatterNNlib.gather(zero(Δ)+Δ, cluster)
         counts = zero.(cluster)
@@ -128,24 +128,6 @@ end
         @inbounds for ind = CartesianIndices(counts)
             ΔX[:, ind] ./= counts[ind]
         end
-        (nothing, ΔX)
-    end
-end
-
-function pool(op::Symbol, cluster::AbstractArray, X::AbstractArray)
-    if op == :add
-        return sumpool(cluster, X)
-    elseif op == :sub
-        return subpool(cluster, X)
-    elseif op == :mul
-        return prodpool(cluster, X)
-    elseif op == :div
-        return divpool(cluster, X)
-    elseif op == :max
-        return maxpool(cluster, X)
-    elseif op == :min
-        return minpool(cluster, X)
-    elseif op == :mean
-        return meanpool(cluster, X)
+        (nothing, nothing, ΔX)
     end
 end

@@ -17,8 +17,6 @@ using ScatterNNlib
 using Zygote
 using ZygoteRules
 
-import Flux: maxpool, meanpool
-
 export
     # layers/gn
     GraphNet,
@@ -52,6 +50,7 @@ export
     GlobalPool,
     LocalPool,
     TopKPool,
+    topk_index,
 
     # models
     GAE,
@@ -64,28 +63,17 @@ export
     # layer/selector
     FeatureSelector,
 
-    # operations/pool
-    sumpool,
-    subpool,
-    prodpool,
-    divpool,
-    maxpool,
-    minpool,
-    meanpool,
-    pool,
-
     # graph/index
     generate_cluster,
 
     # utils
-    topk_index,
     bypass_graph
 
 const IntOrTuple = Union{Integer,Tuple}
 
 include("datasets.jl")
 
-include("pool.jl")
+include("scatter.jl")
 
 include("graph/index.jl")
 
@@ -106,9 +94,9 @@ using .Datasets
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
+        include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
-        include("cuda/pool.jl")
     end
     @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
         include("graph/weightedgraphs.jl")

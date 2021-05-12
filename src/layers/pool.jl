@@ -1,26 +1,26 @@
 using DataStructures: nlargest
 
 struct GlobalPool{A}
-    aggr::Symbol
+    aggr
     cluster::A
-    function GlobalPool(aggr::Symbol, dim...)
+    function GlobalPool(aggr, dim...)
         cluster = ones(Int64, dim)
         new{typeof(cluster)}(aggr, cluster)
     end
 end
 
-(g::GlobalPool)(X::AbstractArray) = pool(g.aggr, g.cluster, X)
+(g::GlobalPool)(X::AbstractArray) = scatter(g.aggr, g.cluster, X)
 
 struct LocalPool{A}
-    aggr::Symbol
+    aggr
     cluster::A
 end
 
-function LocalPool(aggr::Symbol, cluster::AbstractArray)
+function LocalPool(aggr, cluster::AbstractArray)
     LocalPool{typeof(cluster)}(aggr, cluster)
 end
 
-(l::LocalPool)(X::AbstractArray) = pool(l.aggr, l.cluster, X)
+(l::LocalPool)(X::AbstractArray) = scatter(l.aggr, l.cluster, X)
 
 struct TopKPool{T,S}
     A::AbstractMatrix{T}
@@ -40,3 +40,10 @@ function (t::TopKPool)(X::AbstractArray)
     X_ = view(X, :, idx) .* σ.(view(y, idx)')
     return X_
 end
+
+function topk_index(y::AbstractVector, k::Integer)
+    v = nlargest(k, y)
+    return collect(1:length(y))[y .>= v[end]]
+end
+
+topk_index(y::Adjoint, k::Integer) = topk_index(y', k)

@@ -1,5 +1,5 @@
-const AGGR2FUN = Dict(:add => sum, :sub => sum, :mul => prod, :div => prod,
-                      :max => maximum, :min => minimum, :mean => mean)
+const AGGR2FUN = Dict((+) => sum, (-) => sum, (*) => prod, (/) => prod,
+                      max => maximum, min => minimum, mean => mean)
 
 abstract type GraphNet end
 
@@ -21,17 +21,17 @@ end
     hcat([update_vertex(gn, get_feature(Ē, i), get_feature(V, i), u) for i = 1:size(V,2)]...)
 end
 
-@inline function aggregate_neighbors(gn::T, aggr::Symbol, E, accu_edge) where {T<:GraphNet}
+@inline function aggregate_neighbors(gn::T, aggr, E, accu_edge) where {T<:GraphNet}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(E, accu_edge)
-    pool(aggr, cluster, E)
+    GeometricFlux.scatter(aggr, cluster, E)
 end
 
 @inline function aggregate_neighbors(gn::T, aggr::Nothing, E, accu_edge) where {T<:GraphNet}
     @nospecialize E accu_edge num_V num_E
 end
 
-@inline function aggregate_edges(gn::T, aggr::Symbol, E) where {T<:GraphNet}
+@inline function aggregate_edges(gn::T, aggr, E) where {T<:GraphNet}
     u = vec(AGGR2FUN[aggr](E, dims=2))
     aggr == :sub && (u = -u)
     aggr == :div && (u = 1 ./ u)
@@ -42,7 +42,7 @@ end
     @nospecialize E
 end
 
-@inline function aggregate_vertices(gn::T, aggr::Symbol, V) where {T<:GraphNet}
+@inline function aggregate_vertices(gn::T, aggr, V) where {T<:GraphNet}
     u = vec(AGGR2FUN[aggr](V, dims=2))
     aggr == :sub && (u = -u)
     aggr == :div && (u = 1 ./ u)
