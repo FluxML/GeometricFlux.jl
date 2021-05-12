@@ -97,12 +97,11 @@ adj = [0 1 0 1;
         Y = ggc(X)
         @test size(Y) == (out_channel, N)
 
-        # BUG: FluxML/Flux.jl#1381
-        # g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
-        # @test size(g) == size(X)
+        g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
+        @test size(g) == size(X)
 
-        # g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
-        # @test size(g.weight) == size(ggc.weight)
+        g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
+        @test size(g.weight) == size(ggc.weight)
     end
 
     @testset "EdgeConv" begin
