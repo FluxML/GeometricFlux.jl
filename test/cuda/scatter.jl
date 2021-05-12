@@ -1,7 +1,7 @@
 cluster = [1 1 1 1; 2 2 3 3; 4 4 5 5]
 X = CuArray(reshape(1:24, 2, 3, 4))
 
-@testset "cuda/pool" begin
+@testset "cuda/scatter" begin
     for T = [UInt32, UInt64]
         @testset "$(T)" begin
             @testset "+" begin

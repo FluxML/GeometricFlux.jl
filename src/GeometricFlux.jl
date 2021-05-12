@@ -94,9 +94,9 @@ using .Datasets
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
+        include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
-        include("cuda/pool.jl")
     end
     @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
         include("graph/weightedgraphs.jl")
