@@ -32,15 +32,18 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
+    msg = map(i -> apply_batch_message(mp, i, adj[i], edge_idx, E, X, u), 1:n)
+    hcat(msg...)
 end
 
 @inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
-    hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
+    msg = map(j -> message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])), js)
+    hcat(msg...)
 end
 
 @inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
-    hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i in 1:size(X,2)]...)
+    msg = map(i -> update(mp, get_feature(M, i), get_feature(X, i)), 1:size(X,2))
+    hcat(msg...)
 end
 
 @inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
