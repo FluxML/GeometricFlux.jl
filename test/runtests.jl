@@ -8,6 +8,7 @@ using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using PkgVersion
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
+using Statistics: mean
 using MetaGraphs: MetaGraph, MetaDiGraph
 using Zygote
 using Test
@@ -25,9 +26,8 @@ tests = [
     "layers/conv",
     "layers/pool",
     "layers/selector",
-    "grad",
     "models",
-    "pool",
+    "scatter",
     "graph/simplegraphs",
     "graph/weightedgraphs",
     "graph/metagraphs",

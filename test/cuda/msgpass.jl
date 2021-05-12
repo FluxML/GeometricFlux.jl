@@ -15,7 +15,7 @@ end
 NewCudaLayer(m, n) = NewCudaLayer(randn(T, m,n))
 @functor NewCudaLayer
 
-(l::NewCudaLayer)(X) = propagate(l, X, :add)
+(l::NewCudaLayer)(X) = propagate(l, X, +)
 GeometricFlux.message(n::NewCudaLayer, x_i, x_j, e_ij) = n.weight * x_j
 GeometricFlux.update(::NewCudaLayer, m, x) = m
 

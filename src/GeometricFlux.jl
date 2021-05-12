@@ -17,8 +17,6 @@ using ScatterNNlib
 using Zygote
 using ZygoteRules
 
-import Flux: maxpool, meanpool
-
 export
     # layers/gn
     GraphNet,
@@ -65,16 +63,6 @@ export
     # layer/selector
     FeatureSelector,
 
-    # operations/pool
-    sumpool,
-    subpool,
-    prodpool,
-    divpool,
-    maxpool,
-    minpool,
-    meanpool,
-    pool,
-
     # graph/index
     generate_cluster,
 
@@ -85,7 +73,7 @@ const IntOrTuple = Union{Integer,Tuple}
 
 include("datasets.jl")
 
-include("pool.jl")
+include("scatter.jl")
 
 include("graph/index.jl")
 

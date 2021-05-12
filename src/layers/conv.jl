@@ -1,6 +1,3 @@
-const AGGR2STR = Dict{Symbol,String}(:add => "∑", :sub => "-∑", :mul => "∏", :div => "1/∏",
-                                     :max => "max", :min => "min", :mean => "𝔼[]")
-
 """
     GCNConv([graph, ]in=>out)
     GCNConv([graph, ]in=>out, σ)
@@ -186,7 +183,7 @@ the layer instead of only the features.
 - `out`: the dimension of output features.
 - `bias::Bool=true`: keyword argument, whether to learn the additive bias.
 - `σ=identity`: activation function.
-- `aggr::Symbol=:add`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
+- `aggr=+`: an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
 struct GraphConv{V<:AbstractFeaturedGraph,T} <: MessagePassing
     fg::V
@@ -194,11 +191,11 @@ struct GraphConv{V<:AbstractFeaturedGraph,T} <: MessagePassing
     weight2::AbstractMatrix{T}
     bias::AbstractVector{T}
     σ
-    aggr::Symbol
+    aggr
 end
 
 function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
-                   ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add;
+                   ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
@@ -207,7 +204,7 @@ function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
     GraphConv(fg, w1, w2, b, σ, aggr)
 end
 
-function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add;
+function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
@@ -216,7 +213,7 @@ function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ=identi
     GraphConv(fg, w1, w2, b, σ, aggr)
 end
 
-function GraphConv(ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add;
+function GraphConv(ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
@@ -234,14 +231,14 @@ function (gc::GraphConv)(X::AbstractMatrix)
     Zygote.ignore() do
         GraphSignals.check_num_node(g, X)
     end
-    _, X = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, :add)
+    _, X = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
 function (g::GraphConv)(fg::FeaturedGraph)
     Zygote.ignore() do
         GraphSignals.check_num_node(graph(fg), node_feature(fg))
     end
-    propagate(g, fg, :add)
+    propagate(g, fg, +)
 end
 
 function Base.show(io::IO, l::GraphConv)
@@ -250,7 +247,7 @@ function Base.show(io::IO, l::GraphConv)
     print(io, "GraphConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
     print(io, "), ", in_channel, "=>", out_channel)
     l.σ == identity || print(io, ", ", l.σ)
-    print(io, ", aggr=", AGGR2STR[l.aggr])
+    print(io, ", aggr=", l.aggr)
     print(io, ")")
 end
 
@@ -352,14 +349,14 @@ function (gat::GATConv)(X::AbstractMatrix)
     Zygote.ignore() do
         GraphSignals.check_num_node(g, X)
     end
-    _, X = propagate(gat, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, :add)
+    _, X = propagate(gat, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
 function (g::GATConv)(fg::FeaturedGraph)
     Zygote.ignore() do
         GraphSignals.check_num_node(graph(fg), node_feature(fg))
     end
-    propagate(g, fg, :add)
+    propagate(g, fg, +)
 end
 
 function Base.show(io::IO, l::GATConv)
@@ -384,7 +381,7 @@ Gated graph convolution layer.
 the layer instead of only the features.
 - `out`: the dimension of output features.
 - `num_layers` specifies the number of gated recurrent unit.
-- `aggr::Symbol=:add`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
+- `aggr=+`: an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
 struct GatedGraphConv{V<:AbstractFeaturedGraph, T <: Real, R} <: MessagePassing
     fg::V
@@ -392,11 +389,11 @@ struct GatedGraphConv{V<:AbstractFeaturedGraph, T <: Real, R} <: MessagePassing
     gru::R
     out_ch::Integer
     num_layers::Integer
-    aggr::Symbol
+    aggr
 end
 
 function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer;
-                        aggr=:add, init=glorot_uniform, T::DataType=Float32)
+                        aggr=+, init=glorot_uniform, T::DataType=Float32)
     w = T.(init(out_ch, out_ch, num_layers))
     gru = GRUCell(out_ch, out_ch)
     fg = FeaturedGraph(adjacency_list(adj))
@@ -404,7 +401,7 @@ function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Intege
 end
 
 function GatedGraphConv(out_ch::Integer, num_layers::Integer;
-                        aggr=:add, init=glorot_uniform, T::DataType=Float32)
+                        aggr=+, init=glorot_uniform, T::DataType=Float32)
     w = T.(init(out_ch, out_ch, num_layers))
     gru = GRUCell(out_ch, out_ch)
     GatedGraphConv(NullGraph(), w, gru, out_ch, num_layers, aggr)
@@ -436,7 +433,7 @@ function (ggc::GatedGraphConv)(adj::AbstractVector{T}, H::AbstractMatrix{S}) whe
 
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
-        _, M = propagate(ggc, adj, Fill(0.f0, 0, ne(adj)), M, :add)
+        _, M = propagate(ggc, adj, Fill(0.f0, 0, ne(adj)), M, +)
         H, _ = ggc.gru(H, M)  # BUG: FluxML/Flux.jl#1381
     end
     H
@@ -446,7 +443,7 @@ function Base.show(io::IO, l::GatedGraphConv)
     print(io, "GatedGraphConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
     print(io, "), (=>", l.out_ch)
     print(io, ")^", l.num_layers)
-    print(io, ", aggr=", AGGR2STR[l.aggr])
+    print(io, ", aggr=", l.aggr)
     print(io, ")")
 end
 
@@ -461,20 +458,20 @@ Edge convolutional layer.
 # Arguments
 - `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
 - `nn`: a neural network
-- `aggr::Symbol=:max`: an aggregate function applied to the result of message function. `:add`, `:max` and `:mean` are available.
+- `aggr=max`: an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
 struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
     fg::V
     nn
-    aggr::Symbol
+    aggr
 end
 
-function EdgeConv(adj::AbstractMatrix, nn; aggr::Symbol=:max)
+function EdgeConv(adj::AbstractMatrix, nn; aggr=max)
     fg = FeaturedGraph(adjacency_list(adj))
     EdgeConv(fg, nn, aggr)
 end
 
-function EdgeConv(nn; aggr::Symbol=:max)
+function EdgeConv(nn; aggr=max)
     EdgeConv(NullGraph(), nn, aggr)
 end
 
@@ -503,6 +500,6 @@ end
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
     print(io, "), ", l.nn)
-    print(io, ", aggr=", AGGR2STR[l.aggr])
+    print(io, ", aggr=", l.aggr)
     print(io, ")")
 end

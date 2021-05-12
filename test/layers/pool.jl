@@ -4,13 +4,13 @@ X = Array(reshape(1:24, 2, 3, 4))
 @testset "pool" begin
     @testset "GlobalPool" begin
         glb_cltr = [1 1 1 1; 1 1 1 1; 1 1 1 1]
-        p = GlobalPool(:add, 3, 4)
-        @test p(X) == sumpool(glb_cltr, X)
+        p = GlobalPool(+, 3, 4)
+        @test p(X) == GeometricFlux.scatter(+, glb_cltr, X)
     end
 
     @testset "LocalPool" begin
-        p = LocalPool(:add, cluster)
-        @test p(X) == sumpool(cluster, X)
+        p = LocalPool(+, cluster)
+        @test p(X) == GeometricFlux.scatter(+, cluster, X)
     end
 
     @testset "TopKPool" begin

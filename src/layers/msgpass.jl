@@ -41,18 +41,18 @@ end
 @inline update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing} = 
     mapreduce(i -> update(mp, get_feature(M, i), get_feature(X, i)), hcat, 1:size(X,2))
 
-@inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
+@inline function aggregate_neighbors(mp::T, aggr, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(M, accu_edge)
-    pool(aggr, cluster, M)
+    GeometricFlux.scatter(aggr, cluster, M)
 end
 
-function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
+function propagate(mp::T, fg::FeaturedGraph, aggr=+) where {T<:MessagePassing}
     E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
     FeaturedGraph(graph(fg), nf=X, ef=E, gf=Fill(0.f0, 0))
 end
 
-function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr::Symbol) where {T<:MessagePassing,S<:AbstractVector,R,Q}
+function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr) where {T<:MessagePassing,S<:AbstractVector,R,Q}
     E, X, u = propagate(mp, adj, E, X, Fill(0.f0, 0), aggr, nothing, nothing)
     E, X
 end
