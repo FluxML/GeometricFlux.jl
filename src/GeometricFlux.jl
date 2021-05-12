@@ -52,6 +52,7 @@ export
     GlobalPool,
     LocalPool,
     TopKPool,
+    topk_index,
 
     # models
     GAE,
@@ -78,7 +79,6 @@ export
     generate_cluster,
 
     # utils
-    topk_index,
     bypass_graph
 
 const IntOrTuple = Union{Integer,Tuple}

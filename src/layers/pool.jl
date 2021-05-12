@@ -40,3 +40,10 @@ function (t::TopKPool)(X::AbstractArray)
     X_ = view(X, :, idx) .* σ.(view(y, idx)')
     return X_
 end
+
+function topk_index(y::AbstractVector, k::Integer)
+    v = nlargest(k, y)
+    return collect(1:length(y))[y .>= v[end]]
+end
+
+topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
