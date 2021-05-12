@@ -32,19 +32,14 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 @inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    msg = map(i -> apply_batch_message(mp, i, adj[i], edge_idx, E, X, u), 1:n)
-    hcat(msg...)
+    mapreduce(i -> apply_batch_message(mp, i, adj[i], edge_idx, E, X, u), hcat, 1:n)
 end
 
-@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
-    msg = map(j -> message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])), js)
-    hcat(msg...)
-end
+@inline apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing} =
+    mapreduce(j -> message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])), hcat, js)
 
-@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
-    msg = map(i -> update(mp, get_feature(M, i), get_feature(X, i)), 1:size(X,2))
-    hcat(msg...)
-end
+@inline update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing} = 
+    mapreduce(i -> update(mp, get_feature(M, i), get_feature(X, i)), hcat, 1:size(X,2))
 
 @inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
