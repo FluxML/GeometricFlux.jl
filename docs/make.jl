@@ -14,7 +14,7 @@ makedocs(
              "Basics" =>
                ["Building layers" => "basics/layers.md",
                 "Graph passing" => "basics/passgraph.md"],
-             "Cooperate with Flux layers" => "cooperate.md"
+             "Cooperate with Flux layers" => "cooperate.md",
              "Abstractions" =>
                ["Message passing scheme" => "abstractions/msgpass.md",
                 "Graph network block" => "abstractions/gn.md"],
