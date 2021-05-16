@@ -24,5 +24,22 @@ model = Flux.Chain(
 )
 ```
 
-where `feature` can be `:node`, `:edge` or `:global`.
+where `feature` can be `:node`, `:edge` or `:global`. Thus, data passing after `FeatureSelector` layer will become a specified feature.
 
+## Branching different features through different layers
+
+A `bypass_graph` function is designed for passing each feature through different layers from a `FeaturedGraph`. An example is given as follow:
+
+```julia
+Flux.Chain(
+    ...
+    bypass_graph(
+        nf_func=GCNConv(1024=>256, relu),
+        ef_func=Dense(1024, 256, relu),
+        gf_func=identity,
+    ),
+    ...
+)
+```
+
+`bypass_graph` will pass node feature to a `GCNConv` layer and edge feature to a `Dense` layer. Meanwhile, a `FeaturedGraph` is decomposed and keep the graph in `FeaturedGraph` to the downstream layers. A new `FeaturedGraph` is constructed with processed node feature, edge feature and global feature. `bypass_graph` acts as a layer which accepts a `FeaturedGraph` and output a `FeaturedGraph`. Thus, it by pass the graph in a `FeaturedGraph` but pass different features to different layers.
