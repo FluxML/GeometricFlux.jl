@@ -28,6 +28,6 @@ makedocs(
 )
 
 deploydocs(
-  repo = "github.com/yuehhua/GeometricFlux.jl.git",
+  repo = "github.com/FluxML/GeometricFlux.jl.git",
   target = "build",
 )
