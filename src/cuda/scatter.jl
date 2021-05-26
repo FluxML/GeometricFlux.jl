@@ -1,3 +1,6 @@
+scatter(op, cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
+    scatter(op, CuArray{Int64}(cluster), X, c)
+
 function scatter(op::typeof(+), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
@@ -5,9 +8,6 @@ function scatter(op::typeof(+), cluster::CuArray{Int}, X::CuArray{T},
     ScatterNNlib.scatter_add!(Y, X, cluster)
     Y
 end
-
-scatter(op::typeof(+), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op, CuArray{Int64}(cluster), X, c)
 
 function scatter(op::typeof(-), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
@@ -17,9 +17,6 @@ function scatter(op::typeof(-), cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-scatter(op::typeof(-), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op, CuArray{Int64}(cluster), X, c)
-
 function scatter(op::typeof(*), cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
@@ -27,9 +24,6 @@ function scatter(op::typeof(*), cluster::CuArray{Int}, X::CuArray{T},
     ScatterNNlib.scatter_mul!(Y, X, cluster)
     Y
 end
-
-scatter(op::typeof(*), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op, CuArray{Int64}(cluster), X, c)
 
 function scatter(op::typeof(/), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
@@ -40,9 +34,6 @@ function scatter(op::typeof(/), cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-scatter(op::typeof(/), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op, CuArray{Int64}(cluster), X, c)
-
 function scatter(op::typeof(max), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
@@ -50,9 +41,6 @@ function scatter(op::typeof(max), cluster::CuArray{Int}, X::CuArray{T},
     ScatterNNlib.scatter_max!(Y, X, cluster)
     Y
 end
-
-scatter(op::typeof(max), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op, CuArray{Int64}(cluster), X, c)
 
 function scatter(op::typeof(min), cluster::CuArray{Int}, X::CuArray{T},
                  c::Integer=length(Set(cluster))) where {T<:Real}
@@ -62,9 +50,6 @@ function scatter(op::typeof(min), cluster::CuArray{Int}, X::CuArray{T},
     Y
 end
 
-scatter(op::typeof(min), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op, CuArray{Int64}(cluster), X, c)
-
 function scatter(op::typeof(mean), cluster::CuArray{Int}, X::CuArray{T},
                   c::Integer=length(Set(cluster))) where {T<:Real}
     dims = Dims(cluster, X)
@@ -73,9 +58,6 @@ function scatter(op::typeof(mean), cluster::CuArray{Int}, X::CuArray{T},
     ScatterNNlib.scatter_mean!(Y, FT.(X), cluster)
     Y
 end
-
-scatter(op::typeof(mean), cluster::Array{Int}, X::CuArray{T}, c::Integer=length(Set(cluster))) where {T<:Real} =
-    scatter(op::typeof(mean), CuArray{Int64}(cluster), X, c)
 
 @adjoint function scatter(op::typeof(*), cluster::CuArray{Int}, X::CuArray{T}) where {T<:Real}
     scatter(op, cluster, X), function (Δ)
