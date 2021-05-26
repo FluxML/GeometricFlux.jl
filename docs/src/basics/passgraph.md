@@ -24,10 +24,4 @@ FeaturedGraph(adj_mat, features)
 
 ## Cached graph in layers
 
-While a variable graph is given by `FeaturedGraph`, a GNN layer don't need a static graph anymore. Besides taking off the static graph from arguments of a layer, remember to turn off the cache mechanism. A cache mechanism is designed to cache static graph to reduce computation. A cached graph is gotten from layer and computation is then performed. For each time, it will assign current computed graph back to layer. Assignment operation is not differentiable, so we must turn off the cache mechanism as follow:
-
-```
-GCNConv(feat=>h1, relu, cached=false)
-```
-
-This ensures layer function as expected.
+While a variable graph is given by `FeaturedGraph`, a GNN layer don't need a static graph anymore. A cache mechanism is designed to cache static graph to reduce computation. A cached graph is gotten from layer and computation is then performed. For each time, it will assign current computed graph back to layer.

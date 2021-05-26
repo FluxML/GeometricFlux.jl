@@ -1,16 +1,16 @@
 """
-    GCNConv([graph, ]in=>out)
-    GCNConv([graph, ]in=>out, σ)
+    GCNConv([graph, ]in=>out[, σ=identity]; bias=true)
 
 Graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs)
-or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+
+- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
-- `in`: the dimension of input features.
-- `out`: the dimension of output features.
-- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `σ`: Activation function.
+- `bias::Bool`: Keyword argument, whether to learn the additive bias.
 
 Data should be stored in (# features, # nodes) order.
 For example, a 1000-node graph each node of which poses 100 features is constructed.
@@ -23,7 +23,7 @@ struct GCNConv{T,F,S<:AbstractFeaturedGraph}
     fg::S
 end
 
-function GCNConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
+function GCNConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ=identity;
                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
     GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
@@ -75,18 +75,18 @@ end
 
 
 """
-    ChebConv([graph, ]in=>out, k)
+    ChebConv([graph, ]in=>out, k; bias=true)
 
 Chebyshev spectral graph convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
-`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+
+- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
-- `in`: the dimension of input features.
-- `out`: the dimension of output features.
-- `k`: the order of Chebyshev polynomial.
-- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `k`: The order of Chebyshev polynomial.
+- `bias::Bool`: Keyword argument, whether to learn the additive bias.
 """
 struct ChebConv{T,S<:AbstractFeaturedGraph}
     weight::AbstractArray{T,3}
@@ -98,7 +98,7 @@ struct ChebConv{T,S<:AbstractFeaturedGraph}
 end
 
 function ChebConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
+                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
     ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
 end
@@ -159,21 +159,19 @@ end
 
 
 """
-    GraphConv([graph, ]in=>out)
-    GraphConv([graph, ]in=>out, σ)
-    GraphConv([graph, ]in=>out, σ, aggr)
+    GraphConv([graph, ]in=>out[, σ=identity[, aggr=+]]; bias=true)
 
 Graph neural network layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
-`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+
+- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
-- `in`: the dimension of input features.
-- `out`: the dimension of output features.
-- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
-- `σ=identity`: activation function.
-- `aggr=+`: an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `σ`: Activation function.
+- `aggr`: An aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `bias::Bool`: Keyword argument, whether to learn the additive bias.
 """
 struct GraphConv{V<:AbstractFeaturedGraph,T} <: MessagePassing
     fg::V
@@ -185,7 +183,7 @@ struct GraphConv{V<:AbstractFeaturedGraph,T} <: MessagePassing
 end
 
 function GraphConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
-                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
+                   init=glorot_uniform, bias::Bool=true, T::DataType=Float32)
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
@@ -230,18 +228,18 @@ end
 
 
 """
-    GATConv([graph, ]in=>out)
+    GATConv([graph, ]in=>out; bias=true, negative_slope=0.2)
 
 Graph attentional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
-`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+
+- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
-- `in`: the dimension of input features.
-- `out`: the dimension of output features.
-- `bias::Bool=true`: keyword argument, whether to learn the additive bias.
-- `negative_slope::Real=0.2`: keyword argument, the parameter of LeakyReLU.
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `bias::Bool`: Keyword argument, whether to learn the additive bias.
+- `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
 struct GATConv{V<:AbstractFeaturedGraph,T<:Real} <: MessagePassing
     fg::V
@@ -340,17 +338,17 @@ end
 
 
 """
-    GatedGraphConv([graph, ]out, num_layers)
+    GatedGraphConv([graph, ]out, num_layers; aggr=+)
 
 Gated graph convolution layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`,
-`SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
+
+- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
 the layer instead of only the features.
-- `out`: the dimension of output features.
-- `num_layers` specifies the number of gated recurrent unit.
-- `aggr=+`: an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `out`: The dimension of output features.
+- `num_layers`: The number of gated recurrent unit.
+- `aggr`: Keyword argument, an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
 struct GatedGraphConv{V<:AbstractFeaturedGraph, T <: Real, R} <: MessagePassing
     fg::V
@@ -420,15 +418,15 @@ end
 
 
 """
-    EdgeConv(graph, nn)
-    EdgeConv(graph, nn, aggr)
+    EdgeConv(graph, nn; aggr=max)
 
 Edge convolutional layer.
 
 # Arguments
-- `graph`: should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
-- `nn`: a neural network
-- `aggr=max`: an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+
+- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `nn`: A neural network or a layer. It can be, e.g., MLP.
+- `aggr`: Keyword argument, an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
 struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
     fg::V
