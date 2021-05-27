@@ -10,16 +10,14 @@ abstract type GraphNet end
 @inline function update_batch_edge(gn::T, adj, E, V, u) where {T<:GraphNet}
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(gn, i, adj[i], edge_idx, E, V, u) for i in 1:n]...)
+    mapreduce(i -> apply_batch_message(gn, i, adj[i], edge_idx, E, V, u), hcat, 1:n)
 end
 
-@inline function apply_batch_message(gn::T, i, js, edge_idx, E, V, u) where {T<:GraphNet}
-    hcat([update_edge(gn, get_feature(E, edge_idx[(i,j)]), get_feature(V, i), get_feature(V, j), u) for j = js]...)
-end
+@inline apply_batch_message(gn::T, i, js, edge_idx, E, V, u) where {T<:GraphNet} =
+    mapreduce(j -> update_edge(gn, get_feature(E, edge_idx[(i,j)]), get_feature(V, i), get_feature(V, j), u), hcat, js)
 
-@inline function update_batch_vertex(gn::T, Ē, V, u) where {T<:GraphNet}
-    hcat([update_vertex(gn, get_feature(Ē, i), get_feature(V, i), u) for i = 1:size(V,2)]...)
-end
+@inline update_batch_vertex(gn::T, Ē, V, u) where {T<:GraphNet} =
+    mapreduce(i -> update_vertex(gn, get_feature(Ē, i), get_feature(V, i), u), hcat, 1:size(V,2))
 
 @inline function aggregate_neighbors(gn::T, aggr, E, accu_edge) where {T<:GraphNet}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
