@@ -28,9 +28,7 @@ tests = [
     "layers/misc",
     "models",
     "scatter",
-    "graph/simplegraphs",
-    "graph/weightedgraphs",
-    "graph/metagraphs",
+    "graphs",
 ]
 
 if Flux.use_cuda[]
