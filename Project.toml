@@ -17,7 +17,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 ScatterNNlib = "b1168b60-8710-48c1-88d2-5c53ae207dd0"
-SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
@@ -35,14 +34,14 @@ MetaGraphs = "0.6"
 Reexport = "0.2, 1.0"
 Requires = "1.0.0"
 ScatterNNlib = "0.1"
-SimpleWeightedGraphs = "1.1"
 Zygote = "0.4 - 0.6"
 ZygoteRules = "0.2"
 julia = "1.4 - 1.6"
 
 [extras]
 PkgVersion = "eebad327-c553-4316-9ea0-9fa01ccd7688"
+SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["PkgVersion", "Test"]
+test = ["PkgVersion", "SimpleWeightedGraphs", "Test"]
