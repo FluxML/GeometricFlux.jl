@@ -62,21 +62,16 @@ export
 
     # layer/selector
     FeatureSelector,
-
-    # graph/index
-    generate_cluster,
+    bypass_graph,
 
     # utils
-    bypass_graph
+    generate_cluster
 
 const IntOrTuple = Union{Integer,Tuple}
 
 include("datasets.jl")
 
 include("scatter.jl")
-
-include("graph/index.jl")
-
 include("utils.jl")
 
 include("layers/gn.jl")
@@ -85,9 +80,9 @@ include("layers/msgpass.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
-include("layers/selector.jl")
+include("layers/misc.jl")
 
-include("graph/simplegraphs.jl")
+include("graphs.jl")
 
 
 using .Datasets
@@ -97,12 +92,6 @@ function __init__()
         include("cuda/scatter.jl")
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
-    end
-    @require SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622" begin
-        include("graph/weightedgraphs.jl")
-    end
-    @require MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5" begin
-        include("graph/metagraphs.jl")
     end
 end
 

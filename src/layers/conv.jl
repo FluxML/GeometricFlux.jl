@@ -1,3 +1,10 @@
+function add_self_loop!(adj::AbstractVector{T}, n::Int=length(adj)) where {T<:AbstractVector}
+    for i = 1:n
+        i in adj[i] || push!(adj[i], i)
+    end
+    adj
+end
+
 """
     GCNConv([graph, ]in=>out)
     GCNConv([graph, ]in=>out, σ)
@@ -23,25 +30,17 @@ struct GCNConv{T,F,S<:AbstractFeaturedGraph}
     fg::S
 end
 
-function GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity;
+function GCNConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = NullGraph()
     GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
 end
 
-function GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = FeaturedGraph(adj)
-    GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
-end
+GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity; kwargs...) =
+    GCNConv(NullGraph(), ch, σ; kwargs...)
 
-function GCNConv(fg::FeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ = identity;
-                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
-end
+GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity; kwargs...) =
+    GCNConv(FeaturedGraph(adj), ch, σ; kwargs...)
 
 @functor GCNConv
 
@@ -105,19 +104,17 @@ struct ChebConv{T,S<:AbstractFeaturedGraph}
     out_channel::Integer
 end
 
-function ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer;
+function ChebConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, k::Integer;
                   init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
     b = bias ? init(ch[2]) : zeros(T, ch[2])
-    fg = FeaturedGraph(adj)
     ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
 end
 
-function ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init = glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
-    fg = NullGraph()
-    ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
-end
+ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs...) =
+    ChebConv(FeaturedGraph(adj), ch, k; kwargs...)
+
+ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs...) =
+    ChebConv(NullGraph(), ch, k; kwargs...)
 
 @functor ChebConv
 
@@ -194,32 +191,22 @@ struct GraphConv{V<:AbstractFeaturedGraph,T} <: MessagePassing
     aggr
 end
 
-function GraphConv(el::AbstractVector{<:AbstractVector{<:Integer}},
-                   ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
+function GraphConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
                    init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
     w1 = T.(init(ch[2], ch[1]))
     w2 = T.(init(ch[2], ch[1]))
     b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = FeaturedGraph(el)
     GraphConv(fg, w1, w2, b, σ, aggr)
 end
 
-function GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
-                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    w1 = T.(init(ch[2], ch[1]))
-    w2 = T.(init(ch[2], ch[1]))
-    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    fg = FeaturedGraph(adjacency_list(adj))
-    GraphConv(fg, w1, w2, b, σ, aggr)
-end
+GraphConv(el::AbstractVector{<:AbstractVector}, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
+    GraphConv(FeaturedGraph(el), ch, σ, aggr; kwargs...)
 
-function GraphConv(ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
-                   init = glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    w1 = T.(init(ch[2], ch[1]))
-    w2 = T.(init(ch[2], ch[1]))
-    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    GraphConv(NullGraph(), w1, w2, b, σ, aggr)
-end
+GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
+    GraphConv(adjacency_list(adj), ch, σ, aggr; kwargs...)
+
+GraphConv(ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
+    GraphConv(NullGraph(), ch, σ, aggr; kwargs...)
 
 @functor GraphConv
 
@@ -278,24 +265,22 @@ struct GATConv{V<:AbstractFeaturedGraph,T<:Real} <: MessagePassing
     concat::Bool
 end
 
-function GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
+function GATConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
                  heads::Integer=1, concat::Bool=true, negative_slope::Real=T(0.2),
                  init=glorot_uniform, bias::Bool=true)
     w = T.(init(ch[2]*heads, ch[1]))
     b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
     a = T.(init(2*ch[2], heads))
-    fg = FeaturedGraph(adjacency_list(adj))
     GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
 end
 
-function GATConv(ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
-                 heads::Integer=1, concat::Bool=true, negative_slope::Real=T(0.2),
-                 init=glorot_uniform, bias::Bool=true)
-    w = T.(init(ch[2]*heads, ch[1]))
-    b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads))
-    GATConv(NullGraph(), w, b, a, negative_slope, ch, heads, concat)
-end
+GATConv(el::AbstractVector{<:AbstractVector}, ch::Pair{<:Integer,<:Integer}; kwargs...) =
+    GATConv(FeaturedGraph(el), ch; kwargs...)
+
+GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; kwargs...) =
+    GATConv(adjacency_list(adj), ch; kwargs...)
+
+GATConv(ch::Pair{<:Integer,<:Integer}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
 @functor GATConv
 
@@ -313,7 +298,7 @@ end
 # After some reshaping due to the multihead, we get the α from each message,
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
-    e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j)) for j = js]...)
+    e_ij = mapreduce(j -> message(g, _view(X, i), _view(X, j)), hcat, js)
     n = size(e_ij, 1)
     alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
     msgs = view(e_ij, 2:n, :) .* reshape(alphas, 1, :)
@@ -328,7 +313,7 @@ function update_batch_edge(g::GATConv, adj, X::AbstractMatrix)
     Zygote.ignore() do
         add_self_loop!(adj, n)
     end
-    hcat([apply_batch_message(g, i, adj[i], X) for i in 1:n]...)
+    mapreduce(i -> apply_batch_message(g, i, adj[i], X), hcat, 1:n)
 end
 
 # The same as update function in batch manner
@@ -392,20 +377,21 @@ struct GatedGraphConv{V<:AbstractFeaturedGraph, T <: Real, R} <: MessagePassing
     aggr
 end
 
-function GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer;
+function GatedGraphConv(fg::AbstractFeaturedGraph, out_ch::Integer, num_layers::Integer;
                         aggr=+, init=glorot_uniform, T::DataType=Float32)
     w = T.(init(out_ch, out_ch, num_layers))
     gru = GRUCell(out_ch, out_ch)
-    fg = FeaturedGraph(adjacency_list(adj))
     GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
 end
 
-function GatedGraphConv(out_ch::Integer, num_layers::Integer;
-                        aggr=+, init=glorot_uniform, T::DataType=Float32)
-    w = T.(init(out_ch, out_ch, num_layers))
-    gru = GRUCell(out_ch, out_ch)
-    GatedGraphConv(NullGraph(), w, gru, out_ch, num_layers, aggr)
-end
+GatedGraphConv(el::AbstractVector{<:AbstractVector}, out_ch::Integer, num_layers::Integer; kwargs...) =
+    GatedGraphConv(FeaturedGraph(el), out_ch, num_layers; kwargs...)
+
+GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer; kwargs...) =
+    GatedGraphConv(adjacency_list(adj), out_ch, num_layers; kwargs...)
+
+GatedGraphConv(out_ch::Integer, num_layers::Integer; kwargs...) =
+    GatedGraphConv(NullGraph(), out_ch, num_layers; kwargs...)
 
 @functor GatedGraphConv
 
@@ -466,14 +452,10 @@ struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
     aggr
 end
 
-function EdgeConv(adj::AbstractMatrix, nn; aggr=max)
-    fg = FeaturedGraph(adjacency_list(adj))
-    EdgeConv(fg, nn, aggr)
-end
-
-function EdgeConv(nn; aggr=max)
-    EdgeConv(NullGraph(), nn, aggr)
-end
+EdgeConv(fg::AbstractFeaturedGraph, nn; aggr=max) = EdgeConv(fg, nn, aggr)
+EdgeConv(el::AbstractVector{<:AbstractVector}, nn; kwargs...) = EdgeConv(FeaturedGraph(el), nn; kwargs...)
+EdgeConv(adj::AbstractMatrix, nn; kwargs...) = EdgeConv(adjacency_list(adj), nn; kwargs...)
+EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
 
 @functor EdgeConv
 

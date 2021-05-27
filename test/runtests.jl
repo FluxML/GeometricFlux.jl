@@ -25,13 +25,10 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
-    "layers/selector",
+    "layers/misc",
     "models",
     "scatter",
-    "graph/simplegraphs",
-    "graph/weightedgraphs",
-    "graph/metagraphs",
-    "utils",
+    "graphs",
 ]
 
 if Flux.use_cuda[]

@@ -36,10 +36,10 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 end
 
 @inline apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing} =
-    mapreduce(j -> message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])), hcat, js)
+    mapreduce(j -> message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
 
 @inline update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing} = 
-    mapreduce(i -> update(mp, get_feature(M, i), get_feature(X, i)), hcat, 1:size(X,2))
+    mapreduce(i -> update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
 
 @inline function aggregate_neighbors(mp::T, aggr, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
