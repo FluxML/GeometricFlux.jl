@@ -62,12 +62,10 @@ export
 
     # layer/selector
     FeatureSelector,
+    bypass_graph,
 
     # graph/index
-    generate_cluster,
-
-    # utils
-    bypass_graph
+    generate_cluster
 
 const IntOrTuple = Union{Integer,Tuple}
 
@@ -77,15 +75,13 @@ include("scatter.jl")
 
 include("graph/index.jl")
 
-include("utils.jl")
-
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
-include("layers/selector.jl")
+include("layers/misc.jl")
 
 include("graph/simplegraphs.jl")
 
