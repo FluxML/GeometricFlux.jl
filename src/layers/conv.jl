@@ -313,7 +313,7 @@ end
 # After some reshaping due to the multihead, we get the α from each message,
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
-    e_ij = hcat([message(g, get_feature(X, i), get_feature(X, j)) for j = js]...)
+    e_ij = mapreduce(j -> message(g, _view(X, i), _view(X, j)), hcat, js)
     n = size(e_ij, 1)
     alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
     msgs = view(e_ij, 2:n, :) .* reshape(alphas, 1, :)
@@ -328,7 +328,7 @@ function update_batch_edge(g::GATConv, adj, X::AbstractMatrix)
     Zygote.ignore() do
         add_self_loop!(adj, n)
     end
-    hcat([apply_batch_message(g, i, adj[i], X) for i in 1:n]...)
+    mapreduce(i -> apply_batch_message(g, i, adj[i], X), hcat, 1:n)
 end
 
 # The same as update function in batch manner

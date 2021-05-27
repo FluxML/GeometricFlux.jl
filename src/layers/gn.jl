@@ -1,6 +1,10 @@
 const AGGR2FUN = Dict((+) => sum, (-) => sum, (*) => prod, (/) => prod,
                       max => maximum, min => minimum, mean => mean)
 
+_view(::Nothing, i) = nothing
+_view(A::Fill{T,2,Axes}, i) where {T,Axes} = view(A, :, 1)
+_view(A::AbstractMatrix, idx) = view(A, :, idx)
+
 abstract type GraphNet end
 
 @inline update_edge(gn::T, e, vi, vj, u) where {T<:GraphNet} = e
@@ -14,10 +18,10 @@ abstract type GraphNet end
 end
 
 @inline apply_batch_message(gn::T, i, js, edge_idx, E, V, u) where {T<:GraphNet} =
-    mapreduce(j -> update_edge(gn, get_feature(E, edge_idx[(i,j)]), get_feature(V, i), get_feature(V, j), u), hcat, js)
+    mapreduce(j -> update_edge(gn, _view(E, edge_idx[(i,j)]), _view(V, i), _view(V, j), u), hcat, js)
 
 @inline update_batch_vertex(gn::T, Ē, V, u) where {T<:GraphNet} =
-    mapreduce(i -> update_vertex(gn, get_feature(Ē, i), get_feature(V, i), u), hcat, 1:size(V,2))
+    mapreduce(i -> update_vertex(gn, _view(Ē, i), _view(V, i), u), hcat, 1:size(V,2))
 
 @inline function aggregate_neighbors(gn::T, aggr, E, accu_edge) where {T<:GraphNet}
     @assert !iszero(accu_edge) "accumulated edge must not be zero."

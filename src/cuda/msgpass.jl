@@ -25,7 +25,7 @@ end
 end
 
 @inline apply_batch_message(mp::T, i, js, edge_idx, E::CuMatrix, X::CuMatrix, u) where {T<:MessagePassing} =
-    mapreduce(j -> message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])), hcat, js)
+    mapreduce(j -> message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
 
 @inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::CuMatrix, u) where {T<:MessagePassing}
     M = convert(typeof(X), M)
@@ -38,4 +38,4 @@ end
 end
 
 @inline update_batch_vertex(mp::T, M::CuMatrix, X::CuMatrix, u) where {T<:MessagePassing} =
-    mapreduce(i -> update(mp, get_feature(M, i), get_feature(X, i)), hcat, 1:size(X,2))
+    mapreduce(i -> update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
