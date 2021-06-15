@@ -9,7 +9,7 @@ GCNConv(g::AbstractGraph, ch::Pair{<:Integer,<:Integer}, σ = identity; kwargs..
 ChebConv(g::AbstractGraph, ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs...) =
     ChebConv(FeaturedGraph(g), ch, k; kwargs...)
 
-GraphConv(g::AbstractGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add; kwargs...) =
+GraphConv(g::AbstractGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
     GraphConv(FeaturedGraph(g), ch, σ, aggr; kwargs...)
 
 GATConv(g::AbstractGraph, ch::Pair{<:Integer,<:Integer}; kwargs...) =
@@ -29,7 +29,7 @@ GCNConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, σ=identity; kwargs
 ChebConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs...) =
     ChebConv(g.graph, ch, k; kwargs...)
 
-GraphConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=:add; kwargs...) =
+GraphConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
     GraphConv(g.graph, ch, σ, aggr; kwargs...)
 
 GATConv(g::AbstractMetaGraph, ch::Pair{<:Integer,<:Integer}; kwargs...) =
