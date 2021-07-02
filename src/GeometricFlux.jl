@@ -13,9 +13,7 @@ using Flux: @functor
 @reexport using GraphSignals
 using LightGraphs
 using Requires
-using ScatterNNlib
 using Zygote
-using ZygoteRules
 
 export
     # layers/gn
@@ -67,11 +65,8 @@ export
     # utils
     generate_cluster
 
-const IntOrTuple = Union{Integer,Tuple}
-
 include("datasets.jl")
 
-include("scatter.jl")
 include("utils.jl")
 
 include("layers/gn.jl")
@@ -89,7 +84,8 @@ using .Datasets
 
 function __init__()
     @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
-        include("cuda/scatter.jl")
+        using NNlibCUDA
+
         include("cuda/msgpass.jl")
         include("cuda/conv.jl")
     end

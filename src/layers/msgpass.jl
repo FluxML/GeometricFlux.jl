@@ -44,7 +44,7 @@ end
 @inline function aggregate_neighbors(mp::MessagePassing, aggr, M::AbstractMatrix, accu_edge)
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(M, accu_edge)
-    GeometricFlux.scatter(aggr, cluster, M)
+    NNlib.scatter(aggr, M, cluster)
 end
 
 function propagate(mp::MessagePassing, fg::FeaturedGraph, aggr=+)

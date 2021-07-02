@@ -14,7 +14,6 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/scatter",
     "cuda/grad",
     "cuda/conv",
     "cuda/msgpass",
@@ -27,7 +26,6 @@ tests = [
     "layers/pool",
     "layers/misc",
     "models",
-    "scatter",
     "graphs",
 ]
 

@@ -9,7 +9,7 @@ struct GlobalPool{A}
     end
 end
 
-(g::GlobalPool)(X::AbstractArray) = scatter(g.aggr, g.cluster, X)
+(g::GlobalPool)(X::AbstractArray) = NNlib.scatter(g.aggr, X, g.cluster)
 
 struct LocalPool{A}
     aggr
@@ -20,7 +20,7 @@ function LocalPool(aggr, cluster::AbstractArray)
     LocalPool{typeof(cluster)}(aggr, cluster)
 end
 
-(l::LocalPool)(X::AbstractArray) = scatter(l.aggr, l.cluster, X)
+(l::LocalPool)(X::AbstractArray) = NNlib.scatter(l.aggr, X, l.cluster)
 
 struct TopKPool{T,S}
     A::AbstractMatrix{T}
