@@ -5,12 +5,12 @@ X = Array(reshape(1:24, 2, 3, 4))
     @testset "GlobalPool" begin
         glb_cltr = [1 1 1 1; 1 1 1 1; 1 1 1 1]
         p = GlobalPool(+, 3, 4)
-        @test p(X) == GeometricFlux.scatter(+, glb_cltr, X)
+        @test p(X) == NNlib.scatter(+, X, glb_cltr)
     end
 
     @testset "LocalPool" begin
         p = LocalPool(+, cluster)
-        @test p(X) == GeometricFlux.scatter(+, cluster, X)
+        @test p(X) == NNlib.scatter(+, X, cluster)
     end
 
     @testset "TopKPool" begin

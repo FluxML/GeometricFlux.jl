@@ -1,7 +1,6 @@
 module GeometricFlux
 
 using Statistics: mean
-using SparseArrays: SparseMatrixCSC
 using LinearAlgebra: Adjoint, norm, Transpose
 using Reexport
 
