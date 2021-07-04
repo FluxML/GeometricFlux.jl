@@ -1,7 +1,7 @@
 num_node = 5
 A = rand([0, 1], 5, 5)
 A = A .| A'
-num_edge = sum(A)
+num_edge = div(sum(A - diagm(diag(A))), 2)
 nf = rand(6, num_node)
 ef = rand(7, num_edge)
 gf = rand(8)
