@@ -221,12 +221,8 @@ function (gc::GraphConv)(X::AbstractMatrix)
     _, X = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
-function (g::GraphConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(g, fg, +)
-end
+
+(g::GraphConv)(fg::FeaturedGraph) = propagate(g, fg, +)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -337,12 +333,8 @@ function (gat::GATConv)(X::AbstractMatrix)
     _, X = propagate(gat, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
-function (g::GATConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(g, fg, +)
-end
+
+(g::GATConv)(fg::FeaturedGraph) = propagate(g, fg, +)
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -472,12 +464,7 @@ function (e::EdgeConv)(X::AbstractMatrix)
     X
 end
 
-function (e::EdgeConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(e, fg, e.aggr)
-end
+(e::EdgeConv)(fg::FeaturedGraph) = propagate(e, fg, e.aggr)
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
