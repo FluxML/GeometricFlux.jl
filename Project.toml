@@ -25,7 +25,7 @@ ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 [compat]
 CUDA = "1.2 - 2.6, 3.0"
 DataStructures = "0.17 - 0.18"
-FillArrays = "0.8 - 0.11"
+FillArrays = "0.8 - 0.11, 0.12"
 Flux = "0.10 - 0.12"
 GraphMLDatasets = "0.1"
 GraphSignals = "0.1"
