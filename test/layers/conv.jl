@@ -1,5 +1,4 @@
-using Flux: Dense
-
+T = Float32
 in_channel = 3
 out_channel = 5
 N = 4
@@ -8,16 +7,16 @@ adj = T[0. 1. 0. 1.;
        0. 1. 0. 1.;
        1. 0. 1. 0.]
 
-adj_single_vertex =   T[0. 0. 0. 1.;
-                        0. 0. 0. 0.;
-                        0. 0. 0. 1.;
-                        1. 0. 1. 0.]
+adj_single_vertex = T[0. 0. 0. 1.;
+                      0. 0. 0. 0.;
+                      0. 0. 0. 1.;
+                      1. 0. 1. 0.]
 
 
 @testset "layer" begin
     @testset "GCNConv" begin
-        X = rand(Float32, in_channel, N)
-        Xt = transpose(rand(Float32, N, in_channel))
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
         @testset "layer with graph" begin
             gc = GCNConv(adj, in_channel=>out_channel)
             @test size(gc.weight) == (out_channel, in_channel)
@@ -67,8 +66,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
     @testset "ChebConv" begin
         k = 6
-        X = rand(Float32, in_channel, N)
-        Xt = transpose(rand(Float32, N, in_channel))
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
         @testset "layer with graph" begin
             cc = ChebConv(adj, in_channel=>out_channel, k)
             @test size(cc.weight) == (out_channel, in_channel, k)
@@ -122,8 +121,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
     end
 
     @testset "GraphConv" begin
-        X = rand(Float32, in_channel, N)
-        Xt = transpose(rand(Float32, N, in_channel))
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
         @testset "layer with graph" begin
             gc = GraphConv(adj, in_channel=>out_channel)
             @test graph(gc.fg) == [[2,4], [1,3], [2,4], [1,3]]
@@ -175,8 +174,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
     @testset "GATConv" begin
 
-        X = rand(Float32, in_channel, N)
-        Xt = transpose(rand(Float32, N, in_channel))
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
 
         for adj_gat in [adj, adj_single_vertex]
 
@@ -243,8 +242,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
 
     @testset "GatedGraphConv" begin
         num_layers = 3
-        X = rand(Float32, in_channel, N)
-        Xt = transpose(rand(Float32, N, in_channel))
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
         @testset "layer with graph" begin
             ggc = GatedGraphConv(adj, out_channel, num_layers)
             @test graph(ggc.fg) == [[2,4], [1,3], [2,4], [1,3]]
@@ -289,8 +288,8 @@ adj_single_vertex =   T[0. 0. 0. 1.;
     end
 
     @testset "EdgeConv" begin
-        X = rand(Float32, in_channel, N)
-        Xt = transpose(rand(Float32, N, in_channel))
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
         @testset "layer with graph" begin
             ec = EdgeConv(adj, Dense(2*in_channel, out_channel))
             @test graph(ec.fg) == [[2,4], [1,3], [2,4], [1,3]]

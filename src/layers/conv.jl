@@ -284,11 +284,10 @@ GATConv(ch::Pair{<:Integer,<:Integer}; kwargs...) = GATConv(NullGraph(), ch; kwa
 function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector)
     x_i = reshape(g.weight*x_i, :, g.heads)
     x_j = reshape(g.weight*x_j, :, g.heads)
-    n = size(x_i, 1)
-    e = vcat(x_i, x_j+zero(x_j))
-    e = sum(e .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
-    e = leakyrelu.(e, g.negative_slope)
-    vcat(e, x_j)  # shape: (n+1, g.heads)
+    x_ij = vcat(x_i, x_j+zero(x_j))
+    e = sum(x_ij .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
+    e_ij = leakyrelu.(e, g.negative_slope)
+    vcat(e_ij, x_j)  # shape: (n+1, g.heads)
 end
 
 # After some reshaping due to the multihead, we get the α from each message,
@@ -296,8 +295,8 @@ end
 function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
     e_ij = mapreduce(j -> message(g, _view(X, i), _view(X, j)), hcat, js)
     n = size(e_ij, 1)
-    alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
-    msgs = view(e_ij, 2:n, :) .* reshape(alphas, 1, :)
+    αs = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
+    msgs = view(e_ij, 2:n, :) .* reshape(αs, 1, :)
     reshape(msgs, (n-1)*g.heads, :)
 end
 
