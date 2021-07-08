@@ -521,22 +521,22 @@ end
 
 function GINConv(adj::AbstractMatrix, nn, eps, train_eps)
     fg = FeaturedGraph(adj)
-    GraphConv(fg, nn, eps, train_eps)
+    GINConv(fg, nn, eps, train_eps)
 end
 
 function GINConv(nn, eps, train_eps)
-    GraphConv(NullGraph(), nn, eps, train_eps)
+    GINConv(NullGraph(), nn, eps, train_eps)
 end
 
-message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j
-update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
+message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
+update(g::GINConv, m::AbstractVector, x) = g.nn((1.0 + g.eps) * x + m)
 
 @functor GINConv
 
-function(g::GINConv)(adj::AbstractMatrix)
-    fg = FeaturedGraph(adj)
+function(g::GINConv)(X::AbstractMatrix)
+    fg = FeaturedGraph(graph(g.fg), nf=X)
     Zygote.ignore() do
-        GraphSignals.check_num_node(graph(g.fg), adj)
+        GraphSignals.check_num_node(graph(g.fg), X)
     end
     propagate(g, fg, :add)
 end

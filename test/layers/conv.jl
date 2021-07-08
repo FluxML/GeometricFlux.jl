@@ -3,6 +3,7 @@ using Flux: Dense
 in_channel = 3
 out_channel = 5
 N = 4
+T = Float32
 adj = T[0. 1. 0. 1.;
        1. 0. 1. 0.;
        0. 1. 0. 1.;
@@ -401,27 +402,27 @@ adj_single_vertex =   T[0. 0. 0. 1.;
         X = rand(Float32, in_channel, N)
         Xt = transpose(rand(Float32, N, in_channel))
         nn = Flux.Chain(Dense(in_channel, out_channel))
+        eps = 0.001
 
         @testset "layer with graph" begin
-            gc = GINConv(adj)
-            @test size(gc.weight) == (out_channel, in_channel)
-            @test size(gc.bias) == (out_channel,)
+            gc = GINConv(adj, nn, eps, true)
+            @test size(gc.nn.layers[1].W) == (out_channel, in_channel)
+            @test size(gc.nn.layers[1].b) == (out_channel, )
             @test graph(gc.fg) === adj
 
             Y = gc(X)
-            @test size(Y) == (out_channel, N)
+            @test size(node_feature(Y)) == (out_channel, N)
 
             # Test with transposed features
             Y = gc(Xt)
-            @test size(Y) == (out_channel, N)
+            @test size(node_feature(Y)) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(gc(x)), X)[1]
             @test size(g) == size(X)
 
             g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-            @test size(g.weight) == size(gc.weight)
-            @test size(g.bias) == size(gc.bias)
+            @test size(g.weight) == size(gc.nn.layers[1].W)
+            @test size(g.bias) == size(gc.nn.layers[1].b)
         end
-
     end
 end
