@@ -9,6 +9,7 @@ using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell
 using Flux: @functor
+using GraphLaplacians
 @reexport using GraphSignals
 using LightGraphs
 using Requires

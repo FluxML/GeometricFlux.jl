@@ -1,10 +1,3 @@
-function add_self_loop!(adj::AbstractVector{T}, n::Int=length(adj)) where {T<:AbstractVector}
-    for i = 1:n
-        i in adj[i] || push!(adj[i], i)
-    end
-    adj
-end
-
 """
     GCNConv([graph, ]in=>out)
     GCNConv([graph, ]in=>out, σ)
@@ -306,7 +299,7 @@ function update_batch_edge(g::GATConv, adj, X::AbstractMatrix)
     n = size(adj, 1)
     # a vertex must always receive a message from itself
     Zygote.ignore() do
-        add_self_loop!(adj, n)
+        GraphLaplacians.add_self_loop!(adj, n)
     end
     mapreduce(i -> apply_batch_message(g, i, adj[i], X), hcat, 1:n)
 end
