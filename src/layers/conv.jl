@@ -286,7 +286,7 @@ end
 # After some reshaping due to the multihead, we get the α from each message,
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
-    e_ij = mapreduce(j -> message(g, _view(X, i), _view(X, j)), hcat, js)
+    e_ij = mapreduce(j -> GeometricFlux.message(g, _view(X, i), _view(X, j)), hcat, js)
     n = size(e_ij, 1)
     αs = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
     msgs = view(e_ij, 2:n, :) .* reshape(αs, 1, :)

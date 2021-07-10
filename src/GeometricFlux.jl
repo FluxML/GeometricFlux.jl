@@ -18,20 +18,9 @@ using Zygote
 export
     # layers/gn
     GraphNet,
-    update_edge,
-    update_vertex,
-    update_global,
-    update_batch_edge,
-    update_batch_vertex,
-    aggregate_neighbors,
-    aggregate_edges,
-    aggregate_vertices,
-    propagate,
 
     # layers/msgpass
     MessagePassing,
-    message,
-    update,
 
     # layers/conv
     GCNConv,
@@ -40,9 +29,6 @@ export
     GATConv,
     GatedGraphConv,
     EdgeConv,
-    message,
-    update,
-    propagate,
 
     # layer/pool
     GlobalPool,
