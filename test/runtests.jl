@@ -17,7 +17,7 @@ using Test
 
 cuda_tests = [
     "cuda/conv",
-    "cuda/msgpass",
+    # "cuda/msgpass",
 ]
 
 tests = [
