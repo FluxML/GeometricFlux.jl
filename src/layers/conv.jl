@@ -1,10 +1,3 @@
-function add_self_loop!(adj::AbstractVector{T}, n::Int=length(adj)) where {T<:AbstractVector}
-    for i = 1:n
-        i in adj[i] || push!(adj[i], i)
-    end
-    adj
-end
-
 """
     GCNConv([graph, ]in=>out)
     GCNConv([graph, ]in=>out, σ)
@@ -221,12 +214,8 @@ function (gc::GraphConv)(X::AbstractMatrix)
     _, X = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
-function (g::GraphConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(g, fg, +)
-end
+
+(g::GraphConv)(fg::FeaturedGraph) = propagate(g, fg, +)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -288,20 +277,19 @@ GATConv(ch::Pair{<:Integer,<:Integer}; kwargs...) = GATConv(NullGraph(), ch; kwa
 function message(g::GATConv, x_i::AbstractVector, x_j::AbstractVector)
     x_i = reshape(g.weight*x_i, :, g.heads)
     x_j = reshape(g.weight*x_j, :, g.heads)
-    n = size(x_i, 1)
-    e = vcat(x_i, x_j+zero(x_j))
-    e = sum(e .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
-    e = leakyrelu.(e, g.negative_slope)
-    vcat(e, x_j)  # shape: (n+1, g.heads)
+    x_ij = vcat(x_i, x_j+zero(x_j))
+    e = sum(x_ij .* g.a, dims=1)  # inner product for each head, output shape: (1, g.heads)
+    e_ij = leakyrelu.(e, g.negative_slope)
+    vcat(e_ij, x_j)  # shape: (n+1, g.heads)
 end
 
 # After some reshaping due to the multihead, we get the α from each message,
 # then get the softmax over every α, and eventually multiply the message by α
 function apply_batch_message(g::GATConv, i, js, X::AbstractMatrix)
-    e_ij = mapreduce(j -> message(g, _view(X, i), _view(X, j)), hcat, js)
+    e_ij = mapreduce(j -> GeometricFlux.message(g, _view(X, i), _view(X, j)), hcat, js)
     n = size(e_ij, 1)
-    alphas = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
-    msgs = view(e_ij, 2:n, :) .* reshape(alphas, 1, :)
+    αs = Flux.softmax(reshape(view(e_ij, 1, :), g.heads, :), dims=2)
+    msgs = view(e_ij, 2:n, :) .* reshape(αs, 1, :)
     reshape(msgs, (n-1)*g.heads, :)
 end
 
@@ -311,7 +299,7 @@ function update_batch_edge(g::GATConv, adj, X::AbstractMatrix)
     n = size(adj, 1)
     # a vertex must always receive a message from itself
     Zygote.ignore() do
-        add_self_loop!(adj, n)
+        GraphLaplacians.add_self_loop!(adj, n)
     end
     mapreduce(i -> apply_batch_message(g, i, adj[i], X), hcat, 1:n)
 end
@@ -337,12 +325,8 @@ function (gat::GATConv)(X::AbstractMatrix)
     _, X = propagate(gat, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
-function (g::GATConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(g, fg, +)
-end
+
+(g::GATConv)(fg::FeaturedGraph) = propagate(g, fg, +)
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -472,12 +456,7 @@ function (e::EdgeConv)(X::AbstractMatrix)
     X
 end
 
-function (e::EdgeConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(e, fg, e.aggr)
-end
+(e::EdgeConv)(fg::FeaturedGraph) = propagate(e, fg, e.aggr)
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", nv(l.fg), ", E=", ne(l.fg))

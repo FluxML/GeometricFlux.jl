@@ -36,15 +36,15 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 end
 
 @inline apply_batch_message(mp::MessagePassing, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) =
-    mapreduce(j -> message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
+    mapreduce(j -> GeometricFlux.message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
 
 @inline update_batch_vertex(mp::MessagePassing, M::AbstractMatrix, X::AbstractMatrix, u) = 
-    mapreduce(i -> update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
+    mapreduce(i -> GeometricFlux.update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
 
 @inline function aggregate_neighbors(mp::MessagePassing, aggr, M::AbstractMatrix, accu_edge)
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(M, accu_edge)
-    GeometricFlux.scatter(aggr, cluster, M)
+    NNlib.scatter(aggr, M, cluster)
 end
 
 function propagate(mp::MessagePassing, fg::FeaturedGraph, aggr=+)

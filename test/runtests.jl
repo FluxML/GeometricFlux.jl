@@ -5,6 +5,8 @@ using Flux: @functor
 using FillArrays
 using GraphSignals
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
+using LinearAlgebra
+using NNlib
 using PkgVersion
 using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
@@ -14,10 +16,8 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/scatter",
-    "cuda/grad",
     "cuda/conv",
-    "cuda/msgpass",
+    # "cuda/msgpass",
 ]
 
 tests = [
@@ -27,13 +27,13 @@ tests = [
     "layers/pool",
     "layers/misc",
     "models",
-    "scatter",
     "graphs",
 ]
 
 if Flux.use_cuda[]
     using CUDA
     using Flux: gpu
+    using NNlibCUDA
     append!(tests, cuda_tests)
 else
     @warn "CUDA unavailable, not testing GPU support"

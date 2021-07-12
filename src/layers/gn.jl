@@ -31,7 +31,7 @@ end
 @inline function aggregate_neighbors(gn::GraphNet, aggr, E, accu_edge)
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(E, accu_edge)
-    GeometricFlux.scatter(aggr, cluster, E)
+    NNlib.scatter(aggr, E, cluster)
 end
 
 @inline function aggregate_neighbors(gn::GraphNet, aggr::Nothing, E, accu_edge)
