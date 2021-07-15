@@ -20,19 +20,20 @@ num_nodes = 2708
 num_features = 1433
 hidden = 16
 target_catg = 7
-epochs = 100
+epochs = 5
 
 ## Preprocessing data
 train_X = Matrix{Float32}(features)  # dim: num_features * num_nodes
 train_y = Matrix{Float32}(labels) # dim: target_catg * num_nodes
 adj_mat = Matrix{Float32}(adjacency_matrix(g))
 
-model = Chain(
-    GCNConv(adj_mat, num_features=>hidden, relu),
-    Dropout(0.5),
-    GCNConv(adj_mat, hidden=>target_catg),
-)
 ## Model
+model = Chain(
+    GCNConv(num_features=>hidden, relu),
+    # Dropout(0.5),  --> does not work
+    GCNConv(hidden=>target_catg, relu),
+    FeatureSelector(:node)
+)
 
 ## Loss
 loss(x, y) = logitcrossentropy(model(x), y)
@@ -41,8 +42,9 @@ accuracy(x, y) = mean(onecold(softmax(cpu(model(x)))) .== onecold(cpu(y)))
 
 ## Training
 ps = Flux.params(model)
-train_data = [(train_X, train_y)]
+fg = FeaturedGraph(adj_mat, nf=train_X)
+train_data = [(fg, train_y)]
 opt = ADAM(0.01)
-evalcb() = @show(accuracy(train_X, train_y))
+evalcb() = @show(accuracy(fg, train_y))
 
 @epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
