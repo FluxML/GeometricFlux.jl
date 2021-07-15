@@ -1,5 +1,16 @@
 using DataStructures: nlargest
 
+"""
+    GlobalPool(aggr, dim...)
+
+Global pooling layer.
+
+It pools all features with `aggr` operation.
+
+# Arguments
+
+- `aggr`: An aggregate function applied to pool all features.
+"""
 struct GlobalPool{A}
     aggr
     cluster::A
@@ -11,7 +22,19 @@ end
 
 (g::GlobalPool)(X::AbstractArray) = NNlib.scatter(g.aggr, X, g.cluster)
 
-struct LocalPool{A}
+"""
+    LocalPool(aggr, cluster)
+
+Local pooling layer.
+
+It pools features with `aggr` operation accroding to `cluster`. It is implemented with `scatter` operation.
+
+# Arguments
+
+- `aggr`: An aggregate function applied to pool all features.
+- `cluster`: An index structure which indicates what features to aggregate with.
+"""
+struct LocalPool{A<:AbstractArray}
     aggr
     cluster::A
 end
@@ -22,6 +45,17 @@ end
 
 (l::LocalPool)(X::AbstractArray) = NNlib.scatter(l.aggr, X, l.cluster)
 
+"""
+    TopKPool(adj, k, in_channel)
+
+Top-k pooling layer.
+
+# Arguments
+
+- `adj`: Adjacency matrix  of a graph.
+- `k`: Top-k nodes are selected to pool together.
+- `in_channel`: The dimension of input channel.
+"""
 struct TopKPool{T,S}
     A::AbstractMatrix{T}
     k::Int
