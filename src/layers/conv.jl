@@ -1,5 +1,5 @@
 """
-    GCNConv([graph, ]in=>out[, σ=identity]; bias=true)
+    GCNConv([graph,] in => out, σ=identity; bias=true, init=glorot_uniform)
 
 Graph convolutional layer.
 
@@ -10,29 +10,32 @@ the layer instead of only the features.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
-- `bias::Bool`: Keyword argument, whether to learn the additive bias.
+- `bias`: Add learnable bias.
+- `init`: Weights' initializer.
 
-Data should be stored in (# features, # nodes) order.
-For example, a 1000-node graph each node of which poses 100 features is constructed.
-The input data would be a `1000×100` array.
+
+The input to the layer is a node feature array `X` 
+of size `(num_features, num_nodes)`.
 """
-struct GCNConv{T,F,S<:AbstractFeaturedGraph}
-    weight::AbstractMatrix{T}
-    bias::AbstractVector{T}
+struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph}
+    weight::A
+    bias::B
     σ::F
     fg::S
 end
 
-function GCNConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ=identity;
-                 init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    GCNConv(T.(init(ch[2], ch[1])), b, σ, fg)
+function GCNConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, σ=identity;
+                 init=glorot_uniform, bias::Bool=true)
+    in, out = ch
+    W = init(out, in)
+    b = Flux.create_bias(W, bias, out)
+    GCNConv(W, b, σ, fg)
 end
 
-GCNConv(ch::Pair{<:Integer,<:Integer}, σ = identity; kwargs...) =
+GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
     GCNConv(NullGraph(), ch, σ; kwargs...)
 
-GCNConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ = identity; kwargs...) =
+GCNConv(adj::AbstractMatrix, ch::Pair{Int,Int}, σ = identity; kwargs...) =
     GCNConv(FeaturedGraph(adj), ch, σ; kwargs...)
 
 @functor GCNConv
@@ -75,7 +78,7 @@ end
 
 
 """
-    ChebConv([graph, ]in=>out, k; bias=true)
+    ChebConv([graph, ]in=>out, k; bias=true, init=glorot_uniform)
 
 Chebyshev spectral graph convolutional layer.
 
@@ -86,27 +89,30 @@ the layer instead of only the features.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `k`: The order of Chebyshev polynomial.
-- `bias::Bool`: Keyword argument, whether to learn the additive bias.
+- `bias`: Add learnable bias.
+- `init`: Weights' initializer.
 """
-struct ChebConv{T,S<:AbstractFeaturedGraph}
-    weight::AbstractArray{T,3}
-    bias::AbstractVector{T}
+struct ChebConv{A<:AbstractArray{<:Number,3}, B, S<:AbstractFeaturedGraph}
+    weight::A
+    bias::B
     fg::S
-    k::Integer
-    in_channel::Integer
-    out_channel::Integer
+    k::Int
+    in_channel::Int
+    out_channel::Int
 end
 
-function ChebConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, k::Integer;
-                  init=glorot_uniform, T::DataType=Float32, bias::Bool=true)
-    b = bias ? init(ch[2]) : zeros(T, ch[2])
-    ChebConv(init(ch[2], ch[1], k), b, fg, k, ch[1], ch[2])
+function ChebConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, k::Int;
+                  init=glorot_uniform, bias::Bool=true)
+    in, out = ch
+    W = init(out, in, k)
+    b = Flux.create_bias(W, bias, out)
+    ChebConv(W, b, fg, k, in, out)
 end
 
-ChebConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs...) =
+ChebConv(adj::AbstractMatrix, ch::Pair{Int,Int}, k::Int; kwargs...) =
     ChebConv(FeaturedGraph(adj), ch, k; kwargs...)
 
-ChebConv(ch::Pair{<:Integer,<:Integer}, k::Integer; kwargs...) =
+ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
     ChebConv(NullGraph(), ch, k; kwargs...)
 
 @functor ChebConv
@@ -159,7 +165,7 @@ end
 
 
 """
-    GraphConv([graph, ]in=>out[, σ=identity[, aggr=+]]; bias=true)
+    GraphConv([graph,] in => out, σ=identity, aggr=+; bias=true, init=glorot_uniform)
 
 Graph neural network layer.
 
@@ -171,32 +177,34 @@ the layer instead of only the features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
 - `aggr`: An aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
-- `bias::Bool`: Keyword argument, whether to learn the additive bias.
+- `bias`: Add learnable bias.
+- `init`: Weights' initializer.
 """
-struct GraphConv{V<:AbstractFeaturedGraph,T} <: MessagePassing
+struct GraphConv{V<:AbstractFeaturedGraph, A<:AbstractMatrix, B} <: MessagePassing
     fg::V
-    weight1::AbstractMatrix{T}
-    weight2::AbstractMatrix{T}
-    bias::AbstractVector{T}
+    weight1::A
+    weight2::A
+    bias::B
     σ
     aggr
 end
 
-function GraphConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+;
-                   init=glorot_uniform, bias::Bool=true, T::DataType=Float32)
-    w1 = T.(init(ch[2], ch[1]))
-    w2 = T.(init(ch[2], ch[1]))
-    b = bias ? T.(init(ch[2])) : zeros(T, ch[2])
-    GraphConv(fg, w1, w2, b, σ, aggr)
+function GraphConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, σ=identity, aggr=+;
+                   init=glorot_uniform, bias::Bool=true)
+    in, out = ch
+    W1 = init(out, in)
+    W2 = init(out, in)
+    b = Flux.create_bias(W1, bias, out)
+    GraphConv(fg, W1, W2, b, σ, aggr)
 end
 
-GraphConv(el::AbstractVector{<:AbstractVector}, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
+GraphConv(el::AbstractVector{<:AbstractVector}, ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
     GraphConv(FeaturedGraph(el), ch, σ, aggr; kwargs...)
 
-GraphConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
+GraphConv(adj::AbstractMatrix, ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
     GraphConv(adjacency_list(adj), ch, σ, aggr; kwargs...)
 
-GraphConv(ch::Pair{<:Integer,<:Integer}, σ=identity, aggr=+; kwargs...) =
+GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
     GraphConv(NullGraph(), ch, σ, aggr; kwargs...)
 
 @functor GraphConv
@@ -228,7 +236,12 @@ end
 
 
 """
-    GATConv([graph, ]in=>out; bias=true, negative_slope=0.2)
+    GATConv([graph,] in => out;
+            heads=1,
+            concat=true,
+            init=glorot_uniform    
+            bias=true, 
+            negative_slope=0.2)
 
 Graph attentional layer.
 
@@ -239,35 +252,38 @@ the layer instead of only the features.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
+- `heads`: number attention heads 
+- `concat`
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{V<:AbstractFeaturedGraph,T<:Real} <: MessagePassing
+struct GATConv{V<:AbstractFeaturedGraph, T, A<:AbstractMatrix{T}, B} <: MessagePassing
     fg::V
-    weight::AbstractMatrix{T}
-    bias::AbstractVector{T}
-    a::AbstractMatrix{T}
+    weight::A
+    bias::B
+    a::A
     negative_slope::T
-    channel::Pair{<:Integer,<:Integer}
-    heads::Integer
+    channel::Pair{Int, Int}
+    heads::Int
     concat::Bool
 end
 
-function GATConv(fg::AbstractFeaturedGraph, ch::Pair{<:Integer,<:Integer}; T::DataType=Float32,
-                 heads::Integer=1, concat::Bool=true, negative_slope::Real=T(0.2),
+function GATConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int};
+                 heads::Int=1, concat::Bool=true, negative_slope=0.2f0,
                  init=glorot_uniform, bias::Bool=true)
-    w = T.(init(ch[2]*heads, ch[1]))
-    b = bias ? T.(init(ch[2]*heads)) : zeros(T, ch[2]*heads)
-    a = T.(init(2*ch[2], heads))
-    GATConv(fg, w, b, a, negative_slope, ch, heads, concat)
+    in, out = ch             
+    W = init(out*heads, in)
+    b = Flux.create_bias(W, bias, out*heads)
+    a = init(2*out, heads)
+    GATConv(fg, W, b, a, negative_slope, ch, heads, concat)
 end
 
-GATConv(el::AbstractVector{<:AbstractVector}, ch::Pair{<:Integer,<:Integer}; kwargs...) =
+GATConv(el::AbstractVector{<:AbstractVector}, ch::Pair{Int,Int}; kwargs...) =
     GATConv(FeaturedGraph(el), ch; kwargs...)
 
-GATConv(adj::AbstractMatrix, ch::Pair{<:Integer,<:Integer}; kwargs...) =
+GATConv(adj::AbstractMatrix, ch::Pair{Int,Int}; kwargs...) =
     GATConv(adjacency_list(adj), ch; kwargs...)
 
-GATConv(ch::Pair{<:Integer,<:Integer}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
+GATConv(ch::Pair{Int,Int}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
 @functor GATConv
 
@@ -338,7 +354,7 @@ end
 
 
 """
-    GatedGraphConv([graph, ]out, num_layers; aggr=+)
+    GatedGraphConv([graph,] out, num_layers; aggr=+, init=glorot_uniform)
 
 Gated graph convolution layer.
 
@@ -350,29 +366,29 @@ the layer instead of only the features.
 - `num_layers`: The number of gated recurrent unit.
 - `aggr`: Keyword argument, an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
-struct GatedGraphConv{V<:AbstractFeaturedGraph, T <: Real, R} <: MessagePassing
+struct GatedGraphConv{V<:AbstractFeaturedGraph, A<:AbstractArray{<:Number,3}, R} <: MessagePassing
     fg::V
-    weight::AbstractArray{T}
+    weight::A
     gru::R
-    out_ch::Integer
-    num_layers::Integer
+    out_ch::Int
+    num_layers::Int
     aggr
 end
 
-function GatedGraphConv(fg::AbstractFeaturedGraph, out_ch::Integer, num_layers::Integer;
-                        aggr=+, init=glorot_uniform, T::DataType=Float32)
-    w = T.(init(out_ch, out_ch, num_layers))
+function GatedGraphConv(fg::AbstractFeaturedGraph, out_ch::Int, num_layers::Int;
+                        aggr=+, init=glorot_uniform)
+    w = init(out_ch, out_ch, num_layers)
     gru = GRUCell(out_ch, out_ch)
     GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
 end
 
-GatedGraphConv(el::AbstractVector{<:AbstractVector}, out_ch::Integer, num_layers::Integer; kwargs...) =
+GatedGraphConv(el::AbstractVector{<:AbstractVector}, out_ch::Int, num_layers::Int; kwargs...) =
     GatedGraphConv(FeaturedGraph(el), out_ch, num_layers; kwargs...)
 
-GatedGraphConv(adj::AbstractMatrix, out_ch::Integer, num_layers::Integer; kwargs...) =
+GatedGraphConv(adj::AbstractMatrix, out_ch::Int, num_layers::Int; kwargs...) =
     GatedGraphConv(adjacency_list(adj), out_ch, num_layers; kwargs...)
 
-GatedGraphConv(out_ch::Integer, num_layers::Integer; kwargs...) =
+GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
     GatedGraphConv(NullGraph(), out_ch, num_layers; kwargs...)
 
 @functor GatedGraphConv
@@ -380,12 +396,12 @@ GatedGraphConv(out_ch::Integer, num_layers::Integer; kwargs...) =
 message(g::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
 update(g::GatedGraphConv, m::AbstractVector, x) = m
 
-function (ggc::GatedGraphConv)(X::AbstractMatrix{T}) where {T<:Real}
+function (ggc::GatedGraphConv)(X::AbstractMatrix)
     @assert has_graph(ggc.fg) "A GraphConv created without a graph must be given a FeaturedGraph as an input."
     ggc(adjacency_list(ggc.fg), X)
 end
 
-function (ggc::GatedGraphConv{V,T})(fg::FeaturedGraph) where {V,T<:Real}
+function (ggc::GatedGraphConv)(fg::FeaturedGraph)
     g = graph(fg)
     H = ggc(adjacency_list(g), node_feature(fg))
     FeaturedGraph(g, nf=H)
