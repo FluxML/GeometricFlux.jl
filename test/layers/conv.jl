@@ -61,6 +61,11 @@ adj_single_vertex = T[0. 0. 0. 1.;
             @test size(g.weight) == size(gc.weight)
             @test size(g.bias) == size(gc.bias)
         end
+
+        @testset "bias=false" begin
+            length(Flux.params(GCNConv(2=>3))) == 2
+            length(Flux.params(GCNConv(2=>3, bias=false))) == 1
+        end
     end
 
 
@@ -118,6 +123,11 @@ adj_single_vertex = T[0. 0. 0. 1.;
             @test size(g.weight) == size(cc.weight)
             @test size(g.bias) == size(cc.bias)
         end
+
+        @testset "bias=false" begin
+            length(Flux.params(ChebConv(2=>3, 3))) == 2
+            length(Flux.params(ChebConv(2=>3, 3, bias=false))) == 1
+        end
     end
 
     @testset "GraphConv" begin
@@ -169,6 +179,12 @@ adj_single_vertex = T[0. 0. 0. 1.;
             @test size(g.weight1) == size(gc.weight1)
             @test size(g.weight2) == size(gc.weight2)
             @test size(g.bias) == size(gc.bias)
+        end
+
+
+        @testset "bias=false" begin
+            length(Flux.params(GraphConv(2=>3))) == 3
+            length(Flux.params(GraphConv(2=>3, bias=false))) == 2
         end
     end
 
@@ -235,6 +251,11 @@ adj_single_vertex = T[0. 0. 0. 1.;
         #         @test size(g.a) == size(gat.a)
         #     end
         # end
+
+        @testset "bias=false" begin
+            length(Flux.params(GATConv(2=>3))) == 3
+            length(Flux.params(GATConv(2=>3, bias=false))) == 2
+        end
     end
 
     @testset "GatedGraphConv" begin
