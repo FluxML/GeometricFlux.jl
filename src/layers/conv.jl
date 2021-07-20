@@ -253,7 +253,7 @@ the layer instead of only the features.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
 - `heads`: number attention heads 
-- `concat`
+- `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
 struct GATConv{V<:AbstractFeaturedGraph, T, A<:AbstractMatrix{T}, B} <: MessagePassing
