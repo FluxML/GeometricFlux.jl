@@ -9,9 +9,11 @@ adj = [0. 1. 0. 1.;
        0. 1. 0. 1.;
        1. 0. 1. 0.]
 
+fg = FeaturedGraph(adj)
+
 @testset "models" begin
     @testset "GAE" begin
-        gc = GCNConv(adj, in_channel=>out_channel)
+        gc = GCNConv(fg, in_channel=>out_channel)
         gae = GAE(gc)
         X = rand(T, in_channel, N)
         Y = gae(X)

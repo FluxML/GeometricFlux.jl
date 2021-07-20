@@ -34,9 +34,6 @@ end
 GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
     GCNConv(NullGraph(), ch, σ; kwargs...)
 
-GCNConv(adj::AbstractMatrix, ch::Pair{Int,Int}, σ = identity; kwargs...) =
-    GCNConv(FeaturedGraph(adj), ch, σ; kwargs...)
-
 @functor GCNConv
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
@@ -87,9 +84,6 @@ function ChebConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, k::Int;
     b = Flux.create_bias(W, bias, out)
     ChebConv(W, b, fg, k, in, out)
 end
-
-ChebConv(adj::AbstractMatrix, ch::Pair{Int,Int}, k::Int; kwargs...) =
-    ChebConv(FeaturedGraph(adj), ch, k; kwargs...)
 
 ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
     ChebConv(NullGraph(), ch, k; kwargs...)
@@ -157,12 +151,6 @@ function GraphConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, σ=identity, ag
     b = Flux.create_bias(W1, bias, out)
     GraphConv(fg, W1, W2, b, σ, aggr)
 end
-
-GraphConv(el::AbstractVector{<:AbstractVector}, ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
-    GraphConv(FeaturedGraph(el), ch, σ, aggr; kwargs...)
-
-GraphConv(adj::AbstractMatrix, ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
-    GraphConv(adjacency_list(adj), ch, σ, aggr; kwargs...)
 
 GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
     GraphConv(NullGraph(), ch, σ, aggr; kwargs...)
@@ -236,12 +224,6 @@ function GATConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int};
     a = init(2*out, heads)
     GATConv(fg, W, b, a, negative_slope, ch, heads, concat)
 end
-
-GATConv(el::AbstractVector{<:AbstractVector}, ch::Pair{Int,Int}; kwargs...) =
-    GATConv(FeaturedGraph(el), ch; kwargs...)
-
-GATConv(adj::AbstractMatrix, ch::Pair{Int,Int}; kwargs...) =
-    GATConv(adjacency_list(adj), ch; kwargs...)
 
 GATConv(ch::Pair{Int,Int}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
@@ -339,12 +321,6 @@ function GatedGraphConv(fg::AbstractFeaturedGraph, out_ch::Int, num_layers::Int;
     GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
 end
 
-GatedGraphConv(el::AbstractVector{<:AbstractVector}, out_ch::Int, num_layers::Int; kwargs...) =
-    GatedGraphConv(FeaturedGraph(el), out_ch, num_layers; kwargs...)
-
-GatedGraphConv(adj::AbstractMatrix, out_ch::Int, num_layers::Int; kwargs...) =
-    GatedGraphConv(adjacency_list(adj), out_ch, num_layers; kwargs...)
-
 GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
     GatedGraphConv(NullGraph(), out_ch, num_layers; kwargs...)
 
@@ -400,8 +376,6 @@ struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
 end
 
 EdgeConv(fg::AbstractFeaturedGraph, nn; aggr=max) = EdgeConv(fg, nn, aggr)
-EdgeConv(el::AbstractVector{<:AbstractVector}, nn; kwargs...) = EdgeConv(FeaturedGraph(el), nn; kwargs...)
-EdgeConv(adj::AbstractMatrix, nn; kwargs...) = EdgeConv(adjacency_list(adj), nn; kwargs...)
 EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
 
 @functor EdgeConv

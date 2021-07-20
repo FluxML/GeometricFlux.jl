@@ -8,10 +8,11 @@ adj = [0 1 0 1;
        0 1 0 1;
        1 0 1 0]
 
+fg = FeaturedGraph(adj)
 
 @testset "cuda/conv" begin
     @testset "GCNConv" begin
-        gc = GCNConv(adj, in_channel=>out_channel) |> gpu
+        gc = GCNConv(fg, in_channel=>out_channel) |> gpu
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
         @test collect(graph(gc.fg)) == adj
@@ -31,7 +32,7 @@ adj = [0 1 0 1;
 
     @testset "ChebConv" begin
         k = 6
-        cc = ChebConv(adj, in_channel=>out_channel, k) |> gpu
+        cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
         @test collect(graph(cc.fg)) == adj
@@ -52,7 +53,7 @@ adj = [0 1 0 1;
     end
 
     @testset "GraphConv" begin
-        gc = GraphConv(adj, in_channel=>out_channel) |> gpu
+        gc = GraphConv(fg, in_channel=>out_channel) |> gpu
         @test size(gc.weight1) == (out_channel, in_channel)
         @test size(gc.weight2) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
@@ -71,7 +72,7 @@ adj = [0 1 0 1;
     end
 
     @testset "GATConv" begin
-        gat = GATConv(adj, in_channel=>out_channel) |> gpu
+        gat = GATConv(fg, in_channel=>out_channel) |> gpu
         @test size(gat.weight) == (out_channel, in_channel)
         @test size(gat.bias) == (out_channel,)
 
@@ -90,7 +91,7 @@ adj = [0 1 0 1;
 
     @testset "GatedGraphConv" begin
         num_layers = 3
-        ggc = GatedGraphConv(adj, out_channel, num_layers) |> gpu
+        ggc = GatedGraphConv(fg, out_channel, num_layers) |> gpu
         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
         X = rand(in_channel, N) |> gpu
@@ -105,7 +106,7 @@ adj = [0 1 0 1;
     end
 
     @testset "EdgeConv" begin
-        ec = EdgeConv(adj, Dense(2*in_channel, out_channel)) |> gpu
+        ec = EdgeConv(fg, Dense(2*in_channel, out_channel)) |> gpu
         X = rand(in_channel, N) |> gpu
         Y = ec(X)
         @test size(Y) == (out_channel, N)
