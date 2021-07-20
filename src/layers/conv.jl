@@ -252,7 +252,7 @@ the layer instead of only the features.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
-- `heads`: number attention heads 
+- `heads`: Number attention heads 
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
