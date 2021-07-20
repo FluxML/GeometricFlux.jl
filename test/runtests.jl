@@ -3,8 +3,8 @@ using GeometricFlux.Datasets
 using Flux
 using Flux: @functor
 using FillArrays
-using GraphSignals
-using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
+# using GraphSignals
+using LightGraphs
 using LinearAlgebra
 using NNlib
 using SparseArrays: SparseMatrixCSC
@@ -18,6 +18,7 @@ cuda_tests = [
 ]
 
 tests = [
+    "featured_graph",
     "layers/gn",
     "layers/msgpass",
     "layers/conv",

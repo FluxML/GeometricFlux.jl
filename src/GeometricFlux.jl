@@ -1,20 +1,34 @@
 module GeometricFlux
 
 using Statistics: mean
-using LinearAlgebra: Adjoint, norm, Transpose
-using Reexport
+using LinearAlgebra
+using FillArrays: Fill
 
 using CUDA
-using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
 using NNlib, NNlibCUDA
-using GraphLaplacians
-@reexport using GraphSignals
-using LightGraphs
 using Zygote
+using ChainRulesCore
+
+
+# import GraphLaplacians
+# using GraphLaplacians: normalized_laplacian, scaled_laplacian
+# using GraphLaplacians: adjacency_matrix
+# using Reexport
+# @reexport using GraphSignals
+import LightGraphs
+using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv, adjacency_matrix
 
 export
+    # featured_graph
+    FeaturedGraph,
+    adjacency_list,
+    # graph,
+    # has_graph,
+    node_feature, edge_feature, global_feature,
+    # ne, nv, adjacency_matrix, # from LightGraphs
+
     # layers/gn
     GraphNet,
 
@@ -49,6 +63,7 @@ export
     # utils
     generate_cluster
 
+include("featured_graph.jl")  
 include("datasets.jl")
 
 include("utils.jl")

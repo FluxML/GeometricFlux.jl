@@ -55,11 +55,11 @@ See also [`message`](@ref).
     mapreduce(i -> GeometricFlux.update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
 
 function propagate(mp::MessagePassing, fg::FeaturedGraph, aggr=+)
-    E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
-    FeaturedGraph(fg, nf=X, ef=E, gf=Fill(0.f0, 0))
+    E, X = propagate(mp, adjacency_list(fg), edge_feature(fg), node_feature(fg), aggr)
+    FeaturedGraph(fg, nf=X, ef=E)
 end
 
 function propagate(mp::MessagePassing, adj::AbstractVector{S}, E::R, X::Q, aggr) where {S<:AbstractVector,R,Q}
-    E, X, u = propagate(mp, adj, E, X, Fill(0.f0, 0), aggr, nothing, nothing)
+    E, X, u = propagate(mp, adj, E, X, nothing, aggr, nothing, nothing)
     E, X
 end

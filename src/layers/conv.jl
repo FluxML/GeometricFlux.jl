@@ -88,10 +88,16 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
 
 function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
     check_num_nodes(fg, X)
+<<<<<<< HEAD
     @assert size(X, 1) == size(c.weight, 2) "Input feature size must match input channel size."
     
     L̃ = scaled_laplacian(fg, eltype(X))    
 
+=======
+    L̃ = scaled_laplacian(fg, eltype(X))    
+    
+    @assert size(X, 1) == size(c.weight, 2) "Input feature size must match input channel size."
+>>>>>>> 17dbba7 (implement COO featured graph)
     Z_prev = X
     Z = X * L̃
     Y = view(c.weight,:,:,1) * Z_prev
@@ -159,7 +165,11 @@ update(gc::GraphConv, m::AbstractVector, x::AbstractVector) = gc.σ.(gc.weight1*
 
 function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
     check_num_nodes(fg, x)
+<<<<<<< HEAD
     _, x = propagate(gc, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), x, +)
+=======
+    _, x = propagate(gc, adjacency_list(fg),  Fill(0.f0, 0, ne(fg)), x, +)
+>>>>>>> 17dbba7 (implement COO featured graph)
     x
 end
 
@@ -246,11 +256,16 @@ update_batch_edge(gat::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u) = 
 
 function update_batch_edge(gat::GATConv, adj, X::AbstractMatrix)
     n = size(adj, 1)
+<<<<<<< HEAD
     # a vertex must always receive a message from itself
     Zygote.ignore() do
         GraphLaplacians.add_self_loop!(adj, n)
     end
     mapreduce(i -> apply_batch_message(gat, i, adj[i], X), hcat, 1:n)
+=======
+    add_self_loop!(adj)
+    mapreduce(i -> apply_batch_message(g, i, adj[i], X), hcat, 1:n)
+>>>>>>> 17dbba7 (implement COO featured graph)
 end
 
 # The same as update function in batch manner
@@ -267,7 +282,11 @@ end
 
 function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
     check_num_nodes(fg, X)
+<<<<<<< HEAD
     _, X = propagate(gat, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, +)
+=======
+    _, X = propagate(gat, adjacency_list(fg),  Fill(0.f0, 0, ne(fg)), X, +)
+>>>>>>> 17dbba7 (implement COO featured graph)
     X
 end
 
@@ -324,6 +343,7 @@ update(ggc::GatedGraphConv, m::AbstractVector, x) = m
 
 function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
     check_num_nodes(fg, H)
+<<<<<<< HEAD
     m, n = size(H)
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
     adj = adjacency_list(fg)
@@ -331,6 +351,13 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
         Hpad = similar(H, S, ggc.out_ch - m, n)
         H = vcat(H, fill!(Hpad, 0))
     end
+=======
+    adj = adjacency_list(fg)
+    m, n = size(H)
+    @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
+    (m < ggc.out_ch) && (H = vcat(H, zeros(S, ggc.out_ch - m, n)))
+
+>>>>>>> 17dbba7 (implement COO featured graph)
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
         _, M = propagate(ggc, adj, Fill(0.f0, 0, ne(fg)), M, +)
@@ -378,7 +405,11 @@ update(ec::EdgeConv, m::AbstractVector, x) = m
 
 function (ec::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
     check_num_nodes(fg, X)
+<<<<<<< HEAD
     _, X = propagate(ec, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, ec.aggr)
+=======
+    _, X = propagate(ec, adjacency_list(fg),  Fill(0.f0, 0, ne(fg)), X, ec.aggr)
+>>>>>>> 17dbba7 (implement COO featured graph)
     X
 end
 

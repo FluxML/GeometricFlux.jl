@@ -27,29 +27,31 @@ l = NewLayer(out_channel, in_channel)
     @testset "no message or update" begin
         fg_ = l(fg)
 
-        @test graph(fg_) == adj
+        @test all(adjacency_matrix(fg_) .== adj)
         @test size(node_feature(fg_)) == (in_channel, num_V)
         @test size(edge_feature(fg_)) == (in_channel, 2*num_E)
-        @test size(global_feature(fg_)) == (0,)
+        @test global_feature(fg_) === nothing
     end
 
     GeometricFlux.message(l::NewLayer, x_i, x_j, e_ij) = l.weight * x_j
+    
     @testset "message function" begin
         fg_ = l(fg)
 
-        @test graph(fg_) == adj
+        @test adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (out_channel, num_V)
         @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
-        @test size(global_feature(fg_)) == (0,)
+        @test global_feature(fg_) === nothing
     end
-
+    
     GeometricFlux.update(l::NewLayer, m, x) = l.weight * x + m
+
     @testset "message and update" begin
         fg_ = l(fg)
 
-        @test graph(fg_) == adj
+        @test adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (out_channel, num_V)
         @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
-        @test size(global_feature(fg_)) == (0,)
+        @test global_feature(fg_) === nothing
     end
 end
