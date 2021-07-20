@@ -7,12 +7,11 @@ using Reexport
 using CUDA
 using FillArrays: Fill
 using Flux
-using Flux: glorot_uniform, leakyrelu, GRUCell
-using Flux: @functor
+using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
+using NNlib, NNlibCUDA
 using GraphLaplacians
 @reexport using GraphSignals
 using LightGraphs
-using Requires
 using Zygote
 
 export
@@ -65,16 +64,10 @@ include("layers/misc.jl")
 
 include("graphs.jl")
 
+include("cuda/msgpass.jl")
+include("cuda/conv.jl")
 
 using .Datasets
 
-function __init__()
-    @require CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba" begin
-        using NNlibCUDA
-
-        include("cuda/msgpass.jl")
-        include("cuda/conv.jl")
-    end
-end
 
 end

@@ -4,5 +4,4 @@
 deps/deps.jl
 docs/build/
 *.odg
-
 Manifest.toml
