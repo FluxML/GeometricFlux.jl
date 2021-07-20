@@ -25,7 +25,6 @@ tests = [
     "layers/pool",
     "layers/misc",
     "models",
-    # "graphs",
 ]
 
 if Flux.use_cuda[]

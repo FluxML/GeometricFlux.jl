@@ -14,7 +14,7 @@ adj = [0 1 0 1;
         gc = GCNConv(adj, in_channel=>out_channel) |> gpu
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test graph(gc.fg) === adj
+        @test collect(graph(gc.fg)) == adj
 
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
@@ -34,7 +34,7 @@ adj = [0 1 0 1;
         cc = ChebConv(adj, in_channel=>out_channel, k) |> gpu
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test graph(cc.fg) == adj
+        @test collect(graph(cc.fg)) == adj
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel

@@ -41,8 +41,7 @@ GCNConv(adj::AbstractMatrix, ch::Pair{Int,Int}, σ = identity; kwargs...) =
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
     @assert has_graph(fg) "FeaturedGraph must contain a graph."
-    A = adjacency_matrix(fg)
-    L̃ = normalized_laplacian(A, eltype(x); selfloop=true)
+    L̃ = normalized_laplacian(fg, eltype(x); selfloop=true)
     l.σ.(l.weight * x * L̃ .+ l.bias)
 end
 
@@ -99,12 +98,7 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
 
 function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
     @assert has_graph(fg) "FeaturedGraph must contain a graph."
-    g = graph(fg)
-    L̃ = scaled_laplacian(g, T)    
-    # Zygote.ignore() do
-    #     fg isa NullGraph || (fg.graph = g)
-    # end
-    
+    L̃ = scaled_laplacian(fg, T)    
     
     @assert size(X, 1) == c.in_channel "Input feature size must match input channel size."
     GraphSignals.check_num_node(L̃, X)
@@ -381,8 +375,7 @@ end
 
 
 function Base.show(io::IO, l::GatedGraphConv)
-    print(io, "GatedGraphConv((=>", l.out_ch)
-    print(io, ")^", l.num_layers)
+    print(io, "GatedGraphConv(($(l.out_ch) => $(l.out_ch))^$(l.num_layers)")
     print(io, ", aggr=", l.aggr)
     print(io, ")")
 end
@@ -428,8 +421,7 @@ end
 (l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::EdgeConv)
-    print(io, "EdgeConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
-    print(io, "), ", l.nn)
+    print(io, "EdgeConv(", l.nn)
     print(io, ", aggr=", l.aggr)
     print(io, ")")
 end
