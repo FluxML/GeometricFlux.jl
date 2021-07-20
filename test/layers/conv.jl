@@ -47,8 +47,8 @@ adj_single_vertex = T[0. 0. 0. 1.;
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws AssertionError gc(X)
-
+            @test_throws MethodError gc(X)
+            
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
@@ -109,7 +109,7 @@ adj_single_vertex = T[0. 0. 0. 1.;
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws AssertionError cc(X)
+            @test_throws MethodError cc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -165,7 +165,7 @@ adj_single_vertex = T[0. 0. 0. 1.;
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws AssertionError gc(X)
+            @test_throws MethodError gc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -235,7 +235,7 @@ adj_single_vertex = T[0. 0. 0. 1.;
         #         fg_ = gat(fg)
         #         Y = node_feature(fg_)
         #         @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
-        #         @test_throws AssertionError gat(X)
+        #         @test_throws MethodError gat(X)
 
         #         # Test with transposed features
         #         fgt = FeaturedGraph(adj_gat, nf=Xt)
@@ -289,7 +289,7 @@ adj_single_vertex = T[0. 0. 0. 1.;
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws AssertionError ggc(X)
+            @test_throws MethodError ggc(X)
 
 
             # Test with transposed features
@@ -324,13 +324,8 @@ adj_single_vertex = T[0. 0. 0. 1.;
             @test size(g) == size(X)
 
             g = Zygote.gradient(model -> sum(model(X)), ec)[1]
-            if PkgVersion.Version(Flux)  ≥ v"0.12"
-                @test size(g.nn.weight) == size(ec.nn.weight)
-                @test size(g.nn.bias) == size(ec.nn.bias)
-            else
-                @test size(g.nn.W) == size(ec.nn.W)
-                @test size(g.nn.b) == size(ec.nn.b)
-            end
+            @test size(g.nn.weight) == size(ec.nn.weight)
+            @test size(g.nn.bias) == size(ec.nn.bias)
         end
 
         @testset "layer without graph" begin
@@ -339,7 +334,7 @@ adj_single_vertex = T[0. 0. 0. 1.;
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws AssertionError ec(X)
+            @test_throws MethodError ec(X)
 
 
             # Test with transposed features
@@ -351,13 +346,8 @@ adj_single_vertex = T[0. 0. 0. 1.;
             @test size(g[].nf) == size(X)
 
             g = Zygote.gradient(model -> sum(node_feature(model(fg))), ec)[1]
-            if PkgVersion.Version(Flux)  ≥ v"0.12"
-                @test size(g.nn.weight) == size(ec.nn.weight)
-                @test size(g.nn.bias) == size(ec.nn.bias)
-            else
-                @test size(g.nn.W) == size(ec.nn.W)
-                @test size(g.nn.b) == size(ec.nn.b)
-            end
+            @test size(g.nn.weight) == size(ec.nn.weight)
+            @test size(g.nn.bias) == size(ec.nn.bias)
         end
     end
 end

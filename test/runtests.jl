@@ -8,10 +8,8 @@ using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using LinearAlgebra
 using NNlib
 using PkgVersion
-using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
 using Statistics: mean
-using MetaGraphs: MetaGraph, MetaDiGraph
 using Zygote
 using Test
 
@@ -27,7 +25,7 @@ tests = [
     "layers/pool",
     "layers/misc",
     "models",
-    "graphs",
+    # "graphs",
 ]
 
 if Flux.use_cuda[]

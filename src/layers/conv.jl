@@ -5,8 +5,7 @@ Graph convolutional layer.
 
 # Arguments
 
-- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
-the layer instead of only the features.
+- `graph`: Optionally pass a FeaturedGraph. 
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
@@ -40,41 +39,22 @@ GCNConv(adj::AbstractMatrix, ch::Pair{Int,Int}, σ = identity; kwargs...) =
 
 @functor GCNConv
 
-function (g::GCNConv)(L̃::T, X::T) where {T<:AbstractMatrix}
-    Zygote.ignore() do
-        GraphSignals.check_num_node(L̃, X)
-    end
-    g.σ.(g.weight * X * L̃ .+ g.bias)
-end
-(g::GCNConv)(L̃::AbstractMatrix, X::Transpose{T,R}) where {T<:Real,R<:AbstractMatrix} = g(L̃, R(X))
-
-function (g::GCNConv)(X::AbstractMatrix{T}) where {T}
-    @assert has_graph(g.fg) "A GCNConv created without a graph must be given a FeaturedGraph as an input."
-    A = adjacency_matrix(g.fg)
-    L̃ = normalized_laplacian(A, eltype(X); selfloop=true)
-    g(L̃, X)
+function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
+    @assert has_graph(fg) "FeaturedGraph must contain a graph."
+    A = adjacency_matrix(fg)
+    L̃ = normalized_laplacian(A, eltype(x); selfloop=true)
+    l.σ.(l.weight * x * L̃ .+ l.bias)
 end
 
-function (g::GCNConv)(fg::FeaturedGraph)
-    X = node_feature(fg)
-    A = adjacency_matrix(fg) # TODO: choose graph from g or fg
-    Zygote.ignore() do
-        g.fg isa NullGraph || (g.fg.graph = A)
-    end
-    L̃ = normalized_laplacian(A, eltype(X); selfloop=true)
-    X_ = g(L̃, X)
-    FeaturedGraph(A, nf=X_)
-end
+(l::GCNConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::GCNConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GCNConv)
-    in_channel = size(l.weight, ndims(l.weight))
-    out_channel = size(l.weight, ndims(l.weight)-1)
-    print(io, "GCNConv(G(V=", nv(l.fg))
-    print(io, ", E), ", in_channel, "=>", out_channel)
+    out, in = size(l.weight)
+    print(io, "GCNConv($in => $out")
     l.σ == identity || print(io, ", ", l.σ)
     print(io, ")")
 end
-
 
 
 """
@@ -117,12 +97,18 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
 
 @functor ChebConv
 
-function (c::ChebConv)(L̃::T, X::T) where {T<:AbstractMatrix}
+function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
+    @assert has_graph(fg) "FeaturedGraph must contain a graph."
+    g = graph(fg)
+    L̃ = scaled_laplacian(g, T)    
+    # Zygote.ignore() do
+    #     fg isa NullGraph || (fg.graph = g)
+    # end
+    
+    
     @assert size(X, 1) == c.in_channel "Input feature size must match input channel size."
-    Zygote.ignore() do
-        GraphSignals.check_num_node(L̃, X)
-    end
-
+    GraphSignals.check_num_node(L̃, X)
+    
     Z_prev = X
     Z = X * L̃
     Y = view(c.weight,:,:,1) * Z_prev
@@ -134,34 +120,14 @@ function (c::ChebConv)(L̃::T, X::T) where {T<:AbstractMatrix}
     return Y .+ c.bias
 end
 
-(c::ChebConv)(L̃::AbstractMatrix, X::Transpose{T,R}) where {T<:Real,R<:AbstractMatrix} = c(L̃, R(X))
-
-function (c::ChebConv)(X::AbstractMatrix{T}) where {T<:Real}
-    @assert has_graph(c.fg) "A ChebConv created without a graph must be given a FeaturedGraph as an input."
-    g = graph(c.fg)
-    L̃ = scaled_laplacian(g, T)
-    c(L̃, X)
-end
-
-function (c::ChebConv)(fg::FeaturedGraph)
-    @assert has_graph(fg) "A given FeaturedGraph must contain a graph."
-    g = graph(fg)
-    Zygote.ignore() do
-        c.fg isa NullGraph || (c.fg.graph = g)
-    end
-    X = node_feature(fg)
-    L̃ = scaled_laplacian(adjacency_matrix(fg))
-    X_ = c(L̃, X)
-    FeaturedGraph(g, nf=X_)
-end
+(l::ChebConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::ChebConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::ChebConv)
-    print(io, "ChebConv(G(V=", nv(l.fg))
-    print(io, ", E), ", l.in_channel, "=>", l.out_channel)
+    print(io, "ChebConv(", l.in_channel, " => ", l.out_channel)
     print(io, ", k=", l.k)
     print(io, ")")
 end
-
 
 
 """
@@ -210,24 +176,24 @@ GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
 @functor GraphConv
 
 message(g::GraphConv, x_i, x_j::AbstractVector, e_ij) = g.weight2 * x_j
+
 update(g::GraphConv, m::AbstractVector, x::AbstractVector) = g.σ.(g.weight1*x .+ m .+ g.bias)
-function (gc::GraphConv)(X::AbstractMatrix)
-    @assert has_graph(gc.fg) "A GraphConv created without a graph must be given a FeaturedGraph as an input."
-    g = graph(gc.fg)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(g, X)
-    end
-    _, X = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
-    X
+
+function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
+    @assert has_graph(fg) "FeaturedGraph must contain a graph."
+    g = graph(fg)
+    GraphSignals.check_num_node(g, x)
+    _, x = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), x, +)
+    x
 end
 
-(g::GraphConv)(fg::FeaturedGraph) = propagate(g, fg, +)
+(l::GraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::GraphConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
     out_channel = size(l.weight1, ndims(l.weight1)-1)
-    print(io, "GraphConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
-    print(io, "), ", in_channel, "=>", out_channel)
+    print(io, "GraphConv(", in_channel, " => ", out_channel)
     l.σ == identity || print(io, ", ", l.σ)
     print(io, ", aggr=", l.aggr)
     print(io, ")")
@@ -330,27 +296,24 @@ function update_batch_vertex(g::GATConv, M::AbstractMatrix)
     return M
 end
 
-function (gat::GATConv)(X::AbstractMatrix)
-    @assert has_graph(gat.fg) "A GATConv created without a graph must be given a FeaturedGraph as an input."
-    g = graph(gat.fg)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(g, X)
-    end
+function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
+    @assert has_graph(fg) "FeaturedGraph must contain a graph."
+    g = graph(fg)
+    GraphSignals.check_num_node(g, X)
     _, X = propagate(gat, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
     X
 end
 
-(g::GATConv)(fg::FeaturedGraph) = propagate(g, fg, +)
+(l::GATConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::GATConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
     out_channel = size(l.weight, ndims(l.weight)-1)
-    print(io, "GATConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
-    print(io, "), ", in_channel, "=>", out_channel)
+    print(io, "GATConv(", in_channel, "=>", out_channel)
     print(io, ", LeakyReLU(λ=", l.negative_slope)
     print(io, "))")
 end
-
 
 
 """
@@ -394,25 +357,15 @@ GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
 @functor GatedGraphConv
 
 message(g::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
-update(g::GatedGraphConv, m::AbstractVector, x) = m
 
-function (ggc::GatedGraphConv)(X::AbstractMatrix)
-    @assert has_graph(ggc.fg) "A GraphConv created without a graph must be given a FeaturedGraph as an input."
-    ggc(adjacency_list(ggc.fg), X)
-end
+update(g::GatedGraphConv, l::AbstractVector, x) = l
 
-function (ggc::GatedGraphConv)(fg::FeaturedGraph)
-    g = graph(fg)
-    H = ggc(adjacency_list(g), node_feature(fg))
-    FeaturedGraph(g, nf=H)
-end
 
-function (ggc::GatedGraphConv)(adj::AbstractVector{T}, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
+function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
+    adj = adjacency_list(fg)
     m, n = size(H)
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
-    Zygote.ignore() do
-        GraphSignals.check_num_node(adj, H)
-    end
+    GraphSignals.check_num_node(adj, H)
     (m < ggc.out_ch) && (H = vcat(H, zeros(S, ggc.out_ch - m, n)))
 
     for i = 1:ggc.num_layers
@@ -423,9 +376,12 @@ function (ggc::GatedGraphConv)(adj::AbstractVector{T}, H::AbstractMatrix{S}) whe
     H
 end
 
+(l::GatedGraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::GatedGraphConv)(x::AbstractMatrix) = l(l.fg, x)
+
+
 function Base.show(io::IO, l::GatedGraphConv)
-    print(io, "GatedGraphConv(G(V=", nv(l.fg), ", E=", ne(l.fg))
-    print(io, "), (=>", l.out_ch)
+    print(io, "GatedGraphConv((=>", l.out_ch)
     print(io, ")^", l.num_layers)
     print(io, ", aggr=", l.aggr)
     print(io, ")")
@@ -460,17 +416,16 @@ EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
 message(e::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = e.nn(vcat(x_i, x_j .- x_i))
 update(e::EdgeConv, m::AbstractVector, x) = m
 
-function (e::EdgeConv)(X::AbstractMatrix)
-    @assert has_graph(e.fg) "A EdgeConv created without a graph must be given a FeaturedGraph as an input."
-    g = graph(e.fg)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(g, X)
-    end
+function (e::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
+    @assert has_graph(fg) "A EdgeConv created without a graph must be given a FeaturedGraph as an input."
+    g = graph(fg)
+    GraphSignals.check_num_node(g, X)
     _, X = propagate(e, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, e.aggr)
     X
 end
 
-(e::EdgeConv)(fg::FeaturedGraph) = propagate(e, fg, e.aggr)
+(l::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(G(V=", nv(l.fg), ", E=", ne(l.fg))

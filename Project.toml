@@ -13,7 +13,6 @@ GraphMLDatasets = "21828b05-d3b3-40ad-870e-a4bc2f52d5e8"
 GraphSignals = "3ebe565e-a4b5-49c6-aed2-300248c3a9c1"
 LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -30,7 +29,6 @@ GraphLaplacians = "0.1"
 GraphMLDatasets = "0.1"
 GraphSignals = "0.2"
 LightGraphs = "1.3"
-MetaGraphs = "0.6"
 NNlib = "0.7"
 NNlibCUDA = "0.1"
 Reexport = "1.1"
@@ -39,9 +37,8 @@ julia = "1.6"
 
 [extras]
 PkgVersion = "eebad327-c553-4316-9ea0-9fa01ccd7688"
-SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["PkgVersion", "SimpleWeightedGraphs", "SparseArrays", "Test"]
+test = ["PkgVersion", "SparseArrays", "Test"]
