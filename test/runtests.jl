@@ -7,16 +7,13 @@ using GraphSignals
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using LinearAlgebra
 using NNlib
-using PkgVersion
-using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
 using SparseArrays: SparseMatrixCSC
 using Statistics: mean
-using MetaGraphs: MetaGraph, MetaDiGraph
 using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/conv",
+    # "cuda/conv",
     # "cuda/msgpass",
 ]
 
@@ -27,7 +24,6 @@ tests = [
     "layers/pool",
     "layers/misc",
     "models",
-    "graphs",
 ]
 
 if Flux.use_cuda[]

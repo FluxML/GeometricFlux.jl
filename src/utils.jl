@@ -110,3 +110,7 @@ function transform(X::AbstractArray, eidx::Dict)
     end
     Y
 end
+
+### TODO move these to GraphSignals ######
+# @functor FeaturedGraph
+# Zygote.@nograd normalized_laplacian, scaled_laplacian
