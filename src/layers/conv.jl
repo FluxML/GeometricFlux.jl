@@ -37,7 +37,6 @@ GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
 @functor GCNConv
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    @assert has_graph(fg) "FeaturedGraph must contain a graph."
     L̃ = normalized_laplacian(fg, eltype(x); selfloop=true)
     l.σ.(l.weight * x * L̃ .+ l.bias)
 end
@@ -91,7 +90,6 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
 @functor ChebConv
 
 function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
-    @assert has_graph(fg) "FeaturedGraph must contain a graph."
     L̃ = scaled_laplacian(fg, T)    
     
     @assert size(X, 1) == c.in_channel "Input feature size must match input channel size."
@@ -162,7 +160,6 @@ message(g::GraphConv, x_i, x_j::AbstractVector, e_ij) = g.weight2 * x_j
 update(g::GraphConv, m::AbstractVector, x::AbstractVector) = g.σ.(g.weight1*x .+ m .+ g.bias)
 
 function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    @assert has_graph(fg) "FeaturedGraph must contain a graph."
     g = graph(fg)
     GraphSignals.check_num_node(g, x)
     _, x = propagate(gc, adjacency_list(g), Fill(0.f0, 0, ne(g)), x, +)
@@ -273,7 +270,6 @@ function update_batch_vertex(g::GATConv, M::AbstractMatrix)
 end
 
 function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
-    @assert has_graph(fg) "FeaturedGraph must contain a graph."
     g = graph(fg)
     GraphSignals.check_num_node(g, X)
     _, X = propagate(gat, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, +)
@@ -384,7 +380,6 @@ message(e::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = e.nn(vcat
 update(e::EdgeConv, m::AbstractVector, x) = m
 
 function (e::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
-    @assert has_graph(fg) "A EdgeConv created without a graph must be given a FeaturedGraph as an input."
     g = graph(fg)
     GraphSignals.check_num_node(g, X)
     _, X = propagate(e, adjacency_list(g), Fill(0.f0, 0, ne(g)), X, e.aggr)
