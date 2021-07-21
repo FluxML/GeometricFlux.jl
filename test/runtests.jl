@@ -7,7 +7,6 @@ using GraphSignals
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using LinearAlgebra
 using NNlib
-using PkgVersion
 using SparseArrays: SparseMatrixCSC
 using Statistics: mean
 using Zygote

@@ -36,9 +36,8 @@ Zygote = "0.6"
 julia = "1.6"
 
 [extras]
-PkgVersion = "eebad327-c553-4316-9ea0-9fa01ccd7688"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["PkgVersion", "SparseArrays", "Test"]
+test = ["SparseArrays", "Test"]
