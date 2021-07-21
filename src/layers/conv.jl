@@ -328,7 +328,7 @@ GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
 
 message(g::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
 
-update(g::GatedGraphConv, l::AbstractVector, x) = l
+update(g::GatedGraphConv, m::AbstractVector, x) = m
 
 
 function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
