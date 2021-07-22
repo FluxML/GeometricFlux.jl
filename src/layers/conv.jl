@@ -16,7 +16,7 @@ Graph convolutional layer.
 The input to the layer is a node feature array `X` 
 of size `(num_features, num_nodes)`.
 """
-struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph}
+struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph} <: AbstractGraphLayer
     weight::A
     bias::B
     σ::F
@@ -42,7 +42,6 @@ function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
 end
 
 (l::GCNConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GCNConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GCNConv)
     out, in = size(l.weight)
@@ -66,7 +65,7 @@ Chebyshev spectral graph convolutional layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 """
-struct ChebConv{A<:AbstractArray{<:Number,3}, B, S<:AbstractFeaturedGraph}
+struct ChebConv{A<:AbstractArray{<:Number,3}, B, S<:AbstractFeaturedGraph} <: AbstractGraphLayer
     weight::A
     bias::B
     fg::S
@@ -104,7 +103,6 @@ function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
 end
 
 (l::ChebConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::ChebConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::ChebConv)
     out, in, k = size(l.weight)
@@ -164,7 +162,6 @@ function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
 end
 
 (l::GraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GraphConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -272,7 +269,6 @@ function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
 end
 
 (l::GATConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GATConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -340,7 +336,6 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
 end
 
 (l::GatedGraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GatedGraphConv)(x::AbstractMatrix) = l(l.fg, x)
 
 
 function Base.show(io::IO, l::GatedGraphConv)
@@ -383,7 +378,6 @@ function (ec::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
 end
 
 (l::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(", l.nn)

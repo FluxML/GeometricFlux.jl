@@ -15,6 +15,9 @@ using LightGraphs
 using Zygote
 
 export
+    # layers/graphlayers
+    AbstractGraphLayer,
+
     # layers/gn
     GraphNet,
 
@@ -55,6 +58,7 @@ include("datasets.jl")
 
 include("utils.jl")
 
+include("layers/graphlayers.jl")
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
