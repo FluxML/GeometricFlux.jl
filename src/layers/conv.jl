@@ -5,7 +5,7 @@ Graph convolutional layer.
 
 # Arguments
 
-- `graph`: Optionally pass a FeaturedGraph. 
+- `graph`: Optionally pass a FeaturedGraph.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
@@ -59,8 +59,7 @@ Chebyshev spectral graph convolutional layer.
 
 # Arguments
 
-- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
-the layer instead of only the features.
+- `graph`: Optionally pass a FeaturedGraph.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `k`: The order of Chebyshev polynomial.
@@ -123,12 +122,12 @@ Graph neural network layer.
 
 # Arguments
 
-- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
-the layer instead of only the features.
+- `graph`: Optionally pass a FeaturedGraph.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
-- `aggr`: An aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
+`*`, `/`, `max`, `min` and `mean` are available.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 """
@@ -192,8 +191,7 @@ Graph attentional layer.
 
 # Arguments
 
-- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
-the layer instead of only the features.
+- `graph`: Optionally pass a FeaturedGraph.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
@@ -295,11 +293,11 @@ Gated graph convolution layer.
 
 # Arguments
 
-- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs). Is optionnal so you can give a `FeaturedGraph` to
-the layer instead of only the features.
+- `graph`: Optionally pass a FeaturedGraph.
 - `out`: The dimension of output features.
 - `num_layers`: The number of gated recurrent unit.
-- `aggr`: Keyword argument, an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
+`*`, `/`, `max`, `min` and `mean` are available.
 """
 struct GatedGraphConv{V<:AbstractFeaturedGraph, A<:AbstractArray{<:Number,3}, R} <: MessagePassing
     fg::V
@@ -361,9 +359,10 @@ Edge convolutional layer.
 
 # Arguments
 
-- `graph`: Should be a adjacency matrix, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
+- `graph`: Optionally pass a FeaturedGraph.
 - `nn`: A neural network or a layer. It can be, e.g., MLP.
-- `aggr`: Keyword argument, an aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
+`*`, `/`, `max`, `min` and `mean` are available.
 """
 struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
     fg::V
