@@ -35,24 +35,27 @@ end
 end
 
 @inline function aggregate_neighbors(gn::GraphNet, aggr::Nothing, E, accu_edge)
-    @nospecialize E accu_edge num_V num_E
+    @nospecialize E accu_edge
+    return nothing
 end
 
 @inline aggregate_edges(gn::GraphNet, aggr, E) = aggregate(aggr, E)
 
 @inline function aggregate_edges(gn::GraphNet, aggr::Nothing, E)
     @nospecialize E
+    return nothing
 end
 
 @inline aggregate_vertices(gn::GraphNet, aggr, V) = aggregate(aggr, V)
 
 @inline function aggregate_vertices(gn::GraphNet, aggr::Nothing, V)
     @nospecialize V
+    return nothing
 end
 
 function propagate(gn::GraphNet, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing)
     E, V, u = propagate(gn, adjacency_list(fg), fg.ef, fg.nf, fg.gf, naggr, eaggr, vaggr)
-    FeaturedGraph(graph(fg), nf=V, ef=E, gf=u)
+    FeaturedGraph(fg, nf=V, ef=E, gf=u)
 end
 
 function propagate(gn::GraphNet, adj::AbstractVector{S}, E::R, V::Q, u::P,
@@ -63,5 +66,5 @@ function propagate(gn::GraphNet, adj::AbstractVector{S}, E::R, V::Q, u::P,
     ē = aggregate_edges(gn, eaggr, E)
     v̄ = aggregate_vertices(gn, vaggr, V)
     u = update_global(gn, ē, v̄, u)
-    E, V, u
+    return E, V, u
 end

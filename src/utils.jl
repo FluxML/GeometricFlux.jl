@@ -111,6 +111,17 @@ function transform(X::AbstractArray, eidx::Dict)
     Y
 end
 
-### TODO move these to GraphSignals ######
-# @functor FeaturedGraph
-# Zygote.@nograd normalized_laplacian, scaled_laplacian
+function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
+    @assert nv(fg) == size(x, ndims(x))    
+end
+
+### TODO move this to GraphSignals ######
+import GraphSignals: FeaturedGraph
+
+function FeaturedGraph(fg::FeaturedGraph; 
+                        nf=node_feature(fg), 
+                        ef=edge_feature(fg), 
+                        gf=global_feature(fg))
+
+    return FeaturedGraph(graph(fg); nf, ef, gf)
+end

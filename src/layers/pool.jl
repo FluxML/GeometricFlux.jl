@@ -39,10 +39,6 @@ struct LocalPool{A<:AbstractArray}
     cluster::A
 end
 
-function LocalPool(aggr, cluster::AbstractArray)
-    LocalPool{typeof(cluster)}(aggr, cluster)
-end
-
 (l::LocalPool)(X::AbstractArray) = NNlib.scatter(l.aggr, X, l.cluster)
 
 """
