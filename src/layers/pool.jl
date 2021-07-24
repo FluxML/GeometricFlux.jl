@@ -63,7 +63,7 @@ struct TopKPool{T,S}
     Ã::AbstractMatrix{T}
 end
 
-function TopKPool(adj::AbstractMatrix, k::Int, in_channel::Integer; init=glorot_uniform)
+function TopKPool(adj::AbstractMatrix, k::Int, in_channel::Int; init=glorot_uniform)
     TopKPool(adj, k, init(in_channel), similar(adj, k, k))
 end
 
@@ -75,9 +75,9 @@ function (t::TopKPool)(X::AbstractArray)
     return X_
 end
 
-function topk_index(y::AbstractVector, k::Integer)
+function topk_index(y::AbstractVector, k::Int)
     v = nlargest(k, y)
     return collect(1:length(y))[y .>= v[end]]
 end
 
-topk_index(y::Adjoint, k::Integer) = topk_index(y', k)
+topk_index(y::Adjoint, k::Int) = topk_index(y', k)
