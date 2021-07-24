@@ -1,27 +1,4 @@
-num_node = 5
-A = rand([0, 1], 5, 5)
-A = A .| A'
-num_edge = div(sum(A - diagm(diag(A))), 2)
-nf = rand(6, num_node)
-ef = rand(7, num_edge)
-gf = rand(8)
-
-fg = FeaturedGraph(A, nf=nf, ef=ef, gf=gf)
-
 @testset "misc" begin
-    @testset "selector" begin
-        fs = FeatureSelector(:node)
-        @test fs(fg) == nf
-
-        fs = FeatureSelector(:edge)
-        @test fs(fg) == ef
-
-        fs = FeatureSelector(:global)
-        @test fs(fg) == gf
-
-        @test_throws ArgumentError FeatureSelector(:foo)
-    end
-
     @testset "bypass_graph" begin
         N = 4
         E = 5

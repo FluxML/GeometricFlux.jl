@@ -9,24 +9,31 @@ GeometricFlux is designed to be compatible with Flux layers. Flux layers usually
 
 If your feed a `GCNConv` layer with a `Matrix`, it will return you a `Matrix`. If you feed a `GCNConv` layer with a `FeaturedGraph`, it will return you a `FeaturedGraph`. **These APIs ensure the consistency between input and output types.** What you feed is what you get. So, the API for array type is compatible directly with other Flux layers. However, the API for `FeaturedGraph` is not compatible directly.
 
-## Make layers with `FeaturedGraph` output compatible with Flux layers
+## Fetching features from `FeaturedGraph` and output compatible result with Flux layers
 
-To make layers which returns a `FeaturedGraph` compatible with Flux layers, a `FeatureSelector` layer is designed for selecting one of the feature in `FeaturedGraph` to pass through downstream layers.
-
-`FeaturedGraph` contains three kinds of features: node features, edge features and global features. Only one of these features is selected for downstream layers.
+With a layer outputs a `FeaturedGraph`, it is not compatible with Flux layers. Since Flux layers need single feature in array form as input, node features, edge features and global features can be selected by using `FeaturedGraph` APIs: `node_feature`, `edge_feature` or `global_feature`, respectively.
 
 ```julia
-feature = :node
 model = Flux.Chain(
     GCNConv(1024=>256, relu),
-    FeatureSelector(feature),
+    node_feature,  # or edge_feature or global_feature
     softmax
 )
 ```
 
-where `feature` can be `:node`, `:edge` or `:global`. Thus, data passing after `FeatureSelector` layer will become a specified feature.
+In a multitask learning scenario, multiple outputs are required. A branching selection of features can be made as follows:
+
+```julia
+model = Flux.Chain(
+    GCNConv(1024=>256, relu),
+    x -> (node_feature(x), global_feature(x)),
+    (nf, gf) -> (softmax(nf), identity.(gf))
+)
+```
 
 ## Branching different features through different layers
+
+![](bypass_graph.svg)
 
 A `bypass_graph` function is designed for passing each feature through different layers from a `FeaturedGraph`. An example is given as follow:
 
