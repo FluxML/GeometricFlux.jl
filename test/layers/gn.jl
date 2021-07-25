@@ -22,7 +22,7 @@ u = rand(T, in_channel)
     l = NewGNLayer()
 
     @testset "without aggregation" begin
-        (l::NewGNLayer)(fg) = propagate(l, fg)
+        (l::NewGNLayer)(fg) = GeometricFlux.propagate(l, fg)
 
         fg = FeaturedGraph(adj, nf=V)
         fg_ = l(fg)
@@ -34,7 +34,7 @@ u = rand(T, in_channel)
     end
 
     @testset "with neighbor aggregation" begin
-        (l::NewGNLayer)(fg) = propagate(l, fg, :add)
+        (l::NewGNLayer)(fg) = GeometricFlux.propagate(l, fg, +)
 
         fg = FeaturedGraph(adj, nf=V, ef=E, gf=zeros(0))
         l = NewGNLayer()
@@ -48,7 +48,7 @@ u = rand(T, in_channel)
 
     GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = rand(T, out_channel)
     @testset "update edge with neighbor aggregation" begin
-        (l::NewGNLayer)(fg) = propagate(l, fg, :add)
+        (l::NewGNLayer)(fg) = GeometricFlux.propagate(l, fg, +)
 
         fg = FeaturedGraph(adj, nf=V, ef=E, gf=zeros(0))
         l = NewGNLayer()
@@ -62,7 +62,7 @@ u = rand(T, in_channel)
 
     GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = rand(T, out_channel)
     @testset "update edge/vertex with all aggregation" begin
-        (l::NewGNLayer)(fg) = propagate(l, fg, :add, :add, :add)
+        (l::NewGNLayer)(fg) = GeometricFlux.propagate(l, fg, +, +, +)
 
         fg = FeaturedGraph(adj, nf=V, ef=E, gf=u)
         l = NewGNLayer()

@@ -12,8 +12,8 @@ First argument should be message-passing layer, the rest of arguments can be `x_
 - `x_j`: the feature of neighbors of node `x_i`.
 - `e_ij`: the feature of edge (`x_i`, `x_j`).
 """
-@inline message(mp::T, x_i, x_j, e_ij) where {T<:MessagePassing} = x_j
-@inline message(mp::T, i::Integer, j::Integer, x_i, x_j, e_ij) where {T<:MessagePassing} = x_j
+@inline message(mp::MessagePassing, x_i, x_j, e_ij) = x_j
+@inline message(mp::MessagePassing, i::Integer, j::Integer, x_i, x_j, e_ij) = x_j
 
 """
     update(mp, m, x)
@@ -26,35 +26,33 @@ First argument should be message-passing layer, the rest of arguments can be `X`
 - `m`: the message aggregated from message function.
 - `x`: the single node feature.
 """
-@inline update(mp::T, m, x) where {T<:MessagePassing} = m
-@inline update(mp::T, i::Integer, m, x) where {T<:MessagePassing} = m
+@inline update(mp::MessagePassing, m, x) = m
+@inline update(mp::MessagePassing, i::Integer, m, x) = m
 
-@inline function update_batch_edge(mp::T, adj, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
+@inline function update_batch_edge(mp::MessagePassing, adj, E::AbstractMatrix, X::AbstractMatrix, u)
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(mp, i, adj[i], edge_idx, E, X, u) for i in 1:n]...)
+    mapreduce(i -> apply_batch_message(mp, i, adj[i], edge_idx, E, X, u), hcat, 1:n)
 end
 
-@inline function apply_batch_message(mp::T, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
-    hcat([message(mp, get_feature(X, i), get_feature(X, j), get_feature(E, edge_idx[(i,j)])) for j = js]...)
-end
+@inline apply_batch_message(mp::MessagePassing, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) =
+    mapreduce(j -> GeometricFlux.message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
 
-@inline function update_batch_vertex(mp::T, M::AbstractMatrix, X::AbstractMatrix, u) where {T<:MessagePassing}
-    hcat([update(mp, get_feature(M, i), get_feature(X, i)) for i in 1:size(X,2)]...)
-end
+@inline update_batch_vertex(mp::MessagePassing, M::AbstractMatrix, X::AbstractMatrix, u) = 
+    mapreduce(i -> GeometricFlux.update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
 
-@inline function aggregate_neighbors(mp::T, aggr::Symbol, M::AbstractMatrix, accu_edge) where {T<:MessagePassing}
+@inline function aggregate_neighbors(mp::MessagePassing, aggr, M::AbstractMatrix, accu_edge)
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(M, accu_edge)
-    pool(aggr, cluster, M)
+    NNlib.scatter(aggr, M, cluster)
 end
 
-function propagate(mp::T, fg::FeaturedGraph, aggr::Symbol=:add) where {T<:MessagePassing}
+function propagate(mp::MessagePassing, fg::FeaturedGraph, aggr=+)
     E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
     FeaturedGraph(graph(fg), nf=X, ef=E, gf=Fill(0.f0, 0))
 end
 
-function propagate(mp::T, adj::AbstractVector{S}, E::R, X::Q, aggr::Symbol) where {T<:MessagePassing,S<:AbstractVector,R,Q}
+function propagate(mp::MessagePassing, adj::AbstractVector{S}, E::R, X::Q, aggr) where {S<:AbstractVector,R,Q}
     E, X, u = propagate(mp, adj, E, X, Fill(0.f0, 0), aggr, nothing, nothing)
     E, X
 end

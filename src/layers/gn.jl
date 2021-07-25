@@ -1,65 +1,62 @@
-const AGGR2FUN = Dict(:add => sum, :sub => sum, :mul => prod, :div => prod,
-                      :max => maximum, :min => minimum, :mean => mean)
+_view(::Nothing, i) = nothing
+_view(A::Fill{T,2,Axes}, i) where {T,Axes} = view(A, :, 1)
+_view(A::AbstractMatrix, idx) = view(A, :, idx)
+
+aggregate(aggr::typeof(+), X) = vec(sum(X, dims=2))
+aggregate(aggr::typeof(-), X) = -vec(sum(X, dims=2))
+aggregate(aggr::typeof(*), X) = vec(prod(X, dims=2))
+aggregate(aggr::typeof(/), X) = 1 ./ vec(prod(X, dims=2))
+aggregate(aggr::typeof(max), X) = vec(maximum(X, dims=2))
+aggregate(aggr::typeof(min), X) = vec(minimum(X, dims=2))
+aggregate(aggr::typeof(mean), X) = vec(aggr(X, dims=2))
 
 abstract type GraphNet end
 
-@inline update_edge(gn::T, e, vi, vj, u) where {T<:GraphNet} = e
-@inline update_vertex(gn::T, ē, vi, u) where {T<:GraphNet} = vi
-@inline update_global(gn::T, ē, v̄, u) where {T<:GraphNet} = u
+@inline update_edge(gn::GraphNet, e, vi, vj, u) = e
+@inline update_vertex(gn::GraphNet, ē, vi, u) = vi
+@inline update_global(gn::GraphNet, ē, v̄, u) = u
 
-@inline function update_batch_edge(gn::T, adj, E, V, u) where {T<:GraphNet}
+@inline function update_batch_edge(gn::GraphNet, adj, E, V, u)
     n = size(adj, 1)
     edge_idx = edge_index_table(adj)
-    hcat([apply_batch_message(gn, i, adj[i], edge_idx, E, V, u) for i in 1:n]...)
+    mapreduce(i -> apply_batch_message(gn, i, adj[i], edge_idx, E, V, u), hcat, 1:n)
 end
 
-@inline function apply_batch_message(gn::T, i, js, edge_idx, E, V, u) where {T<:GraphNet}
-    hcat([update_edge(gn, get_feature(E, edge_idx[(i,j)]), get_feature(V, i), get_feature(V, j), u) for j = js]...)
-end
+@inline apply_batch_message(gn::GraphNet, i, js, edge_idx, E, V, u) =
+    mapreduce(j -> update_edge(gn, _view(E, edge_idx[(i,j)]), _view(V, i), _view(V, j), u), hcat, js)
 
-@inline function update_batch_vertex(gn::T, Ē, V, u) where {T<:GraphNet}
-    hcat([update_vertex(gn, get_feature(Ē, i), get_feature(V, i), u) for i = 1:size(V,2)]...)
-end
+@inline update_batch_vertex(gn::GraphNet, Ē, V, u) =
+    mapreduce(i -> update_vertex(gn, _view(Ē, i), _view(V, i), u), hcat, 1:size(V,2))
 
-@inline function aggregate_neighbors(gn::T, aggr::Symbol, E, accu_edge) where {T<:GraphNet}
+@inline function aggregate_neighbors(gn::GraphNet, aggr, E, accu_edge)
     @assert !iszero(accu_edge) "accumulated edge must not be zero."
     cluster = generate_cluster(E, accu_edge)
-    pool(aggr, cluster, E)
+    NNlib.scatter(aggr, E, cluster)
 end
 
-@inline function aggregate_neighbors(gn::T, aggr::Nothing, E, accu_edge) where {T<:GraphNet}
+@inline function aggregate_neighbors(gn::GraphNet, aggr::Nothing, E, accu_edge)
     @nospecialize E accu_edge num_V num_E
 end
 
-@inline function aggregate_edges(gn::T, aggr::Symbol, E) where {T<:GraphNet}
-    u = vec(AGGR2FUN[aggr](E, dims=2))
-    aggr == :sub && (u = -u)
-    aggr == :div && (u = 1 ./ u)
-    u
-end
+@inline aggregate_edges(gn::GraphNet, aggr, E) = aggregate(aggr, E)
 
-@inline function aggregate_edges(gn::T, aggr::Nothing, E) where {T<:GraphNet}
+@inline function aggregate_edges(gn::GraphNet, aggr::Nothing, E)
     @nospecialize E
 end
 
-@inline function aggregate_vertices(gn::T, aggr::Symbol, V) where {T<:GraphNet}
-    u = vec(AGGR2FUN[aggr](V, dims=2))
-    aggr == :sub && (u = -u)
-    aggr == :div && (u = 1 ./ u)
-    u
-end
+@inline aggregate_vertices(gn::GraphNet, aggr, V) = aggregate(aggr, V)
 
-@inline function aggregate_vertices(gn::T, aggr::Nothing, V) where {T<:GraphNet}
+@inline function aggregate_vertices(gn::GraphNet, aggr::Nothing, V)
     @nospecialize V
 end
 
-function propagate(gn::T, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet}
+function propagate(gn::GraphNet, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing)
     E, V, u = propagate(gn, adjacency_list(fg), fg.ef, fg.nf, fg.gf, naggr, eaggr, vaggr)
     FeaturedGraph(graph(fg), nf=V, ef=E, gf=u)
 end
 
-function propagate(gn::T, adj::AbstractVector{S}, E::R, V::Q, u::P,
-                   naggr=nothing, eaggr=nothing, vaggr=nothing) where {T<:GraphNet,S<:AbstractVector,R,Q,P}
+function propagate(gn::GraphNet, adj::AbstractVector{S}, E::R, V::Q, u::P,
+                   naggr=nothing, eaggr=nothing, vaggr=nothing) where {S<:AbstractVector,R,Q,P}
     E = update_batch_edge(gn, adj, E, V, u)
     Ē = aggregate_neighbors(gn, naggr, E, accumulated_edges(adj))
     V = update_batch_vertex(gn, Ē, V, u)

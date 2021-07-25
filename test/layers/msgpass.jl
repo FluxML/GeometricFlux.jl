@@ -16,7 +16,7 @@ struct NewLayer <: MessagePassing
 end
 NewLayer(m, n) = NewLayer(randn(T, m,n))
 
-(l::NewLayer)(fg) = propagate(l, fg, :add)
+(l::NewLayer)(fg) = GeometricFlux.propagate(l, fg, +)
 
 X = Array{T}(reshape(1:num_V*in_channel, in_channel, num_V))
 fg = FeaturedGraph(adj, nf=X, ef=Fill(zero(T), 0, 2num_E))

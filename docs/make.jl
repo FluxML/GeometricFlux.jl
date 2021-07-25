@@ -14,6 +14,7 @@ makedocs(
              "Basics" =>
                ["Building layers" => "basics/layers.md",
                 "Graph passing" => "basics/passgraph.md"],
+             "Cooperate with Flux layers" => "cooperate.md",
              "Abstractions" =>
                ["Message passing scheme" => "abstractions/msgpass.md",
                 "Graph network block" => "abstractions/gn.md"],
@@ -21,12 +22,11 @@ makedocs(
                ["Convolutional Layers" => "manual/conv.md",
                 "Pooling Layers" => "manual/pool.md",
                 "Models" => "manual/models.md",
-                "Linear Algebra" => "manual/linalg.md",
-                "Utilities" => "manual/utils.md"]
+                "Linear Algebra" => "manual/linalg.md"]
     ]
 )
 
 deploydocs(
-  repo = "github.com/yuehhua/GeometricFlux.jl.git",
+  repo = "github.com/FluxML/GeometricFlux.jl.git",
   target = "build",
 )

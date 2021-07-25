@@ -5,17 +5,16 @@ using Flux: @functor
 using FillArrays
 using GraphSignals
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
-using SimpleWeightedGraphs: SimpleWeightedGraph, SimpleWeightedDiGraph, add_edge!
+using LinearAlgebra
+using NNlib
 using SparseArrays: SparseMatrixCSC
-using MetaGraphs: MetaGraph, MetaDiGraph
+using Statistics: mean
 using Zygote
 using Test
 
 cuda_tests = [
-#    "cuda/pool",
-#    "cuda/grad",
-#    "cuda/conv",
-#    "cuda/msgpass",
+    # "cuda/conv",
+    # "cuda/msgpass",
 ]
 
 tests = [
@@ -23,19 +22,14 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
-    "layers/selector",
-    "grad",
+    "layers/misc",
     "models",
-    "pool",
-    "graph/simplegraphs",
-    "graph/weightedgraphs",
-    "graph/metagraphs",
-    "utils",
 ]
 
 if Flux.use_cuda[]
     using CUDA
     using Flux: gpu
+    using NNlibCUDA
     append!(tests, cuda_tests)
 else
     @warn "CUDA unavailable, not testing GPU support"
