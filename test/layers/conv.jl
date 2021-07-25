@@ -423,9 +423,6 @@ adj_single_vertex =   T[0. 0. 0. 1.;
             g = Zygote.gradient(model -> sum(node_feature(model(X))), gc)[1]
             @test size(g.nn.layers[1].W) == size(gc.nn.layers[1].W)
             @test size(g.nn.layers[1].b) == size(gc.nn.layers[1].b)
-
-            gc2 = GINConv(adj, nn, eps, false)
-            g = Zygote.gradient(model -> sum(node_feature(model(X))), gc2)[1]
             @test g.eps === nothing
         end
     end
