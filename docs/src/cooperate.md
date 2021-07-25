@@ -33,7 +33,7 @@ model = Flux.Chain(
 
 ## Branching different features through different layers
 
-![](bypass_graph.svg)
+![](../src/assets/bypass_graph.svg)
 
 A `bypass_graph` function is designed for passing each feature through different layers from a `FeaturedGraph`. An example is given as follow:
 
