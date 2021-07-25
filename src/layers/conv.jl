@@ -519,8 +519,7 @@ struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     train_eps::Bool
 end
 
-function GINConv(adj::AbstractMatrix, nn, eps=0.0, train_eps=false)
-    fg = FeaturedGraph(adj)
+function GINConv(fg::AbstractFeaturedGraph, nn, eps=zero{T}, train_eps=false) where {T <: Real}
     if !train_eps
         eps = Untrainable(eps)
     end
@@ -535,9 +534,7 @@ function GINConv(nn, eps=0.0, train_eps=false)
 end
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
-update(g::GINConv, m::AbstractVector, x) = begin 
-    g.nn((1.0 + g.eps) * x + m)
-end
+update(g::GINConv, m::AbstractVector, x) = g.nn((1.0 + g.eps) * x + m)
 
 @functor GINConv
 
