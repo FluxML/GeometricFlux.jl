@@ -103,11 +103,8 @@ function transform(X::AbstractArray, vpair::AbstractVector{<:Tuple}, num_V)
     for (i, p) in enumerate(vpair)
         view(Y, :, p[1], p[2]) .= view(X, :, i)
     end
+    Y
 end
-
-### TODO move these to GraphSignals ######
-# @functor FeaturedGraph
-# Zygote.@nograd normalized_laplacian, scaled_laplacian
 
 
 # Used for untrainable parameters, like epsilon in GINConv when set to false.
@@ -180,10 +177,6 @@ broadcasted(::typeof(/), a::Untrainable, b::AbstractArray) =
 @adjoint /(a::AbstractArray, b::Untrainable) = 
     a/b, _->(nothing, (1/b.value) * ones(size(a)), nothing)
 
-=======
-    Y
-end
-
 function transform(X::AbstractArray, eidx::Dict)
     dims = size(X)[1:end-2]..., length(eidx)
     Y = similar(X, dims)
@@ -193,3 +186,6 @@ function transform(X::AbstractArray, eidx::Dict)
     Y
 end
 
+### TODO move these to GraphSignals ######
+# @functor FeaturedGraph
+# Zygote.@nograd normalized_laplacian, scaled_laplacian
