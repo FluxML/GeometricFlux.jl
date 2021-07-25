@@ -22,8 +22,7 @@ makedocs(
                ["Convolutional Layers" => "manual/conv.md",
                 "Pooling Layers" => "manual/pool.md",
                 "Models" => "manual/models.md",
-                "Linear Algebra" => "manual/linalg.md",
-                "Utilities" => "manual/utils.md"]
+                "Linear Algebra" => "manual/linalg.md"]
     ]
 )
 

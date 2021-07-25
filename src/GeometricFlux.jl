@@ -44,7 +44,6 @@ export
     sample,
 
     # layer/selector
-    FeatureSelector,
     bypass_graph,
 
     # utils
