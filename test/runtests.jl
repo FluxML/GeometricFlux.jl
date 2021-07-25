@@ -12,25 +12,25 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/pool",
-    "cuda/grad",
-    "cuda/conv",
-    "cuda/msgpass",
+     "cuda/pool",
+     "cuda/grad",
+     "cuda/conv",
+     "cuda/msgpass",
 ]
 
 tests = [
-    "layers/gn",
-    "layers/msgpass",
+     "layers/gn",
+     "layers/msgpass",
     "layers/conv",
-    "layers/pool",
-    "layers/selector",
-    "grad",
-    "models",
-    "pool",
-    "graph/simplegraphs",
-    "graph/weightedgraphs",
-    "graph/metagraphs",
-    "utils",
+     "layers/pool",
+     "layers/selector",
+     "grad",
+     "models",
+     "pool",
+     "graph/simplegraphs",
+     "graph/weightedgraphs",
+     "graph/metagraphs",
+     "utils",
 ]
 
 if Flux.use_cuda[]

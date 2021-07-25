@@ -515,16 +515,22 @@ end
 struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     fg::V
     nn
-    eps::R
+    eps::Union{R, Untrainable{R}}
     train_eps::Bool
 end
 
 function GINConv(adj::AbstractMatrix, nn, eps=0.0, train_eps=false)
     fg = FeaturedGraph(adj)
+    if !train_eps
+        eps = Untrainable(eps)
+    end
     GINConv(fg, nn, eps, train_eps)
 end
 
 function GINConv(nn, eps=0.0, train_eps=false)
+    if !train_eps
+        eps = Untrainable(eps)
+    end
     GINConv(NullGraph(), nn, eps, train_eps)
 end
 
