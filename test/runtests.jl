@@ -12,10 +12,10 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/pool",
-    "cuda/grad",
-    "cuda/conv",
-    "cuda/msgpass",
+#    "cuda/pool",
+#    "cuda/grad",
+#    "cuda/conv",
+#    "cuda/msgpass",
 ]
 
 tests = [

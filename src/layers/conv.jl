@@ -515,17 +515,16 @@ end
 struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     fg::V
     nn
-    eps::Union{R, Untrainable{R}}
+    eps::Untrainable{R}
 end
 
-function GINConv(fg::AbstractFeaturedGraph, nn, eps=zero{T}) where {T <: Real}
-    eps = Untrainable(eps)
-    GINConv(fg, nn, eps)
+function GINConv(fg::V, nn, eps=zero(T)) where {V <: AbstractFeaturedGraph, 
+                                                T <: Real}
+    GINConv(fg, nn, Untrainable(eps))
 end
 
-function GINConv(nn, eps=0.0)
-    eps = Untrainable(eps)
-    GINConv(NullGraph(), nn, eps)
+function GINConv(nn, eps=zero(T)) where {T <: Real}
+    GINConv(NullGraph(), nn, Untrainable(eps))
 end
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 

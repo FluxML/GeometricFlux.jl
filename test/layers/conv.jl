@@ -1,5 +1,4 @@
 using Flux: Dense, Chain
-
 in_channel = 3
 out_channel = 5
 N = 4
@@ -405,22 +404,24 @@ adj_single_vertex =   T[0. 0. 0. 1.;
         eps = 0.001
 
         @testset "layer with graph" begin
-            gc = GINConv(adj, nn, eps, true)
+            gc = GINConv(FeaturedGraph(adj), nn, eps)
             @test size(gc.nn.layers[1].W) == (out_channel, in_channel)
             @test size(gc.nn.layers[1].b) == (out_channel, )
             @test graph(gc.fg) === adj
 
-            Y = gc(X)
+            Y = gc(FeaturedGraph(adj, nf=X))
             @test size(node_feature(Y)) == (out_channel, N)
 
             # Test with transposed features
-            Y = gc(Xt)
+            Y = gc(FeaturedGraph(adj, nf=Xt))
             @test size(node_feature(Y)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(gc(x))), X)[1]
-            @test size(g) == size(X)
+            g = Zygote.gradient(x -> sum(node_feature(gc(x))), 
+                                FeaturedGraph(adj, nf=X))[1]
+            @test size(g.x.nf) == size(X)
 
-            g = Zygote.gradient(model -> sum(node_feature(model(X))), gc)[1]
+            g = Zygote.gradient(model -> sum(node_feature(model(FeaturedGraph(adj, nf=X)))), 
+                                gc)[1]
             @test size(g.nn.layers[1].W) == size(gc.nn.layers[1].W)
             @test size(g.nn.layers[1].b) == size(gc.nn.layers[1].b)
             @test g.eps === nothing
