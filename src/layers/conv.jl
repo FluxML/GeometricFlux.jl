@@ -519,17 +519,19 @@ struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     train_eps::Bool
 end
 
-function GINConv(adj::AbstractMatrix, nn, eps, train_eps)
+function GINConv(adj::AbstractMatrix, nn, eps=0.0, train_eps=false)
     fg = FeaturedGraph(adj)
     GINConv(fg, nn, eps, train_eps)
 end
 
-function GINConv(nn, eps, train_eps)
+function GINConv(nn, eps=0.0, train_eps=false)
     GINConv(NullGraph(), nn, eps, train_eps)
 end
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
-update(g::GINConv, m::AbstractVector, x) = g.nn((1.0 + g.eps) * x + m)
+update(g::GINConv, m::AbstractVector, x) = begin 
+    g.nn((1.0 + g.eps) * x + m)
+end
 
 @functor GINConv
 
