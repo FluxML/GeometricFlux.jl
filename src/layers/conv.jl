@@ -396,7 +396,16 @@ end
 
 
 """
-    GINConv([graph, ] nn, eps, train_eps
+GINConv([fg,] nn, [eps])
+
+Graph Isomorphism Network
+
+# Arguments
+
+- `fg`: Optionally pass in a FeaturedGraph as input.
+- `nn`: A neural network/layer.
+- `eps`: Weighting factor. Default 0.
+
 """
 
 struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
@@ -405,12 +414,12 @@ struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     eps::Untrainable{R}
 end
 
-function GINConv(fg::V, nn, eps=zero(T)) where {V <: AbstractFeaturedGraph, 
+function GINConv(fg::V, nn; eps=zero(T)) where {V <: AbstractFeaturedGraph, 
                                                 T <: Real}
     GINConv(fg, nn, Untrainable(eps))
 end
 
-function GINConv(nn, eps=zero(T)) where {T <: Real}
+function GINConv(nn; eps=zero(T)) where {T <: Real}
     GINConv(NullGraph(), nn, Untrainable(eps))
 end
 

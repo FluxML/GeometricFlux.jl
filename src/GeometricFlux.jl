@@ -29,9 +29,6 @@ export
     GatedGraphConv,
     EdgeConv,
     GINConv,
-    message,
-    update,
-    propagate,
 
     # layer/pool
     GlobalPool,

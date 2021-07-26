@@ -3,7 +3,6 @@ import Base: +, -, *, /, broadcasted
 ## Top-k pooling
 """
     accumulated_edges(adj)
->>>>>>> orig/master
 
 Return a vector which acts as a mapping table. The index is the vertex index,
 value is accumulated numbers of edge (current vertex not included).
