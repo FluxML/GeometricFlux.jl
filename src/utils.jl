@@ -114,67 +114,67 @@ mutable struct Untrainable{T <: Number}
 end
 
 +(u::Untrainable, z::Number) = u.value+z
-@adjoint +(u::Untrainable, z::Number) = u+z, _->(nothing, 1.0)
+Zygote.@adjoint +(u::Untrainable, z::Number) = u+z, _->(nothing, 1.0)
 +(z::Number,u::Untrainable) = u.value+z
-@adjoint +(z::Number, u::Untrainable) = z+u, _->(1.0, nothing)
+Zygote.@adjoint +(z::Number, u::Untrainable) = z+u, _->(1.0, nothing)
 +(u1::Untrainable,u2::Untrainable) = u1.value + u2.value
-@adjoint +(u1::Untrainable, u2::Untrainable) = u1+u2, _->(nothing,nothing)
+Zygote.@adjoint +(u1::Untrainable, u2::Untrainable) = u1+u2, _->(nothing,nothing)
 
 -(u::Untrainable, z::Number) = u.value-z
-@adjoint -(u::Untrainable, z::Number) = u-z, _->(nothing, -1.0)
+Zygote.@adjoint -(u::Untrainable, z::Number) = u-z, _->(nothing, -1.0)
 -(z::Number,u::Untrainable) = z-u.value
-@adjoint -(z::Number, u::Untrainable) = z-u, _->(1.0, nothing)
+Zygote.@adjoint -(z::Number, u::Untrainable) = z-u, _->(1.0, nothing)
 -(u1::Untrainable,u2::Untrainable) = u1.value - u2.value
-@adjoint -(u1::Untrainable, u2::Untrainable) = u1-u2, _->(nothing,nothing)
+Zygote.@adjoint -(u1::Untrainable, u2::Untrainable) = u1-u2, _->(nothing,nothing)
 
 *(u::Untrainable, z::Number) = u.value*z
-@adjoint *(u::Untrainable, z::Number) = u*z, _->(nothing, u.value)
+Zygote.@adjoint *(u::Untrainable, z::Number) = u*z, _->(nothing, u.value)
 *(z::Number,u::Untrainable) = z*u.value
-@adjoint *(z::Number, u::Untrainable) = z*u, _->(u.value, nothing)
+Zygote.@adjoint *(z::Number, u::Untrainable) = z*u, _->(u.value, nothing)
 *(u1::Untrainable,u2::Untrainable) = u1.value - u2.value
-@adjoint *(u1::Untrainable, u2::Untrainable) = u1*u2, _->(nothing,nothing)
+Zygote.@adjoint *(u1::Untrainable, u2::Untrainable) = u1*u2, _->(nothing,nothing)
 
 /(u::Untrainable, z::Number) = u.value/z
-@adjoint /(u::Untrainable, z::Number) = u/z, _->(nothing, -u.value/(z^2))
+Zygote.@adjoint /(u::Untrainable, z::Number) = u/z, _->(nothing, -u.value/(z^2))
 /(z::Number,u::Untrainable) = z/u.value
-@adjoint /(z::Number, u::Untrainable) = z/u, _->(1/u.value, nothing)
+Zygote.@adjoint /(z::Number, u::Untrainable) = z/u, _->(1/u.value, nothing)
 /(u1::Untrainable,u2::Untrainable) = u1.value - u2.value
-@adjoint /(u1::Untrainable, u2::Untrainable) = u1/u2, _->(nothing,nothing)
+Zygote.@adjoint /(u1::Untrainable, u2::Untrainable) = u1/u2, _->(nothing,nothing)
 
 broadcasted(::typeof(+), a::Untrainable, b::AbstractArray) = 
     broadcasted(+, a.value, b)
-@adjoint broadcasted(::typeof(+), a::Untrainable, b::AbstractArray) = 
+Zygote.@adjoint broadcasted(::typeof(+), a::Untrainable, b::AbstractArray) = 
     broadcasted(+, a, b), _->(nothing, nothing, ones(size(b)))
 
 broadcasted(::typeof(+), a::AbstractArray, b::Untrainable) = 
     broadcasted(+, a, b.value)
-@adjoint broadcasted(::typeof(+), a::AbstractArray, b::Untrainable) = 
+Zygote.@adjoint broadcasted(::typeof(+), a::AbstractArray, b::Untrainable) = 
     broadcasted(+, a, b), _->(nothing, ones(size(b)), nothing)
 
 broadcasted(::typeof(-), a::Untrainable, b::AbstractArray) = 
     broadcasted(-, a.value, b)
-@adjoint broadcasted(::typeof(-), a::Untrainable, b::AbstractArray) = 
+Zygote.@adjoint broadcasted(::typeof(-), a::Untrainable, b::AbstractArray) = 
     broadcasted(-, a, b), _->(nothing, nothing, -ones(size(b)))
 
 broadcasted(::typeof(-), a::AbstractArray, b::Untrainable) = 
     broadcasted(-, a, b.value)
-@adjoint broadcasted(::typeof(-), a::AbstractArray, b::Untrainable) = 
+Zygote.@adjoint broadcasted(::typeof(-), a::AbstractArray, b::Untrainable) = 
     broadcasted(-, a, b), _->(nothing, ones(size(a)), nothing)
 
 *(a::Untrainable, b::AbstractArray) = a.value * b
-@adjoint *(a::Untrainable, b::AbstractArray) = 
+Zygote.@adjoint *(a::Untrainable, b::AbstractArray) = 
     a * b, _->(nothing, nothing, a.value * ones(size(b)))
 *(a::AbstractArray, b::Untrainable) = a * b.value
-@adjoint broadcasted(::typeof(*), a::AbstractArray, b::Untrainable) = 
+Zygote.@adjoint broadcasted(::typeof(*), a::AbstractArray, b::Untrainable) = 
     a * b, _->(nothing, b.value * ones(size(a)), nothing)
 
 broadcasted(::typeof(/), a::Untrainable, b::AbstractArray) = 
     broadcasted(/, a.value, b)
-@adjoint broadcasted(::typeof(/), a::Untrainable, b::AbstractArray) = 
+Zygote.@adjoint broadcasted(::typeof(/), a::Untrainable, b::AbstractArray) = 
     broadcasted(/, a, b), _->(nothing, nothing, a.value ./ (b.^2))
     
 /(a::AbstractArray, b::Untrainable) = /(a, b.value)
-@adjoint /(a::AbstractArray, b::Untrainable) = 
+Zygote.@adjoint /(a::AbstractArray, b::Untrainable) = 
     a/b, _->(nothing, (1/b.value) * ones(size(a)), nothing)
 
 function transform(X::AbstractArray, eidx::Dict)
