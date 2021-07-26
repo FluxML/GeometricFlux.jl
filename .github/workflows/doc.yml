@@ -11,13 +11,12 @@ on:
 
 jobs:
   build:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: '1'
-        os: ubuntu-latest
-        arch: x64
+        os: [ubuntu-latest]
+        julia-version: ["1"]
+        julia-arch: [x64]
 
     steps:
       - uses: actions/checkout@v2
