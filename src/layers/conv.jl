@@ -396,9 +396,9 @@ end
 
 
 """
-GINConv([fg,] nn, [eps])
+    GINConv([fg,] nn, [eps])
 
-Graph Isomorphism Network
+    Graph Isomorphism Network.
 
 # Arguments
 
@@ -406,6 +406,8 @@ Graph Isomorphism Network
 - `nn`: A neural network/layer.
 - `eps`: Weighting factor. Default 0.
 
+The definition of this is as defined in the original paper,
+Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
 """
 
 struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
@@ -414,19 +416,18 @@ struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     eps::R
 end
 
-function GINConv(fg::V, nn; eps=zero(T)) where {V <: AbstractFeaturedGraph, 
-                                                T <: Real}
+function GINConv(fg::AbstractFeaturedGraph, nn; eps=0f0)
     GINConv(fg, nn, eps)
 end
 
-function GINConv(nn; eps=zero(T)) where {T <: Real}
+function GINConv(nn; eps=0f0) 
     GINConv(NullGraph(), nn, eps)
 end
 
 Flux.trainable(g::GINConv) = (fg=g.fg,nn=g.nn)
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
-update(g::GINConv, m::AbstractVector, x) = g.nn((1.0 + g.eps) * x + m)
+update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
 
 @functor GINConv
 
