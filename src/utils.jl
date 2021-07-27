@@ -1,6 +1,3 @@
-import Base: +, -, *, /, broadcasted
-
-## Top-k pooling
 """
     accumulated_edges(adj)
 
