@@ -105,13 +105,6 @@ function transform(X::AbstractArray, vpair::AbstractVector{<:Tuple}, num_V)
     Y
 end
 
-
-# Used for untrainable parameters, like epsilon in GINConv when set to false.
-# NOTE: Only works for scalars untrainable params.
-mutable struct Untrainable{T <: Number}
-    value::T
-end
-
 function transform(X::AbstractArray, eidx::Dict)
     dims = size(X)[1:end-2]..., length(eidx)
     Y = similar(X, dims)
