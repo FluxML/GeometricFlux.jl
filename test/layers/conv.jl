@@ -362,8 +362,8 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
 
         @testset "layer with graph" begin
             gc = GINConv(FeaturedGraph(adj), nn, eps=eps)
-            @test size(gc.nn.layers[1].W) == (out_channel, in_channel)
-            @test size(gc.nn.layers[1].b) == (out_channel, )
+            @test size(gc.nn.layers[1].weight) == (out_channel, in_channel)
+            @test size(gc.nn.layers[1].bias) == (out_channel, )
             @test graph(gc.fg) === adj
 
             Y = gc(FeaturedGraph(adj, nf=X))
@@ -379,9 +379,9 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
 
             g = Zygote.gradient(model -> sum(node_feature(model(FeaturedGraph(adj, nf=X)))), 
                                 gc)[1]
-            @test size(g.nn.layers[1].W) == size(gc.nn.layers[1].W)
-            @test size(g.nn.layers[1].b) == size(gc.nn.layers[1].b)
-            @test g.eps === nothing
+            @test size(g.nn.layers[1].weight) == size(gc.nn.layers[1].weight)
+            @test size(g.nn.layers[1].bias) == size(gc.nn.layers[1].bias)
+            @test !in(:eps, Flux.trainable(gc))
         end
     end
 end

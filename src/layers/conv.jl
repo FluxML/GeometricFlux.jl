@@ -411,34 +411,31 @@ Graph Isomorphism Network
 struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     fg::V
     nn
-    eps::Untrainable{R}
+    eps::R
 end
 
 function GINConv(fg::V, nn; eps=zero(T)) where {V <: AbstractFeaturedGraph, 
                                                 T <: Real}
-    GINConv(fg, nn, Untrainable(eps))
+    GINConv(fg, nn, eps)
 end
 
 function GINConv(nn; eps=zero(T)) where {T <: Real}
-    GINConv(NullGraph(), nn, Untrainable(eps))
+    GINConv(NullGraph(), nn, eps)
 end
+
+Flux.trainable(g::GINConv) = (fg=g.fg,nn=g.nn)
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
 update(g::GINConv, m::AbstractVector, x) = g.nn((1.0 + g.eps) * x + m)
 
 @functor GINConv
 
-function(g::GINConv)(X::AbstractMatrix)
-    fg = FeaturedGraph(graph(g.fg), nf=X)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(g.fg), X)
-    end
-    propagate(g, fg, :add)
+function (g::GINConv)(fg::FeaturedGraph, X::AbstractMatrix)
+    gf = graph(fg)
+    GraphSignals.check_num_node(gf, X)
+    _, X = propagate(g, adjacency_list(gf), Fill(0.f0, 0, ne(gf)), X, +)
+    X
 end
 
-function(g::GINConv)(fg::FeaturedGraph)
-    Zygote.ignore() do
-        GraphSignals.check_num_node(graph(fg), node_feature(fg))
-    end
-    propagate(g, fg, :add)
-end
+(l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::GINConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
