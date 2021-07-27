@@ -21,36 +21,6 @@ Zygote.@nograd function generate_cluster(M::AbstractArray{T,N}, accu_edge) where
 end
 
 """
-    vertex_pair_table(adj[, num_E])
-
-Generate a mapping from edge index to vertex pair (i, j). The edge indecies are determined by
-the sorted vertex indecies.
-"""
-function vertex_pair_table(adj::AbstractVector{<:AbstractVector{<:Integer}},
-                           num_E=sum(map(length, adj)))
-    table = similar(adj[1], Tuple{UInt32,UInt32}, num_E)
-    e = one(UInt64)
-    for (i, js) = enumerate(adj)
-        js = sort(js)
-        for j = js
-            table[e] = (i, j)
-            e += one(UInt64)
-        end
-    end
-    table
-end
-
-function vertex_pair_table(eidx::Dict)
-    table = Array{Tuple{UInt32,UInt32}}(undef, num_E)
-    for (k, v) = eidx
-        table[v] = k
-    end
-    table
-end
-
-Zygote.@nograd vertex_pair_table
-
-"""
     edge_index_table(adj[, directed])
 
 Generate a mapping from vertex pair (i, j) to edge index. The edge indecies are determined by
@@ -93,24 +63,17 @@ edge_index_table(fg::FeaturedGraph) = edge_index_table(fg.graph, fg.directed)
 
 Zygote.@nograd edge_index_table
 
-function transform(X::AbstractArray, vpair::AbstractVector{<:Tuple}, num_V)
-    dims = size(X)[1:end-1]..., num_V, num_V
-    Y = similar(X, dims)
-    for (i, p) in enumerate(vpair)
-        view(Y, :, p[1], p[2]) .= view(X, :, i)
-    end
-    Y
-end
-
-function transform(X::AbstractArray, eidx::Dict)
-    dims = size(X)[1:end-2]..., length(eidx)
-    Y = similar(X, dims)
-    for (k, v) in eidx
-        view(Y, :, v) .= view(X, :, k[1], k[2])
-    end
-    Y
-end
-
 ### TODO move these to GraphSignals ######
-# @functor FeaturedGraph
-# Zygote.@nograd normalized_laplacian, scaled_laplacian
+import GraphSignals: FeaturedGraph
+
+function FeaturedGraph(fg::FeaturedGraph; 
+                        nf=node_feature(fg), 
+                        ef=edge_feature(fg), 
+                        gf=global_feature(fg))
+
+    return FeaturedGraph(graph(fg); nf, ef, gf)
+end
+
+function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
+    @assert nv(fg) == size(x, ndims(x))    
+end

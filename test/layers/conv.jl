@@ -67,8 +67,8 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
         end
 
         @testset "bias=false" begin
-            length(Flux.params(GCNConv(2=>3))) == 2
-            length(Flux.params(GCNConv(2=>3, bias=false))) == 1
+            @test length(Flux.params(GCNConv(2=>3))) == 2
+            @test length(Flux.params(GCNConv(2=>3, bias=false))) == 1
         end
     end
 
@@ -83,9 +83,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             @test size(cc.bias) == (out_channel,)
             @test graph(cc.fg) === adj
             @test cc.k == k
-            @test cc.in_channel == in_channel
-            @test cc.out_channel == out_channel
-
+            
             Y = cc(X)
             @test size(Y) == (out_channel, N)
 
@@ -107,9 +105,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             @test size(cc.bias) == (out_channel,)
             @test !has_graph(cc.fg)
             @test cc.k == k
-            @test cc.in_channel == in_channel
-            @test cc.out_channel == out_channel
-
+            
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
@@ -129,8 +125,8 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
         end
 
         @testset "bias=false" begin
-            length(Flux.params(ChebConv(2=>3, 3))) == 2
-            length(Flux.params(ChebConv(2=>3, 3, bias=false))) == 1
+            @test length(Flux.params(ChebConv(2=>3, 3))) == 2
+            @test length(Flux.params(ChebConv(2=>3, 3, bias=false))) == 1
         end
     end
 
@@ -187,8 +183,8 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
 
 
         @testset "bias=false" begin
-            length(Flux.params(GraphConv(2=>3))) == 3
-            length(Flux.params(GraphConv(2=>3, bias=false))) == 2
+            @test length(Flux.params(GraphConv(2=>3))) == 3
+            @test length(Flux.params(GraphConv(2=>3, bias=false))) == 2
         end
     end
 
@@ -258,8 +254,8 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
         end
 
         @testset "bias=false" begin
-            length(Flux.params(GATConv(2=>3))) == 3
-            length(Flux.params(GATConv(2=>3, bias=false))) == 2
+            @test length(Flux.params(GATConv(2=>3))) == 3
+            @test length(Flux.params(GATConv(2=>3, bias=false))) == 2
         end
     end
 

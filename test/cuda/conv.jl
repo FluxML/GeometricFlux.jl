@@ -15,7 +15,7 @@ fg = FeaturedGraph(adj)
         gc = GCNConv(fg, in_channel=>out_channel) |> gpu
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test collect(graph(gc.fg)) == adj
+        @test Array(adjacency_matrix(gc.fg)) == adj
 
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
@@ -35,7 +35,7 @@ fg = FeaturedGraph(adj)
         cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test collect(graph(cc.fg)) == adj
+        @test Array(adjacency_matrix(cc.fg)) == adj
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel

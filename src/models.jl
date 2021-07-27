@@ -68,10 +68,10 @@ end
 
 (i::InnerProductDecoder)(Z::AbstractMatrix)::AbstractMatrix = i.σ.(Z'*Z)
 
-function (i::InnerProductDecoder)(fg::FeaturedGraph)::FeaturedGraph
+function (i::InnerProductDecoder)(fg::FeaturedGraph)
     Z = node_feature(fg)
     A = i(Z)
-    FeaturedGraph(graph(fg), nf=A)
+    return FeaturedGraph(fg, nf=A)
 end
 
 
@@ -106,7 +106,7 @@ end
 function (ve::VariationalEncoder)(fg::FeaturedGraph)::FeaturedGraph
     μ, logσ = summarize(ve, fg)
     Z = sample(μ, logσ)
-    FeaturedGraph(graph(fg), nf=Z)
+    FeaturedGraph(fg, nf=Z)
 end
 
 function summarize(ve::VariationalEncoder, fg::FeaturedGraph)
