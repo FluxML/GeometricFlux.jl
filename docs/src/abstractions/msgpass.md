@@ -20,20 +20,20 @@ A message function accepts feature vector representing node state `x_i`, feature
 Messages from message function are aggregated by an aggregate function. An aggregated message is passed to update function for node-level computation. An aggregate function is given by the following:
 
 ```
-propagate(mp, fg::FeaturedGraph, aggr::Symbol=:add)
+propagate(mp, fg::FeaturedGraph, aggr::Symbol=+)
 ```
 
-`propagate` function calls the whole message passing layer. `fg` acts as an input for message passing layer and `aggr` represents assignment of aggregate function to `propagate` function. `:add` represents an aggregate function of addition of all messages.
+`propagate` function calls the whole message passing layer. `fg` acts as an input for message passing layer and `aggr` represents assignment of aggregate function to `propagate` function. `+` represents an aggregate function of addition of all messages.
 
 The following `aggr` are available aggregate functions:
 
-`:add`: sum over all messages
-`:sub`: negative of sum over all messages
-`:mul`: multiplication over all messages
-`:div`: inverse of multiplication over all messages
-`:max`: the maximum of all messages
-`:min`: the minimum of all messages
-`:mean`: the average of all messages
+`+`: sum over all messages
+`-`: negative of sum over all messages
+`*`: multiplication over all messages
+`/`: inverse of multiplication over all messages
+`max`: the maximum of all messages
+`min`: the minimum of all messages
+`mean`: the average of all messages
 
 ## Update function
 

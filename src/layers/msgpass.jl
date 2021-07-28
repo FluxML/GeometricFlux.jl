@@ -1,7 +1,7 @@
 abstract type MessagePassing <: GraphNet end
 
 """
-    message(mp::MessagePassing, x_i, x_j, e_ij)
+message(mp::MessagePassing, x_i, x_j, e_ij)
 
 Message function for the message-passing scheme,
 returning the message from node `j` to node `i` .
@@ -22,11 +22,10 @@ specialize this method with custom behavior.
 
 See also [`update`](@ref).
 """
-@inline message(mp::MessagePassing, x_i, x_j, e_ij) = x_j
-@inline message(mp::MessagePassing, i::Integer, j::Integer, x_i, x_j, e_ij) = x_j
+function message end 
 
 """
-    update(mp::MessagePassing, m, x)
+update(mp::GraphNet, m, x)
 
 Update function for the message-passing scheme,
 returning a new set of node features `x′` based on old 
@@ -45,21 +44,14 @@ specialize this method with custom behavior.
 
 See also [`message`](@ref).
 """
-@inline update(mp::MessagePassing, m, x) = m
-@inline update(mp::MessagePassing, i::Integer, m, x) = m
-
-@inline apply_batch_message(mp::MessagePassing, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) =
-    mapreduce(j -> GeometricFlux.message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
-
-@inline update_batch_vertex(mp::MessagePassing, M::AbstractMatrix, X::AbstractMatrix, u) = 
-    mapreduce(i -> GeometricFlux.update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
+function message end
 
 function propagate(mp::MessagePassing, fg::FeaturedGraph, aggr=+)
-    E, X = propagate(mp, adjacency_list(fg), edge_feature(fg), node_feature(fg), aggr)
+    E, X = propagate(mp, edge_index(fg), edge_feature(fg), node_feature(fg), aggr)
     FeaturedGraph(fg, nf=X, ef=E)
 end
 
-function propagate(mp::MessagePassing, adj::AbstractVector{S}, E::R, X::Q, aggr) where {S<:AbstractVector,R,Q}
-    E, X, u = propagate(mp, adj, E, X, nothing, aggr, nothing, nothing)
+function propagate(mp::MessagePassing, eindex::Tuple, E, X, aggr)
+    E, X, u = propagate(mp, eindex, E, X, nothing, aggr, nothing, nothing)
     E, X
 end

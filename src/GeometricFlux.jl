@@ -1,5 +1,6 @@
 module GeometricFlux
 
+using Base: Tuple
 using Statistics: mean
 using LinearAlgebra
 using FillArrays: Fill
@@ -21,13 +22,10 @@ import LightGraphs
 using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv, adjacency_matrix
 
 export
-    # featured_graph
     FeaturedGraph,
     adjacency_list,
-    # graph,
-    # has_graph,
     node_feature, edge_feature, global_feature,
-    # ne, nv, adjacency_matrix, # from LightGraphs
+    ne, nv, adjacency_matrix, # from LightGraphs
 
     # layers/gn
     GraphNet,
@@ -58,10 +56,7 @@ export
     sample,
 
     # layer/selector
-    bypass_graph,
-
-    # utils
-    generate_cluster
+    bypass_graph
 
 include("featured_graph.jl")  
 include("datasets.jl")

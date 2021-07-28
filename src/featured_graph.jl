@@ -126,6 +126,8 @@ end
 
 @functor FeaturedGraph
 
+edge_index(fg::FeaturedGraph) = fg.edge_index
+
 LightGraphs.edges(fg::FeaturedGraph) = zip(fg.edge_index[1], fg.edge_index[2])
 
 LightGraphs.edgetype(fg::FeaturedGraph) = Tuple{eltype(fg.edge_index[1]), eltype(fg.edge_index[2])}
