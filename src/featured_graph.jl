@@ -124,7 +124,6 @@ function FeaturedGraph(fg::FeaturedGraph;
                   nf, ef, gf)
 end
 
-
 @functor FeaturedGraph
 
 LightGraphs.edges(fg::FeaturedGraph) = zip(fg.edge_index[1], fg.edge_index[2])

@@ -71,11 +71,7 @@ end
 function (i::InnerProductDecoder)(fg::FeaturedGraph)
     Z = node_feature(fg)
     A = i(Z)
-<<<<<<< HEAD
     return FeaturedGraph(fg, nf=A)
-=======
-    FeaturedGraph(fg, nf=A)
->>>>>>> 17dbba7 (implement COO featured graph)
 end
 
 

@@ -53,13 +53,9 @@ end
 end
 
 function propagate(gn::GraphNet, fg::FeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing)
-<<<<<<< HEAD
-    E, V, u = propagate(gn, adjacency_list(fg), fg.ef, fg.nf, fg.gf, naggr, eaggr, vaggr)
-=======
     E, V, u = propagate(gn, adjacency_list(fg), 
                         edge_feature(fg), node_feature(fg), global_feature(fg), 
                         naggr, eaggr, vaggr)
->>>>>>> 17dbba7 (implement COO featured graph)
     FeaturedGraph(fg, nf=V, ef=E, gf=u)
 end
 
