@@ -43,7 +43,7 @@ See also [`update`](@ref).
 function message end 
 
 """
-update(mp::MessagePassing, m, x)
+    update(mp::MessagePassing, m, x)
 
 Update function for the message-passing scheme,
 returning a new set of node features `x′` based on old 
@@ -62,7 +62,7 @@ specialize this method with custom behavior.
 
 See also [`message`](@ref).
 """
-function message end
+function update end
 
 
 _gather(x, i) = NNlib.gather(x, i)

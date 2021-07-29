@@ -5,7 +5,6 @@ using Flux: @functor
 using LightGraphs
 using LinearAlgebra
 using NNlib
-using SparseArrays: SparseMatrixCSC
 using Statistics: mean
 using Zygote
 using Test

@@ -9,23 +9,23 @@
 
     fg = FeaturedGraph(adj)
 
-    # @testset "GCNConv" begin
-    #     gc = GCNConv(fg, in_channel=>out_channel) |> gpu
-    #     @test size(gc.weight) == (out_channel, in_channel)
-    #     @test size(gc.bias) == (out_channel,)
-    #     @test adjacency_matrix(gc.fg |> cpu) == adj
+    @testset "GCNConv" begin
+        gc = GCNConv(fg, in_channel=>out_channel) |> gpu
+        @test size(gc.weight) == (out_channel, in_channel)
+        @test size(gc.bias) == (out_channel,)
+        @test adjacency_matrix(gc.fg |> cpu) == adj
 
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = gc(X)
-    #     @test size(Y) == (out_channel, N)
+        X = rand(in_channel, N) |> gpu
+        Y = gc(X)
+        @test size(Y) == (out_channel, N)
 
-    #     g = Zygote.gradient(x -> sum(gc(x)), X)[1]
-    #     @test size(g) == size(X)
+        g = Zygote.gradient(x -> sum(gc(x)), X)[1]
+        @test size(g) == size(X)
 
-    #     g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-    #     @test size(g.weight) == size(gc.weight)
-    #     @test size(g.bias) == size(gc.bias)
-    # end
+        g = Zygote.gradient(model -> sum(model(X)), gc)[1]
+        @test size(g.weight) == size(gc.weight)
+        @test size(g.bias) == size(gc.bias)
+    end
 
 
     # @testset "ChebConv" begin

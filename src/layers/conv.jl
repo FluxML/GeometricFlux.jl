@@ -15,7 +15,7 @@ Graph convolutional layer.
 The input to the layer is a node feature array `X` 
 of size `(num_features, num_nodes)`.
 """
-struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph}
+struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph} <: MessagePassing
     weight::A
     bias::B
     σ::F
@@ -35,9 +35,22 @@ GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
 
 @functor GCNConv
 
+# function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
+#     L̃ = normalized_laplacian(fg, eltype(x); selfloop=true)
+#     l.σ.(l.weight * x * L̃ .+ l.bias)
+# end
+
+message(l::GCNConv, xi, xj) = xj
+update(l::GCNConv, m, x) = m
+
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    L̃ = normalized_laplacian(fg, eltype(x); selfloop=true)
-    l.σ.(l.weight * x * L̃ .+ l.bias)
+    # TODO handle self loops
+    # cout = sqrt.(degree(fg, dir=:out))
+    cin = reshape(sqrt.(degree(fg, dir=:in)), 1, :)
+    x = cin .* x
+    _, x = propagate(l, fg, nothing, x, +)
+    x = cin .* x
+    return l.σ.(l.weight * x .+ l.bias)
 end
 
 (l::GCNConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))

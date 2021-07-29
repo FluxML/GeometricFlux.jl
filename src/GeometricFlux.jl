@@ -1,5 +1,7 @@
 module GeometricFlux
 
+using ChainRulesCore: eltype
+using LinearAlgebra: similar
 using Statistics: mean
 using LinearAlgebra
 
@@ -10,7 +12,8 @@ using NNlib, NNlibCUDA
 using Zygote
 using ChainRulesCore
 import LightGraphs
-using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv, adjacency_matrix
+using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv, 
+                  adjacency_matrix, degree
 
 export
     FeaturedGraph,

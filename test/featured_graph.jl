@@ -29,6 +29,12 @@
             fg = FeaturedGraph(adj_mat)
             adjacency_matrix(fg; dir=:out) == adj_mat
             adjacency_matrix(fg; dir=:in) == adj_mat
+        end 
+
+        @testset "degree" begin
+            fg = FeaturedGraph(adj_mat)
+            @test degree(fg, dir=:out) == vec(sum(adj_mat, dims=2))
+            @test degree(fg, dir=:in) == vec(sum(adj_mat, dims=1))
         end
     end
 
@@ -64,6 +70,12 @@
         @test adjacency_list(fg, dir=:out) ==  adj_list_out
         @test adjacency_matrix(fg, dir=:in) ==  adj_mat_in
         @test adjacency_list(fg, dir=:in) ==  adj_list_in
+
+        @testset "degree" begin
+            fg = FeaturedGraph(adj_mat_out)
+            @test degree(fg, dir=:out) == vec(sum(adj_mat_out, dims=2))
+            @test degree(fg, dir=:in) == vec(sum(adj_mat_out, dims=1))
+        end
     end
 
 end

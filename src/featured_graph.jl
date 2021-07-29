@@ -165,14 +165,27 @@ end
 # TODO return sparse matrix
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph, T::DataType=Int; dir=:out)
     # TODO dir=:both
-    u, v = fg.edge_index
+    u, v = edge_index(fg)
     n = fg.num_nodes
-    adj_mat = zeros(T, n, n)
+    adj_mat = fill!(similar(u, T, (n, n)), 0)
     adj_mat[u .+ n .* (v .- 1)] .= 1 # exploiting linear indexing
     return dir == :out ? adj_mat : adj_mat'
 end
 
-Zygote.@nograd adjacency_matrix, adjacency_list
+function LightGraphs.degree(fg::FeaturedGraph; dir=:both)
+    s, t = edge_index(fg)
+    degs = fill!(similar(s, eltype(s), fg.num_nodes), 0)
+    o = fill!(similar(s, eltype(s), fg.num_edges), 1)
+    if dir ∈ [:out, :both]
+        NNlib.scatter!(+, degs, o, s)
+    end
+    if dir ∈ [:in, :both]
+        NNlib.scatter!(+, degs, o, t)
+    end
+    return degs
+end
+
+Zygote.@nograd adjacency_matrix, adjacency_list, degree
 
 
 # function ChainRulesCore.rrule(::typeof(copy), x)
