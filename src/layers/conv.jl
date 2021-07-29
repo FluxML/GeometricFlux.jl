@@ -12,7 +12,6 @@ Graph convolutional layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 
-
 The input to the layer is a node feature array `X` 
 of size `(num_features, num_nodes)`.
 """
@@ -194,7 +193,7 @@ Graph attentional layer.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
 - `heads`: Number attention heads 
-- `concat`: Concatenate layer output or not. If not, layer output is averaged.
+- `concat`: Concatenate layer output or not. If not, layer output is averaged over the heads.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
 struct GATConv{V<:AbstractFeaturedGraph, T, A<:AbstractMatrix{T}, B} <: MessagePassing
@@ -314,7 +313,7 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
         _, M = propagate(ggc, fg, nothing, M, +)
-        H, _ = ggc.gru(H, M)  # BUG: FluxML/Flux.jl#1381
+        H, _ = ggc.gru(H, M)
     end
     H
 end
