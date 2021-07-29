@@ -28,25 +28,29 @@
     end
 
 
-    # @testset "ChebConv" begin
-    #     k = 6
-    #     cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
-    #     @test size(cc.weight) == (out_channel, in_channel, k)
-    #     @test size(cc.bias) == (out_channel,)
-    #     @test adjacency_matrix(cc.fg |> cpu) == adj
-    #     @test cc.k == k
+    @testset "ChebConv" begin
+        k = 6
+        cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
+        @test size(cc.weight) == (out_channel, in_channel, k)
+        @test size(cc.bias) == (out_channel,)
+        @test adjacency_matrix(cc.fg |> cpu) == adj
+        @test cc.k == k
         
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = cc(X)
-    #     @test size(Y) == (out_channel, N)
+        @test_broken begin 
+            X = rand(in_channel, N) |> gpu
+            Y = cc(X)
+            @test size(Y) == (out_channel, N)
 
-    #     g = Zygote.gradient(x -> sum(cc(x)), X)[1]
-    #     @test size(g) == size(X)
+            g = Zygote.gradient(x -> sum(cc(x)), X)[1]
+            @test size(g) == size(X)
 
-    #     g = Zygote.gradient(model -> sum(model(X)), cc)[1]
-    #     @test size(g.weight) == size(cc.weight)
-    #     @test size(g.bias) == size(cc.bias)
-    # end
+            g = Zygote.gradient(model -> sum(model(X)), cc)[1]
+            @test size(g.weight) == size(cc.weight)
+            @test size(g.bias) == size(cc.bias)
+
+            true
+        end
+    end
 
     @testset "GraphConv" begin
         gc = GraphConv(fg, in_channel=>out_channel) |> gpu

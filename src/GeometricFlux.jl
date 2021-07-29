@@ -1,6 +1,7 @@
 module GeometricFlux
 
-using ChainRulesCore: eltype
+using NNlib: similar
+using ChainRulesCore: eltype, reshape
 using LinearAlgebra: similar
 using Statistics: mean
 using LinearAlgebra
@@ -16,10 +17,14 @@ using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv
                   adjacency_matrix, degree
 
 export
+    # featured_graph
     FeaturedGraph,
-    adjacency_list,
+    edge_index,
     node_feature, edge_feature, global_feature,
-    ne, nv, adjacency_matrix, # from LightGraphs
+    adjacency_list, normalized_laplacian, scaled_laplacian,
+
+    # from LightGraphs
+    ne, nv, adjacency_matrix, 
 
     # layers/msgpass
     MessagePassing,

@@ -255,18 +255,18 @@ LightGraphs.is_directed(g::AbstractMatrix) = !issymmetric(Matrix(g))
 ## from GraphLaplacians
 
 """
-    normalized_laplacian(g[, T]; selfloop=false, dir=:out)
+    normalized_laplacian(fg, T=Float32; selfloop=false, dir=:out)
 
 Normalized Laplacian matrix of graph `g`.
 
 # Arguments
 
-- `g`: should be a adjacency matrix, `FeaturedGraph`, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
-- `T`: result element type of degree vector; default is the element type of `g` (optional).
-- `selfloop`: adding self loop while calculating the matrix (optional).
+- `fg`: A `FeaturedGraph`.
+- `T`: result element type of degree vector; default `Float32`.
+- `selfloop`: adding self loop while calculating the matrix.
 - `dir`: the edge directionality considered (:out, :in, :both).
 """
-function normalized_laplacian(fg::FeaturedGraph, T::DataType=Int; selfloop::Bool=false, dir::Symbol=:out)
+function normalized_laplacian(fg::FeaturedGraph, T::DataType=Float32; selfloop::Bool=false, dir::Symbol=:out)
     A = adjacency_matrix(fg, T; dir=dir)
     selfloop && (A += I)
     degs = vec(sum(A; dims=2))
@@ -286,7 +286,7 @@ defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normal
 - `T`: result element type of degree vector; default is the element type of `g` (optional).
 - `dir`: the edge directionality considered (:out, :in, :both).
 """
-function scaled_laplacian(fg::FeaturedGraph, T::DataType=Int; dir=:out)
+function scaled_laplacian(fg::FeaturedGraph, T::DataType=Float32; dir=:out)
     A = adjacency_matrix(fg, T; dir=dir)
     @assert issymmetric(A) "scaled_laplacian only works with symmetric matrices"
     E = eigen(Symmetric(A)).values

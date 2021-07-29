@@ -8,6 +8,10 @@ using NNlib
 using Statistics: mean
 using Zygote
 using Test
+using CUDA
+using Flux: gpu
+using NNlibCUDA
+CUDA.allowscalar(false)
 
 cuda_tests = [
     "cuda/conv",
@@ -24,9 +28,6 @@ tests = [
 ]
 
 if Flux.use_cuda[]
-    using CUDA
-    using Flux: gpu
-    using NNlibCUDA
     append!(tests, cuda_tests)
 else
     @warn "CUDA unavailable, not testing GPU support"
