@@ -3,7 +3,6 @@ using GeometricFlux.Datasets
 using Flux
 using Flux: @functor
 using FillArrays
-# using GraphSignals
 using LightGraphs
 using LinearAlgebra
 using NNlib
@@ -19,12 +18,11 @@ cuda_tests = [
 
 tests = [
     "featured_graph",
-    "layers/gn",
-    # "layers/msgpass",
-    # "layers/conv",
-    # "layers/pool",
-    # "layers/misc",
-    # "models",
+    "layers/msgpass",
+    "layers/conv",
+    "layers/pool",
+    "layers/misc",
+    "models",
 ]
 
 if Flux.use_cuda[]

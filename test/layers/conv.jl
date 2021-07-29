@@ -1,23 +1,22 @@
-T = Float32
-in_channel = 3
-out_channel = 5
-N = 4
-adj = T[0. 1. 0. 1.;
-       1. 0. 1. 0.;
-       0. 1. 0. 1.;
-       1. 0. 1. 0.]
-
-fg = FeaturedGraph(adj)
-    
-adj_single_vertex = T[0. 0. 0. 1.;
-                      0. 0. 0. 0.;
-                      0. 0. 0. 1.;
-                      1. 0. 1. 0.]
-
-fg_single_vertex = FeaturedGraph(adj_single_vertex)
-
-
 @testset "layer" begin
+    T = Float32
+    in_channel = 3
+    out_channel = 5
+    N = 4
+    adj = [0 1 0 1
+           1 0 1 0
+           0 1 0 1
+           1 0 1 0]
+
+    fg = FeaturedGraph(adj)
+        
+    adj_single_vertex =  [0 0 0 1
+                          0 0 0 0
+                          0 0 0 1
+                          1 0 1 0]
+
+    fg_single_vertex = FeaturedGraph(adj_single_vertex)
+
     @testset "GCNConv" begin
         X = rand(T, in_channel, N)
         Xt = transpose(rand(T, N, in_channel))
@@ -25,7 +24,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             gc = GCNConv(fg, in_channel=>out_channel)
             @test size(gc.weight) == (out_channel, in_channel)
             @test size(gc.bias) == (out_channel,)
-            @test all(adjacency_matrix(gc.fg) .== adj)
+            @test adjacency_matrix(gc.fg) == adj
 
             Y = gc(X)
             @test size(Y) == (out_channel, N)

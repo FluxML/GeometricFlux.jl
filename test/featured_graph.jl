@@ -1,5 +1,3 @@
-using LightGraphs
-
 @testset "FeaturedGraph" begin
     @testset "symmetric graph" begin
         u = [1, 2, 3, 4, 2, 3, 4, 1]
@@ -67,7 +65,5 @@ using LightGraphs
         @test adjacency_matrix(fg, dir=:in) ==  adj_mat_in
         @test adjacency_list(fg, dir=:in) ==  adj_list_in
     end
-
-    
 
 end

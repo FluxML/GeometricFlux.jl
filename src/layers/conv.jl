@@ -153,13 +153,13 @@ GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
 
 @functor GraphConv
 
-message(gc::GraphConv, x_i, x_j::AbstractVector, e_ij) = gc.weight2 * x_j
+message(gc::GraphConv, x_i, x_j, e_ij) =  x_j
 
-update(gc::GraphConv, m::AbstractVector, x::AbstractVector) = gc.σ.(gc.weight1*x .+ m .+ gc.bias)
+update(gc::GraphConv, m, x) = gc.σ.(gc.weight1 * x .+ gc.weight2 * m .+ gc.bias)
 
 function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
     check_num_nodes(fg, x)
-    _, x = propagate(gc, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), x, +)
+    _, x = propagate(gc, fg, nothing, x, +)
     x
 end
 
@@ -222,50 +222,34 @@ GATConv(ch::Pair{Int,Int}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
 @functor GATConv
 
-# Here the α that has not been softmaxed is the first number of the output message
-function message(gat::GATConv, x_i::AbstractVector, x_j::AbstractVector)
-    x_i = reshape(gat.weight*x_i, :, gat.heads)
-    x_j = reshape(gat.weight*x_j, :, gat.heads)
-    x_ij = vcat(x_i, x_j+zero(x_j))
-    e = sum(x_ij .* gat.a, dims=1)  # inner product for each head, output shape: (1, gat.heads)
-    e_ij = leakyrelu.(e, gat.negative_slope)
-    vcat(e_ij, x_j)  # shape: (n+1, gat.heads)
-end
-
-# After some reshaping due to the multihead, we get the α from each message,
-# then get the softmax over every α, and eventually multiply the message by α
-function apply_batch_message(gat::GATConv, i, js, X::AbstractMatrix)
-    e_ij = mapreduce(j -> GeometricFlux.message(gat, _view(X, i), _view(X, j)), hcat, js)
-    n = size(e_ij, 1)
-    αs = Flux.softmax(reshape(view(e_ij, 1, :), gat.heads, :), dims=2)
-    msgs = view(e_ij, 2:n, :) .* reshape(αs, 1, :)
-    reshape(msgs, (n-1)*gat.heads, :)
-end
-
-update_batch_edge(gat::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u) = update_batch_edge(gat, adj, X)
-
-function update_batch_edge(gat::GATConv, adj, X::AbstractMatrix)
-    n = size(adj, 1)
-    add_self_loop!(adj)
-    mapreduce(i -> apply_batch_message(gat, i, adj[i], X), hcat, 1:n)
-end
-
-# The same as update function in batch manner
-update_batch_vertex(gat::GATConv, M::AbstractMatrix, X::AbstractMatrix, u) = update_batch_vertex(gat, M)
-
-function update_batch_vertex(gat::GATConv, M::AbstractMatrix)
-    M = M .+ gat.bias
-    if !gat.concat
-        N = size(M, 2)
-        M = reshape(mean(reshape(M, :, gat.heads, N), dims=2), :, N)
-    end
-    return M
-end
-
 function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
     check_num_nodes(fg, X)
-    _, X = propagate(gat, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, +)
-    X
+    # add_self_loop!(adj) #TODO
+    chin, chout = gat.channel
+    heads = gat.heads
+
+    source, target = edge_index(fg)
+    Wx = gat.weight*X
+    Wx = reshape(Wx, chout, heads, :)                   # chout × nheads × nnodes
+    Wxi = NNlib.gather(Wx, target)                      # chout × nheads × nedges
+    Wxj = NNlib.gather(Wx, source)
+
+    # Edge Message
+    # Computing softmax. TODO make it numerically stable
+    aWW = sum(gat.a .* cat(Wxi, Wxj, dims=1), dims=1)   # 1 × nheads × nedges
+    α = exp.(leakyrelu.(aWW, gat.negative_slope))       
+    m̄ =  NNlib.scatter(+, α .* Wxj, target)             # chout × nheads × nnodes 
+    ᾱ = NNlib.scatter(+, α, target)                     # 1 × nheads × nnodes
+    
+    # Node update
+    b = reshape(gat.bias, chout, heads)
+    X = m̄ ./ ᾱ .+ b                                     # chout × nheads × nnodes 
+    if !gat.concat
+        X = sum(X, dims=2)
+    end
+
+    # We finally return a matrix
+    return reshape(X, :, size(X, 3)) 
 end
 
 (l::GATConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
@@ -314,23 +298,22 @@ GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
 
 @functor GatedGraphConv
 
-message(ggc::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
+message(ggc::GatedGraphConv, x_i, x_j, e_ij) = x_j
 
-update(ggc::GatedGraphConv, m::AbstractVector, x) = m
+update(ggc::GatedGraphConv, m, x) = m
 
 
 function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
     check_num_nodes(fg, H)
     m, n = size(H)
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
-    adj = adjacency_list(fg)
     if m < ggc.out_ch
         Hpad = similar(H, S, ggc.out_ch - m, n)
         H = vcat(H, fill!(Hpad, 0))
     end
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
-        _, M = propagate(ggc, adj, Fill(0.f0, 0, ne(fg)), M, +)
+        _, M = propagate(ggc, fg, nothing, M, +)
         H, _ = ggc.gru(H, M)  # BUG: FluxML/Flux.jl#1381
     end
     H
@@ -370,12 +353,13 @@ EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
 
 @functor EdgeConv
 
-message(ec::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
-update(ec::EdgeConv, m::AbstractVector, x) = m
+message(ec::EdgeConv, x_i, x_j, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
+
+update(ec::EdgeConv, m, x) = m
 
 function (ec::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
     check_num_nodes(fg, X)
-    _, X = propagate(ec, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, ec.aggr)
+    _, X = propagate(ec, fg, nothing, X, ec.aggr)
     X
 end
 
