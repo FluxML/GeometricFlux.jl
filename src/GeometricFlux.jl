@@ -2,7 +2,6 @@ module GeometricFlux
 
 using Statistics: mean
 using LinearAlgebra
-using FillArrays: Fill
 
 using CUDA
 using Flux

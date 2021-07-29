@@ -12,8 +12,8 @@ using Zygote
 using Test
 
 cuda_tests = [
-    # "cuda/conv",
-    # "cuda/msgpass",
+    "cuda/conv",
+    "cuda/msgpass",
 ]
 
 tests = [
