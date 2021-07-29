@@ -44,11 +44,11 @@ message(l::GCNConv, xi, xj) = xj
 update(l::GCNConv, m, x) = m
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    # TODO handle self loops
+    fg = add_self_loops(fg)
     # cout = sqrt.(degree(fg, dir=:out))
     cin = reshape(sqrt.(degree(fg, dir=:in)), 1, :)
     x = cin .* x
-    _, x = propagate(l, fg, nothing, x, +)
+    _, x = propagate(l, fg, nothing, x, nothing, +)
     x = cin .* x
     return l.σ.(l.weight * x .+ l.bias)
 end
@@ -171,7 +171,7 @@ update(gc::GraphConv, m, x) = gc.σ.(gc.weight1 * x .+ gc.weight2 * m .+ gc.bias
 
 function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
     check_num_nodes(fg, x)
-    _, x = propagate(gc, fg, nothing, x, +)
+    _, x = propagate(gc, fg, nothing, x, nothing, +)
     x
 end
 
@@ -236,7 +236,7 @@ GATConv(ch::Pair{Int,Int}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
 function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
     check_num_nodes(fg, X)
-    # add_self_loop!(adj) #TODO
+    fg = add_self_loops(fg)
     chin, chout = gat.channel
     heads = gat.heads
 
@@ -325,7 +325,7 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
     end
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
-        _, M = propagate(ggc, fg, nothing, M, +)
+        _, M = propagate(ggc, fg, nothing, M, nothing, +)
         H, _ = ggc.gru(H, M)
     end
     H
@@ -371,7 +371,7 @@ update(ec::EdgeConv, m, x) = m
 
 function (ec::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
     check_num_nodes(fg, X)
-    _, X = propagate(ec, fg, nothing, X, ec.aggr)
+    _, X = propagate(ec, fg, nothing, X, nothing, ec.aggr)
     X
 end
 

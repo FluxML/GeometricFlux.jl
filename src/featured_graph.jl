@@ -1,23 +1,8 @@
 #===================================
 Define FeaturedGraph type as a subtype of LightGraphs' AbstractGraph.
-
-All LightGraphs functions rely on a standard API to function. 
-As long as your graph structure is a subtype of AbstractGraph and 
-implements the following API functions with the given return values, 
-all functions within the LightGraphs package should just work:
-    edges
-    Base.eltype
-    edgetype (example: edgetype(g::CustomGraph) = LightGraphs.SimpleEdge{eltype(g)}))
-    has_edge
-    has_vertex
-    inneighbors
-    ne
-    nv
-    outneighbors
-    vertices
-    is_directed(::Type{CustomGraph})::Bool (example: is_directed(::Type{<:CustomGraph}) = false)
-    is_directed(g::CustomGraph)::Bool
-    zero
+For the core methods to be implemented by any AbstractGraph, see
+https://juliagraphs.org/LightGraphs.jl/latest/types/#AbstractGraph-Type
+https://juliagraphs.org/LightGraphs.jl/latest/developing/#Developing-Alternate-Graph-Types
 =============================================#
 
 abstract type AbstractFeaturedGraph <: AbstractGraph{Int} end
@@ -43,8 +28,8 @@ struct FeaturedGraph <: AbstractFeaturedGraph
 end
 
 
-function FeaturedGraph(u::AbstractVector{Int}, v::AbstractVector{Int}; 
-                        num_nodes = max(maximum(u), maximum(v)), 
+function FeaturedGraph(s::AbstractVector{Int}, t::AbstractVector{Int}; 
+                        num_nodes = max(maximum(s), maximum(t)), 
                         # ndata = Dict{String, Any}(), 
                         # edata = Dict{String, Any}(),
                         # gdata = Dict{String, Any}(),
@@ -52,11 +37,11 @@ function FeaturedGraph(u::AbstractVector{Int}, v::AbstractVector{Int};
                         ef = nothing, 
                         gf = nothing)
 
-    @assert length(u) == length(v)
-    @assert min(minimum(u), minimum(v)) >= 1 
-    @assert max(maximum(u), maximum(v)) <= num_nodes 
+    @assert length(s) == length(t)
+    @assert min(minimum(s), minimum(t)) >= 1 
+    @assert max(maximum(s), maximum(t)) <= num_nodes 
     
-    num_edges = length(u)
+    num_edges = length(s)
     
     ## I would like to have dict data store, but currently this 
     ## doesn't play well with zygote due to 
@@ -66,7 +51,7 @@ function FeaturedGraph(u::AbstractVector{Int}, v::AbstractVector{Int};
     # gdata["g"] = gf
     
 
-    FeaturedGraph((u, v), num_nodes, num_edges, 
+    FeaturedGraph((s, t), num_nodes, num_edges, 
                    nf, ef, gf)
 end
 
@@ -77,20 +62,20 @@ function FeaturedGraph(adj_mat::AbstractMatrix; dir=:out, kws...)
     @assert num_nodes == size(adj_mat, 2)
     @assert all(x -> (x == 1) || (x == 0), adj_mat)
     num_edges = round(Int, sum(adj_mat))
-    u = zeros(Int, num_edges)
-    v = zeros(Int, num_edges)
+    s = zeros(Int, num_edges)
+    t = zeros(Int, num_edges)
     e = 0
     for j in 1:num_nodes
         for i in 1:num_nodes
             if adj_mat[i, j] == 1
                 e += 1
-                u[e] = i
-                v[e] = j
+                s[e] = i
+                t[e] = j
             end
         end
     end
     @assert e == num_edges
-    FeaturedGraph(u, v; num_nodes, kws...)
+    FeaturedGraph(s, t; num_nodes, kws...)
 end
 
 
@@ -99,20 +84,21 @@ function FeaturedGraph(adj_list::AbstractVector{<:AbstractVector}; dir=:out, kws
     @assert dir == :out  # TODO
     num_nodes = length(adj_list)
     num_edges = sum(length.(adj_list))
-    u = zeros(Int, num_edges)
-    v = zeros(Int, num_edges)
+    s = zeros(Int, num_edges)
+    t = zeros(Int, num_edges)
     e = 0
     for i in 1:num_nodes
         for j in adj_list[i]
             e += 1
-            u[e] = i
-            v[e] = j 
+            s[e] = i
+            t[e] = j 
         end
     end
     @assert e == num_edges
-    FeaturedGraph(u, v; num_nodes, kws...)
+    FeaturedGraph(s, t; num_nodes, kws...)
 end
 
+FeaturedGraph(g::AbstractGraph; kws...) = FeaturedGraph(adjacency_matrix(g, dir=:out); kws...)
 
 # from other featured_graph 
 function FeaturedGraph(fg::FeaturedGraph; 
@@ -126,15 +112,25 @@ end
 
 @functor FeaturedGraph
 
+"""
+    edge_index(fg::FeaturedGraph)
+
+Return a tuple containing two vectors, respectively containing the source and target 
+nodes of the edges in the graph `fg`.
+
+```julia
+s, t = edge_index(fg)
+```
+"""
 edge_index(fg::FeaturedGraph) = fg.edge_index
 
-LightGraphs.edges(fg::FeaturedGraph) = zip(fg.edge_index[1], fg.edge_index[2])
+LightGraphs.edges(fg::FeaturedGraph) = zip(edge_index(fg)...)
 
-LightGraphs.edgetype(fg::FeaturedGraph) = Tuple{eltype(fg.edge_index[1]), eltype(fg.edge_index[2])}
+LightGraphs.edgetype(fg::FeaturedGraph) = Tuple{Int, Int}
 
 function LightGraphs.has_edge(fg::FeaturedGraph, i::Integer, j::Integer)
-    u, v = fg.edge_index
-    return any((u .== i) .& (v .== j))
+    s, t = edge_index(fg)
+    return any((s .== i) .& (t .== j))
 end
 
 LightGraphs.nv(fg::FeaturedGraph) = fg.num_nodes
@@ -143,13 +139,13 @@ LightGraphs.has_vertex(fg::FeaturedGraph, i::Int) = i in 1:fg.num_nodes
 LightGraphs.vertices(fg::FeaturedGraph) = 1:fg.num_nodes
 
 function LightGraphs.outneighbors(fg::FeaturedGraph, i::Integer)
-    u, v = fg.edge_index
-    return v[u .== i]
+    s, t = edge_index(fg)
+    return t[s .== i]
 end
 
 function LightGraphs.inneighbors(fg::FeaturedGraph, i::Integer)
-    u, v = fg.edge_index
-    return u[v .== i]
+    s, t = edge_index(fg)
+    return s[t .== i]
 end
 
 LightGraphs.is_directed(::FeaturedGraph) = true
@@ -165,10 +161,10 @@ end
 # TODO return sparse matrix
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph, T::DataType=Int; dir=:out)
     # TODO dir=:both
-    u, v = edge_index(fg)
+    s, t = edge_index(fg)
     n = fg.num_nodes
-    adj_mat = fill!(similar(u, T, (n, n)), 0)
-    adj_mat[u .+ n .* (v .- 1)] .= 1 # exploiting linear indexing
+    adj_mat = fill!(similar(s, T, (n, n)), 0)
+    adj_mat[s .+ n .* (t .- 1)] .= 1 # exploiting linear indexing
     return dir == :out ? adj_mat : adj_mat'
 end
 
@@ -185,14 +181,6 @@ function LightGraphs.degree(fg::FeaturedGraph; dir=:both)
     return degs
 end
 
-Zygote.@nograd adjacency_matrix, adjacency_list, degree
-
-
-# function ChainRulesCore.rrule(::typeof(copy), x)
-#     copy_pullback(ȳ) = (NoTangent(), ȳ)
-#     return copy(x), copy_pullback
-# end
-
 # node_feature(fg::FeaturedGraph) = fg.ndata["x"]
 # edge_feature(fg::FeaturedGraph) = fg.edata["e"]
 # global_feature(fg::FeaturedGraph) = fg.gdata["g"]
@@ -200,12 +188,6 @@ Zygote.@nograd adjacency_matrix, adjacency_list, degree
 node_feature(fg::FeaturedGraph) = fg.nf
 edge_feature(fg::FeaturedGraph) = fg.ef
 global_feature(fg::FeaturedGraph) = fg.gf
-
-## TO DEPRECATE EVERYTHING BELOW ??? ##############################
-
-# has_graph(fg::FeaturedGraph) = true
-# has_graph(fg::NullGraph) = false
-# graph(fg::FeaturedGraph) = adjacency_list(fg) # DEPRECATE
 
 # function Base.getproperty(fg::FeaturedGraph, sym::Symbol)
 #     if sym === :nf
@@ -218,33 +200,6 @@ global_feature(fg::FeaturedGraph) = fg.gf
 #         return getfield(fg, sym)
 #     end
 # end
-
-## Already in GraphSignals ##############
-LightGraphs.ne(adj_list::AbstractVector{<:AbstractVector}) = sum(length.(adj_list))
-LightGraphs.nv(adj_list::AbstractVector{<:AbstractVector}) = length(adj_list)
-LightGraphs.ne(adj_mat::AbstractMatrix) = round(Int, sum(adj_mat))
-LightGraphs.nv(adj_mat::AbstractMatrix) = size(adj_mat, 1)
-
-adjacency_list(adj::AbstractVector{<:AbstractVector}) = adj
-
-function LightGraphs.is_directed(g::AbstractVector{T}) where {T<:AbstractVector}
-    edges = Set{Tuple{Int64,Int64}}()
-    for (i, js) in enumerate(g)
-        for j in Set(js)
-            if i != j
-                e = (i,j)
-                if e in edges
-                    pop!(edges, e)
-                else
-                    push!(edges, (j,i))
-                end
-            end
-        end
-    end
-    !isempty(edges)
-end
-
-LightGraphs.is_directed(g::AbstractMatrix) = !issymmetric(Matrix(g))
 
 # function LightGraphs.laplacian_matrix(fg::FeaturedGraph, T::DataType=Int; dir::Symbol=:out)
 #     A = adjacency_matrix(fg, T; dir=dir)
@@ -296,21 +251,28 @@ function scaled_laplacian(fg::FeaturedGraph, T::DataType=Float32; dir=:out)
     return  2 / maximum(E) * Lnorm - I
 end
 
-
-function add_self_loop!(adj::AbstractVector{<:AbstractVector})
-    for i = 1:length(adj)
-        i in adj[i] || push!(adj[i], i)
-    end
-    adj
+function add_self_loops(fg::FeaturedGraph)
+    s, t = edge_index(fg)
+    @assert edge_feature(fg) === nothing
+    mask_old_loops = s .!= t
+    s = s[mask_old_loops]
+    t = t[mask_old_loops]
+    n = fg.num_nodes
+    nodes = convert(typeof(s), [1:n;])
+    s = [s; nodes]
+    t = [t; nodes]
+    FeaturedGraph(s, t, nf=node_feature(fg), ef=edge_feature(fg), gf=global_feature(fg))
 end
-
-# # TODO Do we need a separate package just for laplacians?
-# GraphLaplacians.scaled_laplacian(fg::FeaturedGraph, T::DataType) =
-#     scaled_laplacian(adjacency_matrix(fg, T))
-# GraphLaplacians.normalized_laplacian(fg::FeaturedGraph, T::DataType; kws...) =
-#     normalized_laplacian(adjacency_matrix(fg, T); kws...)
-
 
 @non_differentiable normalized_laplacian(x...)
 @non_differentiable scaled_laplacian(x...)
-@non_differentiable add_self_loop!(x...)
+@non_differentiable adjacency_matrix(x...)
+@non_differentiable adjacency_list(x...)
+@non_differentiable degree(x...)
+@non_differentiable add_self_loops(x...)
+
+# delete when https://github.com/JuliaDiff/ChainRules.jl/pull/472 is merged
+function ChainRulesCore.rrule(::typeof(copy), x)
+    copy_pullback(ȳ) = (NoTangent(), ȳ)
+    return copy(x), copy_pullback
+end

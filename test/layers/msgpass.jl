@@ -19,15 +19,15 @@
     u = rand(T, in_channel)
 
 
-    @testset "default aggregation (+)" begin
+    @testset "no aggregation" begin
         l = NewLayer()
-        (l::NewLayer)(fg) = GeometricFlux.propagate(l, fg)
+        (l::NewLayer)(fg) = GeometricFlux.propagate(l, fg, nothing)
 
         fg = FeaturedGraph(adj, nf=X)
         fg_ = l(fg)
 
         @test adjacency_matrix(fg_) == adj
-        @test size(node_feature(fg_)) == (in_channel, num_V)
+        @test node_feature(fg_) === nothing
         @test edge_feature(fg_)  === nothing
         @test global_feature(fg_) === nothing
     end
