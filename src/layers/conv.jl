@@ -45,8 +45,9 @@ update(l::GCNConv, m, x) = m
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
     fg = add_self_loops(fg)
+    T = eltype(l.weight)
     # cout = sqrt.(degree(fg, dir=:out))
-    cin = reshape(sqrt.(degree(fg, dir=:in)), 1, :)
+    cin = reshape(sqrt.(T.(degree(fg, dir=:in))), 1, :)
     x = cin .* x
     _, x = propagate(l, fg, nothing, x, nothing, +)
     x = cin .* x

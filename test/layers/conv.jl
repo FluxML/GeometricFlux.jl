@@ -27,10 +27,12 @@
             @test adjacency_matrix(gc.fg) == adj
 
             Y = gc(X)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             # Test with transposed features
             Y = gc(Xt)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(gc(x)), X)[1]
@@ -49,12 +51,14 @@
 
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
+            @test node_feature(fg_) isa Matrix{T}
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError gc(X)
             
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
+            @test node_feature(fgt_) isa Matrix{T}
             @test size(node_feature(fgt_)) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(node_feature(gc(x))), fg)[1]
@@ -85,10 +89,12 @@
             @test cc.k == k
             
             Y = cc(X)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             # Test with transposed features
             Y = cc(Xt)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(cc(x)), X)[1]
@@ -108,12 +114,14 @@
             
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
+            @test node_feature(fg_) isa Matrix{T}
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError cc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = cc(fgt)
+            @test node_feature(fg_) isa Matrix{T}
             @test size(node_feature(fgt_)) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(node_feature(cc(x))), fg)[1]
@@ -141,10 +149,12 @@
             @test size(gc.bias) == (out_channel,)
 
             Y = gc(X)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             # Test with transposed features
             Y = gc(Xt)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(gc(x)), X)[1]
@@ -164,12 +174,14 @@
 
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
+            @test node_feature(fg_) isa Matrix{T}
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError gc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
+            @test node_feature(fgt_) isa Matrix{T}
             @test size(node_feature(fgt_)) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(node_feature(gc(x))), fg)[1]
@@ -209,10 +221,12 @@
                 @test size(gat.a) == (2*out_channel, heads)
 
                 Y = gat(X)
+                @test Y isa Matrix{T}
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
 
                 # Test with transposed features
                 Y = gat(Xt)
+                @test Y isa Matrix{T}
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
 
                 g = Zygote.gradient(x -> sum(gat(x)), X)[1]
@@ -235,12 +249,14 @@
 
                 fg_ = gat(fg_gat)
                 Y = node_feature(fg_)
+                @test Y isa Matrix{T}
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
                 @test_throws MethodError gat(X)
 
                 # Test with transposed features
                 fgt = FeaturedGraph(adj_gat, nf=Xt)
                 fgt_ = gat(fgt)
+                @test node_feature(fg_) isa Matrix{T}
                 @test size(node_feature(fgt_)) == (concat ? (out_channel*heads, N) : (out_channel, N))
 
                 g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg_gat)[1]
@@ -269,11 +285,12 @@
             @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
             Y = ggc(X)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
-
 
             # Test with transposed features
             Y = ggc(Xt)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
@@ -289,12 +306,14 @@
 
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
+            @test node_feature(fg_) isa Matrix{T}
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError ggc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = ggc(fgt)
+            @test node_feature(fgt_) isa Matrix{T}
             @test size(node_feature(fgt_)) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(node_feature(ggc(x))), fg)[1]
@@ -313,10 +332,12 @@
             @test adjacency_list(ec.fg) == [[2,4], [1,3], [2,4], [1,3]]
 
             Y = ec(X)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             # Test with transposed features
             Y = ec(Xt)
+            @test Y isa Matrix{T}
             @test size(Y) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(ec(x)), X)[1]
@@ -332,12 +353,14 @@
 
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
+            @test node_feature(fg_) isa Matrix{T} 
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError ec(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = ec(fgt)
+            @test node_feature(fgt_) isa Matrix{T}
             @test size(node_feature(fgt_)) == (out_channel, N)
 
             g = Zygote.gradient(x -> sum(node_feature(ec(x))), fg)[1]
