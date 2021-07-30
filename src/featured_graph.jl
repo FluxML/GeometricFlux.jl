@@ -55,9 +55,8 @@ function FeaturedGraph(s::AbstractVector{Int}, t::AbstractVector{Int};
                    nf, ef, gf)
 end
 
-# Construct from adjacency matrix # TODO deprecate?
 function FeaturedGraph(adj_mat::AbstractMatrix; dir=:out, kws...)
-    @assert dir == :out  # TODO
+    @assert dir ∈ [:out, :in]
     num_nodes = size(adj_mat, 1)
     @assert num_nodes == size(adj_mat, 2)
     @assert all(x -> (x == 1) || (x == 0), adj_mat)
@@ -75,13 +74,14 @@ function FeaturedGraph(adj_mat::AbstractMatrix; dir=:out, kws...)
         end
     end
     @assert e == num_edges
+    if dir == :in
+        s, t = t, s
+    end
     FeaturedGraph(s, t; num_nodes, kws...)
 end
 
-
-# Construct from adjacency list # TODO deprecate?
 function FeaturedGraph(adj_list::AbstractVector{<:AbstractVector}; dir=:out, kws...)
-    @assert dir == :out  # TODO
+    @assert dir ∈ [:out, :in]
     num_nodes = length(adj_list)
     num_edges = sum(length.(adj_list))
     s = zeros(Int, num_edges)
@@ -95,12 +95,14 @@ function FeaturedGraph(adj_list::AbstractVector{<:AbstractVector}; dir=:out, kws
         end
     end
     @assert e == num_edges
+    if dir == :in
+        s, t = t, s
+    end
     FeaturedGraph(s, t; num_nodes, kws...)
 end
 
 FeaturedGraph(g::AbstractGraph; kws...) = FeaturedGraph(adjacency_matrix(g, dir=:out); kws...)
 
-# from other featured_graph 
 function FeaturedGraph(fg::FeaturedGraph; 
                 # ndata=copy(fg.ndata), edata=copy(fg.edata), gdata=copy(fg.gdata), # copy keeps the refs to old data 
                 nf=node_feature(fg), ef=edge_feature(fg), gf=global_feature(fg))
@@ -152,8 +154,7 @@ LightGraphs.is_directed(::FeaturedGraph) = true
 LightGraphs.is_directed(::Type{FeaturedGraph}) = true
 
 function adjacency_list(fg::FeaturedGraph; dir=:out)
-    # TODO probably this has to be called with `dir=:in` by gnn layers
-    # TODO dir=:both
+    @assert dir ∈ [:out, :in]
     fneighs = dir == :out ? outneighbors : inneighbors
     return [fneighs(fg, i) for i in 1:fg.num_nodes]
 end

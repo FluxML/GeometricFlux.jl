@@ -1,5 +1,13 @@
 # Adapted message passing from paper 
 # "Relational inductive biases, deep learning, and graph networks"
+"""
+    MessagePassing
+
+The abstract type from which all message passing layers are derived.
+
+Related methods are [`propagate`](@ref), [`message`](@ref),
+[`update`](@ref), [`update_edge`](@ref), and [`update_global`](@ref). 
+"""
 abstract type MessagePassing end
 
 """
