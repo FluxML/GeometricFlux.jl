@@ -16,7 +16,7 @@ using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv
 export
     # featured_graph
     FeaturedGraph,
-    edge_index,
+    graph, edge_index,
     node_feature, edge_feature, global_feature,
     adjacency_list, normalized_laplacian, scaled_laplacian,
 

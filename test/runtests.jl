@@ -18,12 +18,12 @@ cuda_tests = [
 
 tests = [
     "featured_graph",
-    # "layers/gn",
-    # "layers/msgpass",
-    # "layers/conv",
-    # "layers/pool",
-    # "layers/misc",
-    # "models",
+    "layers/gn",
+    "layers/msgpass",
+    "layers/conv",
+    "layers/pool",
+    "layers/misc",
+    "models",
 ]
 
 if Flux.use_cuda[]

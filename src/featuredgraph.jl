@@ -88,6 +88,8 @@ s, t = edge_index(fg)
 """
 edge_index(fg::FeaturedGraph{<:COO_T}) = fg.graph
 
+graph(fg::FeaturedGraph) = fg.graph
+
 LightGraphs.edges(fg::FeaturedGraph{<:COO_T}) = zip(edge_index(fg)...)
 
 LightGraphs.edgetype(fg::FeaturedGraph{<:COO_T}) = Tuple{Int, Int}
