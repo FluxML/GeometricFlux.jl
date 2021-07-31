@@ -63,17 +63,3 @@ edge_index_table(fg::FeaturedGraph) = edge_index_table(fg.graph, fg.directed)
 
 Zygote.@nograd edge_index_table
 
-### TODO move these to GraphSignals ######
-import GraphSignals: FeaturedGraph
-
-function FeaturedGraph(fg::FeaturedGraph; 
-                        nf=node_feature(fg), 
-                        ef=edge_feature(fg), 
-                        gf=global_feature(fg))
-
-    return FeaturedGraph(graph(fg); nf, ef, gf)
-end
-
-function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
-    @assert nv(fg) == size(x, ndims(x))    
-end

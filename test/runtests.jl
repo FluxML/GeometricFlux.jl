@@ -3,27 +3,27 @@ using GeometricFlux.Datasets
 using Flux
 using Flux: @functor
 using FillArrays
-using GraphSignals
-using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using LinearAlgebra
 using NNlib
-using SparseArrays: SparseMatrixCSC
+using LightGraphs
 using Statistics: mean
 using Zygote
 using Test
 
 cuda_tests = [
+    # "cuda/featured_graph",
     # "cuda/conv",
     # "cuda/msgpass",
 ]
 
 tests = [
-    "layers/gn",
-    "layers/msgpass",
-    "layers/conv",
-    "layers/pool",
-    "layers/misc",
-    "models",
+    "featured_graph",
+    # "layers/gn",
+    # "layers/msgpass",
+    # "layers/conv",
+    # "layers/pool",
+    # "layers/misc",
+    # "models",
 ]
 
 if Flux.use_cuda[]
