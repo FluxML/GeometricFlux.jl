@@ -105,3 +105,18 @@ EdgeConv
 ```
 
 Reference: [Dynamic Graph CNN for Learning on Point Clouds](https://arxiv.org/abs/1801.07829)
+
+---
+
+## Graph Isomorphism Network
+
+```math
+\textbf{x}_i' = f_{\Theta}\left((1 + \varepsilon) \dot \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \textbf{x}_j \right)
+```
+
+where ``f_{\Theta}`` denotes a neural network parametrized by ``\Theta``, *i.e.*, a MLP.
+
+```@docs
+GINConv
+```
+Reference: [How Powerful are Graph Neural Networks?](https://arxiv.org/pdf/1810.00826.pdf)
