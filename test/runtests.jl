@@ -11,15 +11,15 @@ using Zygote
 using Test
 
 cuda_tests = [
-    # "cuda/featured_graph",
+    "cuda/featured_graph",
     # "cuda/conv",
     # "cuda/msgpass",
 ]
 
 tests = [
-    # "featured_graph",
-    # "layers/gn",
-    # "layers/msgpass",
+    "featured_graph",
+    "layers/gn",
+    "layers/msgpass",
     "layers/conv",
     "layers/pool",
     "layers/misc",
@@ -35,7 +35,8 @@ else
     @warn "CUDA unavailable, not testing GPU support"
 end
 
-@testset "GeometricFlux" begin
+@testset "GeometricFlux: graph format $graph_type" for graph_type in (:coo, :adjmat)
+    global GRAPH_T = graph_type
     for t in tests
         include("$(t).jl")
     end

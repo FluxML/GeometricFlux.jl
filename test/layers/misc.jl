@@ -11,7 +11,7 @@
         ef = rand(5, E)
         gf = rand(7)
 
-        fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=gf)
+        fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=gf, graph_type=GRAPH_T)
         layer = bypass_graph(x -> x .+ 1.,
                                 x -> x .+ 2.,
                                 x -> x .+ 3.)

@@ -1,6 +1,6 @@
 ### CONVERT_TO_COO REPRESENTATION ########
 
-function to_coo(graph::COO_T; num_nodes=nothing)
+function to_coo(graph::COO_T; num_nodes=nothing, dir=:out)
     s, t = graph   
     num_nodes = isnothing(num_nodes) ? max(maximum(s), maximum(t)) : num_nodes 
     @assert length(s) == length(t)
@@ -40,8 +40,9 @@ function to_coo(adj_list::ADJLIST_T; dir=:out, num_nodes=nothing)
     @assert dir ∈ [:out, :in]
     num_nodes = length(adj_list)
     num_edges = sum(length.(adj_list))
-    s = zeros(Int, num_edges)
-    t = zeros(Int, num_edges)
+    @assert num_nodes > 0
+    s = similar(adj_list[1], eltype(adj_list[1]), num_edges)
+    t = similar(adj_list[1], eltype(adj_list[1]), num_edges)
     e = 0
     for i in 1:num_nodes
         for j in adj_list[i]
@@ -93,7 +94,7 @@ function to_adjmat(adj_list::ADJLIST_T, T::DataType=Int; dir=:out, num_nodes=not
 end
 
 function to_adjmat(eindex::COO_T, T::DataType=Int; dir=:out, num_nodes=nothing)
-    # Dir will be ignored since the input eindes is alwasys in source target format.
+    # `dir` will be ignored since the input `eindex` is alwasys in source target format.
     # The output will always be a adjmat in :out format (e.g. A[i,j] denotes from i to j)
     s, t = eindex
     n = isnothing(num_nodes) ? max(maximum(s), maximum(t)) : num_nodes
@@ -101,6 +102,9 @@ function to_adjmat(eindex::COO_T, T::DataType=Int; dir=:out, num_nodes=nothing)
     adj_mat[s .+ n .* (t .- 1)] .= 1 # exploiting linear indexing
     return adj_mat, n, length(s)
 end
+
+@non_differentiable to_coo(x...)
+@non_differentiable to_adjmat(x...)
 
 ## TODO
 # to_sparse

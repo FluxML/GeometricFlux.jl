@@ -8,7 +8,7 @@ adj = [0 1 0 1;
        0 1 0 1;
        1 0 1 0]
 
-fg = FeaturedGraph(adj)
+fg = FeaturedGraph(adj, graph_type=GRAPH_T)
 
 @testset "cuda/conv" begin
     @testset "GCNConv" begin

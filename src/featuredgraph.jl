@@ -17,6 +17,8 @@ struct NullGraph <: AbstractFeaturedGraph end
 const COO_T = Tuple{T, T} where T <: AbstractVector
 const ADJMAT_T = AbstractMatrix
 const ADJLIST_T = AbstractVector{T} where T <: AbstractVector
+# const SPARSE_T = ...  Support sparse adjacency matrices in the future
+
 
 struct FeaturedGraph{T<:Union{COO_T,ADJMAT_T}} <: AbstractFeaturedGraph
     graph::T
@@ -31,8 +33,9 @@ struct FeaturedGraph{T<:Union{COO_T,ADJMAT_T}} <: AbstractFeaturedGraph
     # gdata::Dict{String, Any}
 end
 
+@functor FeaturedGraph
 
-function FeaturedGraph(graph; 
+function FeaturedGraph(g; 
                         num_nodes = nothing, 
                         graph_type = :adjmat,
                         dir = :out,
@@ -47,9 +50,9 @@ function FeaturedGraph(graph;
     @assert graph_type ∈ [:coo, :adjmat] "Invalid graph_type $graph_type requested"
     @assert dir ∈ [:in, :out]
     if graph_type == :coo
-        graph, num_nodes, num_edges = to_coo(graph; num_nodes, dir)
+        g, num_nodes, num_edges = to_coo(g; num_nodes, dir)
     else graph_type == :adjmat
-        graph, num_nodes, num_edges = to_adjmat(graph; dir)
+        g, num_nodes, num_edges = to_adjmat(g; dir)
     end
 
     ## Possible future implementation of feature maps. 
@@ -60,21 +63,19 @@ function FeaturedGraph(graph;
     # gdata["g"] = gf
     
 
-    FeaturedGraph(graph, num_nodes, num_edges, nf, ef, gf)
+    FeaturedGraph(g, num_nodes, num_edges, nf, ef, gf)
 end
 
 FeaturedGraph(s::AbstractVector, t::AbstractVector; kws...) = FeaturedGraph((s,t); kws...)
 FeaturedGraph(g::AbstractGraph; kws...) = FeaturedGraph(adjacency_matrix(g, dir=:out); kws...)
 
 function FeaturedGraph(fg::FeaturedGraph; 
-                num_nodes=fg.num_nodes,
                 nf=node_feature(fg), ef=edge_feature(fg), gf=global_feature(fg))
                 # ndata=copy(fg.ndata), edata=copy(fg.edata), gdata=copy(fg.gdata), # copy keeps the refs to old data 
     
-    FeaturedGraph(fg.graph; num_nodes, nf, ef, gf) #   ndata, edata, gdata, 
+    FeaturedGraph(fg.graph, fg.num_nodes, fg.num_edges, nf, ef, gf) #   ndata, edata, gdata, 
 end
 
-@functor FeaturedGraph
 
 """
     edge_index(fg::FeaturedGraph)
@@ -88,16 +89,23 @@ s, t = edge_index(fg)
 """
 edge_index(fg::FeaturedGraph{<:COO_T}) = fg.graph
 
+function edge_index(fg::FeaturedGraph{<:ADJMAT_T})
+    nz = findall(!=(0), graph(fg)) # vec of cartesian indexes
+    ntuple(i -> map(t->t[i], nz), 2)
+end
+
 graph(fg::FeaturedGraph) = fg.graph
 
-LightGraphs.edges(fg::FeaturedGraph{<:COO_T}) = zip(edge_index(fg)...)
+LightGraphs.edges(fg::FeaturedGraph) = zip(edge_index(fg)...)
 
-LightGraphs.edgetype(fg::FeaturedGraph{<:COO_T}) = Tuple{Int, Int}
+LightGraphs.edgetype(fg::FeaturedGraph) = Tuple{Int, Int}
 
 function LightGraphs.has_edge(fg::FeaturedGraph{<:COO_T}, i::Integer, j::Integer)
     s, t = edge_index(fg)
     return any((s .== i) .& (t .== j))
 end
+
+LightGraphs.has_edge(fg::FeaturedGraph{<:ADJMAT_T}, i::Integer, j::Integer) = graph(fg)[i,j] != 0
 
 LightGraphs.nv(fg::FeaturedGraph) = fg.num_nodes
 LightGraphs.ne(fg::FeaturedGraph) = fg.num_edges
@@ -109,14 +117,14 @@ function LightGraphs.outneighbors(fg::FeaturedGraph{<:COO_T}, i::Integer)
     return t[s .== i]
 end
 
-function LightGraphs.inneighbors(fg::FeaturedGraph{<:COO_T}, i::Integer)
-    s, t = edge_index(fg)
-    return s[t .== i]
-end
-
 function LightGraphs.outneighbors(fg::FeaturedGraph{<:ADJMAT_T}, i::Integer)
     A = graph(fg)
     return findall(!=(0), A[i,:])
+end
+
+function LightGraphs.inneighbors(fg::FeaturedGraph{<:COO_T}, i::Integer)
+    s, t = edge_index(fg)
+    return s[t .== i]
 end
 
 function LightGraphs.inneighbors(fg::FeaturedGraph{<:ADJMAT_T}, i::Integer)
@@ -157,6 +165,12 @@ function LightGraphs.degree(fg::FeaturedGraph{<:COO_T}; dir=:out)
         NNlib.scatter!(+, degs, o, t)
     end
     return degs
+end
+
+function LightGraphs.degree(fg::FeaturedGraph{<:ADJMAT_T}; dir=:out)
+    @assert dir ∈ (:in, :out)
+    A = graph(fg)
+    return dir == :out ? vec(sum(A, dims=2)) : vec(sum(A, dims=1))
 end
 
 # node_feature(fg::FeaturedGraph) = fg.ndata["x"]
@@ -261,7 +275,6 @@ end
 @non_differentiable degree(x...)
 @non_differentiable add_self_loops(x...)
 @non_differentiable remove_self_loops(x...)
-
 
 # # delete when https://github.com/JuliaDiff/ChainRules.jl/pull/472 is merged
 # function ChainRulesCore.rrule(::typeof(copy), x)

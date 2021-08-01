@@ -9,7 +9,7 @@ adj = [0. 1. 0. 1.;
        0. 1. 0. 1.;
        1. 0. 1. 0.]
 
-fg = FeaturedGraph(adj)
+fg = FeaturedGraph(adj; graph_type=GRAPH_T)
 
 @testset "models" begin
     @testset "GAE" begin
@@ -28,13 +28,13 @@ fg = FeaturedGraph(adj)
            @test size(Y) == (N, N)
 
            X = rand(T, 1, N)
-           fg = FeaturedGraph(adj, nf=X)
+           fg = FeaturedGraph(adj, nf=X, graph_type=GRAPH_T)
            fg_ = ipd(fg)
            Y = node_feature(fg_)
            @test size(Y) == (N, N)
 
            X = rand(T, in_channel, N)
-           fg = FeaturedGraph(adj, nf=X)
+           fg = FeaturedGraph(adj, nf=X, graph_type=GRAPH_T)
            fg_ = ipd(fg)
            Y = node_feature(fg_)
            @test size(Y) == (N, N)
@@ -45,7 +45,7 @@ fg = FeaturedGraph(adj)
             gc = GCNConv(in_channel=>out_channel)
             ve = VariationalEncoder(gc, out_channel, z_dim)
             X = rand(T, in_channel, N)
-            fg = FeaturedGraph(adj, nf=X)
+            fg = FeaturedGraph(adj, nf=X, graph_type=GRAPH_T)
             fg_ = ve(fg)
             Z = node_feature(fg_)
             @test size(Z) == (z_dim, N)
@@ -56,7 +56,7 @@ fg = FeaturedGraph(adj)
             gc = GCNConv(in_channel=>out_channel)
             vgae = VGAE(gc, out_channel, z_dim)
             X = rand(T, in_channel, N)
-            fg = FeaturedGraph(adj, nf=X)
+            fg = FeaturedGraph(adj, nf=X, graph_type=GRAPH_T)
             fg_ = vgae(fg)
             Y = node_feature(fg_)
             @test size(Y) == (N, N)
