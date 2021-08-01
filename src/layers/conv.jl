@@ -246,10 +246,6 @@ update_batch_edge(gat::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u) = 
 
 function update_batch_edge(gat::GATConv, adj, X::AbstractMatrix)
     n = size(adj, 1)
-    # a vertex must always receive a message from itself
-    Zygote.ignore() do
-        GraphLaplacians.add_self_loop!(adj, n)
-    end
     mapreduce(i -> apply_batch_message(gat, i, adj[i], X), hcat, 1:n)
 end
 
@@ -266,8 +262,10 @@ function update_batch_vertex(gat::GATConv, M::AbstractMatrix)
 end
 
 function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
+    # a vertex must always receive a message from itself
+    adjlist = add_self_loops(adjacency_list(fg))
     check_num_nodes(fg, X)
-    _, X = propagate(gat, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, +)
+    _, X = propagate(gat, adjlist, Fill(0.f0, 0, ne(fg)), X, +)
     X
 end
 

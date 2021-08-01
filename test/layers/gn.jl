@@ -29,35 +29,35 @@ u = rand(T, in_channel)
 
         @test adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (in_channel, num_V)
-        @test size(edge_feature(fg_)) == (0, 2*num_E)
-        @test size(global_feature(fg_)) == (0,)
+        @test all(edge_feature(fg_) .== fill(nothing, 2*num_E))
+        @test global_feature(fg_) === nothing
     end
 
     @testset "with neighbor aggregation" begin
         (l::NewGNLayer)(fg) = GeometricFlux.propagate(l, fg, +)
 
-        fg = FeaturedGraph(adj, nf=V, ef=E, gf=zeros(0))
+        fg = FeaturedGraph(adj, nf=V, ef=E, gf=nothing)
         l = NewGNLayer()
         fg_ = l(fg)
 
         @test adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (in_channel, num_V)
         @test size(edge_feature(fg_)) == (in_channel, 2*num_E)
-        @test size(global_feature(fg_)) == (0,)
+        @test global_feature(fg_) === nothing
     end
 
     GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = rand(T, out_channel)
     @testset "update edge with neighbor aggregation" begin
         (l::NewGNLayer)(fg) = GeometricFlux.propagate(l, fg, +)
 
-        fg = FeaturedGraph(adj, nf=V, ef=E, gf=zeros(0))
+        fg = FeaturedGraph(adj, nf=V, ef=E, gf=nothing)
         l = NewGNLayer()
         fg_ = l(fg)
 
         @test adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (in_channel, num_V)
         @test size(edge_feature(fg_)) == (out_channel, 2*num_E)
-        @test size(global_feature(fg_)) == (0,)
+        @test global_feature(fg_) === nothing
     end
 
     GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = rand(T, out_channel)

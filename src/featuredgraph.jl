@@ -34,7 +34,8 @@ end
 
 function FeaturedGraph(graph; 
                         num_nodes = nothing, 
-                        graph_type = :coo,
+                        graph_type = :adjmat,
+                        dir = :out,
                         nf = nothing, 
                         ef = nothing, 
                         gf = nothing,
@@ -44,15 +45,15 @@ function FeaturedGraph(graph;
                         )
 
     @assert graph_type ∈ [:coo, :adjmat] "Invalid graph_type $graph_type requested"
-    
+    @assert dir ∈ [:in, :out]
     if graph_type == :coo
-        graph, num_nodes, num_edges = convert_to_coo(graph; num_nodes)
+        graph, num_nodes, num_edges = to_coo(graph; num_nodes, dir)
     else graph_type == :adjmat
-        graph, num_nodes, num_edges = convert_to_adjmat(graph)
+        graph, num_nodes, num_edges = to_adjmat(graph; dir)
     end
 
-    ## I would like to have dict data store, but currently this 
-    ## doesn't play well with zygote due to 
+    ## Possible future implementation of feature maps. 
+    ## Currently this doesn't play well with zygote due to 
     ## https://github.com/FluxML/Zygote.jl/issues/717    
     # ndata["x"] = nf
     # edata["e"] = ef
@@ -66,12 +67,11 @@ FeaturedGraph(s::AbstractVector, t::AbstractVector; kws...) = FeaturedGraph((s,t
 FeaturedGraph(g::AbstractGraph; kws...) = FeaturedGraph(adjacency_matrix(g, dir=:out); kws...)
 
 function FeaturedGraph(fg::FeaturedGraph; 
-                # ndata=copy(fg.ndata), edata=copy(fg.edata), gdata=copy(fg.gdata), # copy keeps the refs to old data 
+                num_nodes=fg.num_nodes,
                 nf=node_feature(fg), ef=edge_feature(fg), gf=global_feature(fg))
+                # ndata=copy(fg.ndata), edata=copy(fg.edata), gdata=copy(fg.gdata), # copy keeps the refs to old data 
     
-    FeaturedGraph(fg.graph; 
-                #   ndata, edata, gdata, 
-                  nf, ef, gf)
+    FeaturedGraph(fg.graph; num_nodes, nf, ef, gf) #   ndata, edata, gdata, 
 end
 
 @functor FeaturedGraph
@@ -114,6 +114,16 @@ function LightGraphs.inneighbors(fg::FeaturedGraph{<:COO_T}, i::Integer)
     return s[t .== i]
 end
 
+function LightGraphs.outneighbors(fg::FeaturedGraph{<:ADJMAT_T}, i::Integer)
+    A = graph(fg)
+    return findall(!=(0), A[i,:])
+end
+
+function LightGraphs.inneighbors(fg::FeaturedGraph{<:ADJMAT_T}, i::Integer)
+    A = graph(fg)
+    return findall(!=(0), A[:,i])
+end
+
 LightGraphs.is_directed(::FeaturedGraph) = true
 LightGraphs.is_directed(::Type{FeaturedGraph}) = true
 
@@ -125,22 +135,15 @@ end
 
 # TODO return sparse matrix
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:COO_T}, T::DataType=Int; dir=:out)
-    # TODO dir=:both
-    s, t = edge_index(fg)
-    n = fg.num_nodes
-    adj_mat = fill!(similar(s, T, (n, n)), 0)
-    adj_mat[s .+ n .* (t .- 1)] .= 1 # exploiting linear indexing
-    return dir == :out ? adj_mat : adj_mat'
+    A, n, m = to_adjmat(fg.graph, T, num_nodes=fg.num_nodes)
+    return dir == :out ? A : A'
 end
 
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:ADJMAT_T}, T::DataType=eltype(fg.graph); dir=:out)
-    @assert dir == :out
+    @assert dir ∈ [:in, :out]
     A = fg.graph 
-    if T != eltype(A)
-        return T.(A)
-    else
-        return A
-    end
+    A = T != eltype(A) ? T.(A) : A
+    return dir == :out ? A : A'
 end
 
 function LightGraphs.degree(fg::FeaturedGraph{<:COO_T}; dir=:out)
@@ -234,7 +237,21 @@ function add_self_loops(fg::FeaturedGraph{<:COO_T})
     nodes = convert(typeof(s), [1:n;])
     s = [s; nodes]
     t = [t; nodes]
-    FeaturedGraph(s, t, nf=node_feature(fg), ef=edge_feature(fg), gf=global_feature(fg))
+
+    FeaturedGraph((s, t), fg.num_nodes, fg.num_edges,
+        node_feature(fg), edge_feature(fg), global_feature(fg))
+end
+
+
+function remove_self_loops(fg::FeaturedGraph{<:COO_T})
+    s, t = edge_index(fg)
+    @assert edge_feature(fg) === nothing
+    mask_old_loops = s .!= t
+    s = s[mask_old_loops]
+    t = t[mask_old_loops]
+
+    FeaturedGraph((s, t), fg.num_nodes, fg.num_edges,
+        node_feature(fg), edge_feature(fg), global_feature(fg))
 end
 
 @non_differentiable normalized_laplacian(x...)
@@ -243,6 +260,8 @@ end
 @non_differentiable adjacency_list(x...)
 @non_differentiable degree(x...)
 @non_differentiable add_self_loops(x...)
+@non_differentiable remove_self_loops(x...)
+
 
 # # delete when https://github.com/JuliaDiff/ChainRules.jl/pull/472 is merged
 # function ChainRulesCore.rrule(::typeof(copy), x)

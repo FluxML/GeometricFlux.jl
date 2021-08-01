@@ -54,3 +54,13 @@ Zygote.@nograd edge_index_table
 function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
     @assert nv(fg) == size(x, ndims(x))    
 end
+
+function add_self_loops(adjlist::AbstractVector{<:AbstractVector})
+    anew = deepcopy(adjlist)
+    for (i, neigs) in enumerate(anew)
+        if i ∉ neigs
+            push!(neigs, i)
+        end
+    end
+    return anew
+end
