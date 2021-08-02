@@ -19,7 +19,71 @@ const ADJMAT_T = AbstractMatrix
 const ADJLIST_T = AbstractVector{T} where T <: AbstractVector
 # const SPARSE_T = ...  Support sparse adjacency matrices in the future
 
+"""
+    FeaturedGraph(g; [graph_type, dir, num_nodes, nf, ef, gf])
+    FeaturedGraph(fg::FeaturedGraph; [nf, ef, gf])
 
+A type representing a graph structure and storing also arrays 
+that contain features associated to nodes, edges, and the whole graph. 
+    
+A `FeaturedGraph` can be constructed out of different objects `g` representing
+the connections inside the graph, while the internal representation 
+is governed by `graph_type`. 
+When constructed from another featured graph `fg`, the internal representationis 
+is preserved and shared. 
+
+A FeaturedGraph is a LightGraphs' `AbstractGraph`, therefore any 
+
+# Arguments 
+
+- `g`: Some data representing the graph topology. Possible type are 
+    - An adjacency matrix
+    - An adjacency list.
+    - A tuple containing the source and target vectors (COO representation)
+    - A LightGraphs' graph.
+- `graph_type`: A keyword argument that specifies 
+                the underlying representation used by the FeaturedGraph. 
+                Currently supported values are 
+    - `:coo`
+    - `:adjmat`  
+    Default `:coo`.
+- `dir`. The assumed edge direction when given adjacency matrix or adjacency list input data `g`. 
+        Possible values are `:out` and `:in`. Defaul `:out`.
+- `num_nodes`. The number of nodes. If not specified, inferred from `g`. Default nothing.
+- `nf`: Node features. Either nothing, or an array whose last dimension has size num_nodes. Default nothing.
+- `ef`: Edge features. Either nothing, or an array whose last dimension has size num_edges. Default nothing.
+- `gf`: Global features. Default nothing. 
+
+# Usage. 
+
+```
+using Flux, GeometricFlux
+
+# Construct from adjacency list representation
+g = [[2,3], [1,4,5], [1], [2,5], [2,4]]
+fg = FeaturedGraph(g)
+
+# Same graph in COO representation
+s = [1,1,2,2,2,3,4,4,5,5]
+t = [2,3,1,4,5,3,2,5,2,4]
+fg = FeaturedGraph((s, t))
+fg = FeaturedGraph(s, t) # other convenience constructor
+
+# From a LightGraphs' graph
+fg = FeaturedGraph(erdos_renyi(100, 20))
+
+# Copy featured graph while also adding node features
+fg = FeaturedGraph(fg, nf=rand(100, 5))
+
+# Send to gpu
+fg = fg |> gpu
+
+# Collect edges' source and target nodes.
+source, target = edge_index(fg)
+```
+
+See also [`graph`](@ref), [`edge_index`](@ref), [`node_feature`](@ref), [`edge_feature`](@ref), and [`global_feature`](@ref) 
+"""
 struct FeaturedGraph{T<:Union{COO_T,ADJMAT_T}} <: AbstractFeaturedGraph
     graph::T
     num_nodes::Int
@@ -35,7 +99,7 @@ end
 
 @functor FeaturedGraph
 
-function FeaturedGraph(g; 
+function FeaturedGraph(data; 
                         num_nodes = nothing, 
                         graph_type = :adjmat,
                         dir = :out,
@@ -50,9 +114,9 @@ function FeaturedGraph(g;
     @assert graph_type ∈ [:coo, :adjmat] "Invalid graph_type $graph_type requested"
     @assert dir ∈ [:in, :out]
     if graph_type == :coo
-        g, num_nodes, num_edges = to_coo(g; num_nodes, dir)
+        g, num_nodes, num_edges = to_coo(data; num_nodes, dir)
     else graph_type == :adjmat
-        g, num_nodes, num_edges = to_adjmat(g; dir)
+        g, num_nodes, num_edges = to_adjmat(data; dir)
     end
 
     ## Possible future implementation of feature maps. 
@@ -80,8 +144,8 @@ end
 """
     edge_index(fg::FeaturedGraph)
 
-Return a tuple containing two vectors, respectively containing the source and target 
-nodes of the edges in the graph `fg`.
+Return a tuple containing two vectors, respectively storing 
+the source and target nodes for each edges in `fg`.
 
 ```julia
 s, t = edge_index(fg)
@@ -94,6 +158,11 @@ function edge_index(fg::FeaturedGraph{<:ADJMAT_T})
     ntuple(i -> map(t->t[i], nz), 2)
 end
 
+"""
+    graph(fg::FeaturedGraph)
+
+Re
+"""
 graph(fg::FeaturedGraph) = fg.graph
 
 LightGraphs.edges(fg::FeaturedGraph) = zip(edge_index(fg)...)
@@ -177,9 +246,27 @@ end
 # edge_feature(fg::FeaturedGraph) = fg.edata["e"]
 # global_feature(fg::FeaturedGraph) = fg.gdata["g"]
 
+
+"""
+    node_feature(fg::FeaturedGraph)
+
+Return the node features of `fg`.
+"""
 node_feature(fg::FeaturedGraph) = fg.nf
+
+"""
+    edge_feature(fg::FeaturedGraph)
+
+Return the edge features of `fg`.
+"""
 edge_feature(fg::FeaturedGraph) = fg.ef
-global_feature(fg::FeaturedGraph) = fg.gf
+
+"""
+    global_feature(fg::FeaturedGraph)
+
+Return the global features of `fg`.
+"""
+global_feature(fg::NullGraph) = fg.gf
 
 # function Base.getproperty(fg::FeaturedGraph, sym::Symbol)
 #     if sym === :nf
@@ -241,6 +328,12 @@ function scaled_laplacian(fg::FeaturedGraph, T::DataType=Float32; dir=:out)
     return  2 / maximum(E) * Lnorm - I
 end
 
+"""
+    add_self_loops(fg::FeaturedGraph)
+
+Return a featured graph with the same features as `fg`
+but also adding edges connecting the nodes to themselves.
+"""
 function add_self_loops(fg::FeaturedGraph{<:COO_T})
     s, t = edge_index(fg)
     @assert edge_feature(fg) === nothing
