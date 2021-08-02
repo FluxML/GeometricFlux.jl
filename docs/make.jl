@@ -19,10 +19,12 @@ makedocs(
                ["Message passing scheme" => "abstractions/msgpass.md",
                 "Graph network block" => "abstractions/gn.md"],
              "Manual" =>
-               ["Convolutional Layers" => "manual/conv.md",
+               [
+                "Graphs" => "manual/featuredgraph.md",
+                "Convolutional Layers" => "manual/conv.md",
                 "Pooling Layers" => "manual/pool.md",
                 "Models" => "manual/models.md",
-                "Linear Algebra" => "manual/linalg.md"]
+               ]
     ]
 )
 
