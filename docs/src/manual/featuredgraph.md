@@ -6,15 +6,15 @@ nodes and edges.
 
 
 ```@docs
-FeaturedGraph
-edge_index
-graph
-adjacency_list
-adjacency_matrix
-add_self_loops
-remove_self_loops
-degree
-laplacian_matrix
-normalized_laplacian
-scaled_laplacian
+GeometrixFlux.FeaturedGraph
+GeometrixFlux.edge_index
+GeometrixFlux.graph
+GeometrixFlux.adjacency_list
+GeometrixFlux.adjacency_matrix
+GeometrixFlux.add_self_loops
+GeometrixFlux.remove_self_loops
+GeometrixFlux.degree
+GeometrixFlux.laplacian_matrix
+GeometrixFlux.normalized_laplacian
+GeometrixFlux.scaled_laplacian
 ```
