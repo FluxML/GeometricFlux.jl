@@ -210,9 +210,8 @@ function adjacency_list(fg::FeaturedGraph; dir=:out)
     return [fneighs(fg, i) for i in 1:fg.num_nodes]
 end
 
-# TODO return sparse matrix (when support is good enough)
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:COO_T}, T::DataType=Int; dir=:out)
-    A, n, m = to_dense(graph(fg), T, num_nodes=fg.num_nodes)
+    A, n, m = to_sparse(graph(fg), T, num_nodes=fg.num_nodes)
     return dir == :out ? A : A'
 end
 
@@ -294,7 +293,7 @@ Normalized Laplacian matrix of graph `g`.
 # Arguments
 
 - `fg`: A `FeaturedGraph`.
-- `T`: result element type of degree vector; default `Float32`.
+- `T`: result element type.
 - `selfloop`: adding self loop while calculating the matrix.
 - `dir`: the edge directionality considered (:out, :in, :both).
 """
@@ -307,26 +306,30 @@ function normalized_laplacian(fg::FeaturedGraph, T::DataType=Float32; selfloop::
 end
 
 @doc raw"""
-    scaled_laplacian(g[, T]; dir=:out)
+    scaled_laplacian(fg, T=Float32; dir=:out)
 
 Scaled Laplacian matrix of graph `g`,
 defined as ``\hat{L} = \frac{2}{\lambda_{max}} L - I`` where ``L`` is the normalized Laplacian matrix.
 
 # Arguments
 
-- `g`: should be a adjacency matrix, `FeaturedGraph`, `SimpleGraph`, `SimpleDiGraph` (from LightGraphs) or `SimpleWeightedGraph`, `SimpleWeightedDiGraph` (from SimpleWeightedGraphs).
-- `T`: result element type of degree vector; default is the element type of `g` (optional).
+- `fg`: A `FeaturedGraph`.
+- `T`: result element type.
 - `dir`: the edge directionality considered (:out, :in, :both).
 """
 function scaled_laplacian(fg::FeaturedGraph, T::DataType=Float32; dir=:out)
-    A = adjacency_matrix(fg, T; dir=dir)
-    @assert issymmetric(A) "scaled_laplacian only works with symmetric matrices"
-    E = eigen(Symmetric(A)).values
-    degs = vec(sum(A; dims=2))
-    inv_sqrtD = Diagonal(inv.(sqrt.(degs)))
-    Lnorm = I - inv_sqrtD * A * inv_sqrtD
-    return  2 / maximum(E) * Lnorm - I
+    L = normalized_laplacian(fg, T)
+    @assert issymmetric(L) "scaled_laplacian only works with symmetric matrices"
+    λmax = _eigmax(L)
+    return  2 / λmax * L - I
 end
+
+# _eigmax(A) = eigmax(Symmetric(A)) # Doesn't work on sparse arrays
+_eigmax(A) = KrylovKit.eigsolve(Symmetric(A), 1, :LR)[1][1] # also eigs(A, x0, nev, mode) available 
+
+# Eigenvalues for cuarray don't seem to be well supported. 
+# https://github.com/JuliaGPU/CUDA.jl/issues/154
+# https://discourse.julialang.org/t/cuda-eigenvalues-of-a-sparse-matrix/46851/5
 
 """
     add_self_loops(fg::FeaturedGraph)

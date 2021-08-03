@@ -1,9 +1,11 @@
 module GeometricFlux
 
-using LinearAlgebra: similar
+using NNlib: similar
+using LinearAlgebra: similar, fill!
 using Statistics: mean
 using LinearAlgebra
 using SparseArrays
+import KrylovKit
 using CUDA
 using FillArrays: Fill
 using Flux
