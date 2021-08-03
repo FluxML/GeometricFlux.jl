@@ -1,4 +1,3 @@
-using Flux: Dense, Chain
 in_channel = 3
 out_channel = 5
 N = 4
