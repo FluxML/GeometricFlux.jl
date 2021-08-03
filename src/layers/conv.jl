@@ -390,3 +390,50 @@ function Base.show(io::IO, l::EdgeConv)
     print(io, ", aggr=", l.aggr)
     print(io, ")")
 end
+
+
+"""
+    GINConv([fg,] nn, [eps])
+
+    Graph Isomorphism Network.
+
+# Arguments
+
+- `fg`: Optionally pass in a FeaturedGraph as input.
+- `nn`: A neural network/layer.
+- `eps`: Weighting factor. Default 0.
+
+The definition of this is as defined in the original paper,
+Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
+"""
+
+struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
+    fg::V
+    nn
+    eps::R
+end
+
+function GINConv(fg::AbstractFeaturedGraph, nn; eps=0f0)
+    GINConv(fg, nn, eps)
+end
+
+function GINConv(nn; eps=0f0) 
+    GINConv(NullGraph(), nn, eps)
+end
+
+Flux.trainable(g::GINConv) = (fg=g.fg,nn=g.nn)
+
+message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
+update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
+
+@functor GINConv
+
+function (g::GINConv)(fg::FeaturedGraph, X::AbstractMatrix)
+    gf = graph(fg)
+    GraphSignals.check_num_node(gf, X)
+    _, X = propagate(g, adjacency_list(gf), Fill(0.f0, 0, ne(gf)), X, +)
+    X
+end
+
+(l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::GINConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))

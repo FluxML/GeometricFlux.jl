@@ -1,7 +1,7 @@
-T = Float32
 in_channel = 3
 out_channel = 5
 N = 4
+T = Float32
 adj = T[0. 1. 0. 1.;
        1. 0. 1. 0.;
        0. 1. 0. 1.;
@@ -346,6 +346,37 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             g = Zygote.gradient(model -> sum(node_feature(model(fg))), ec)[1]
             @test size(g.nn.weight) == size(ec.nn.weight)
             @test size(g.nn.bias) == size(ec.nn.bias)
+        end
+    end
+
+    @testset "GINConv" begin
+        X = rand(Float32, in_channel, N)
+        Xt = transpose(rand(Float32, N, in_channel))
+        nn = Flux.Chain(Dense(in_channel, out_channel))
+        eps = 0.001
+
+        @testset "layer with graph" begin
+            gc = GINConv(FeaturedGraph(adj), nn, eps=eps)
+            @test size(gc.nn.layers[1].weight) == (out_channel, in_channel)
+            @test size(gc.nn.layers[1].bias) == (out_channel, )
+            @test graph(gc.fg) === adj
+
+            Y = gc(FeaturedGraph(adj, nf=X))
+            @test size(node_feature(Y)) == (out_channel, N)
+
+            # Test with transposed features
+            Y = gc(FeaturedGraph(adj, nf=Xt))
+            @test size(node_feature(Y)) == (out_channel, N)
+
+            g = Zygote.gradient(x -> sum(node_feature(gc(x))), 
+                                FeaturedGraph(adj, nf=X))[1]
+            @test size(g.x.nf) == size(X)
+
+            g = Zygote.gradient(model -> sum(node_feature(model(FeaturedGraph(adj, nf=X)))), 
+                                gc)[1]
+            @test size(g.nn.layers[1].weight) == size(gc.nn.layers[1].weight)
+            @test size(g.nn.layers[1].bias) == size(gc.nn.layers[1].bias)
+            @test !in(:eps, Flux.trainable(gc))
         end
     end
 end
