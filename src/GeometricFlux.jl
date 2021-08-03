@@ -11,7 +11,6 @@ using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
 using NNlib, NNlibCUDA
-using Zygote
 using ChainRulesCore
 import LightGraphs
 using LightGraphs: AbstractGraph, outneighbors, inneighbors, is_directed, ne, nv, 

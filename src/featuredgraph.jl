@@ -44,9 +44,10 @@ A FeaturedGraph is a LightGraphs' `AbstractGraph`, therefore any
 - `graph_type`: A keyword argument that specifies 
                 the underlying representation used by the FeaturedGraph. 
                 Currently supported values are 
-    - `:coo`
-    - `:sparse`
-    - `:dense`  
+    - `:coo`. Graph represented as a tuple `(source, target)`, such that the `k`-th edge 
+              connects the node `source[k]` to node `target[k]`
+    - `:sparse`. A sparse adjacency matrix representation.
+    - `:dense`. A dense adjacency matrix representation.  
     Default `:coo`.
 - `dir`. The assumed edge direction when given adjacency matrix or adjacency list input data `g`. 
         Possible values are `:out` and `:in`. Defaul `:out`.
@@ -64,6 +65,10 @@ using Flux, GeometricFlux
 g = [[2,3], [1,4,5], [1], [2,5], [2,4]]
 fg = FeaturedGraph(g)
 
+# Number of nodes and edges
+fg.num_nodes  # 5
+fg.num_edges  # 10 
+
 # Same graph in COO representation
 s = [1,1,2,2,2,3,4,4,5,5]
 t = [2,3,1,4,5,3,2,5,2,4]
@@ -80,6 +85,7 @@ fg = FeaturedGraph(fg, nf=rand(100, 5))
 fg = fg |> gpu
 
 # Collect edges' source and target nodes.
+# Both source and target are vectors of length num_edges
 source, target = edge_index(fg)
 ```
 
