@@ -3,6 +3,7 @@ module GeometricFlux
 using LinearAlgebra: similar
 using Statistics: mean
 using LinearAlgebra
+using SparseArrays
 using CUDA
 using FillArrays: Fill
 using Flux

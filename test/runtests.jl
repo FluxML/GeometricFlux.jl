@@ -35,7 +35,8 @@ else
     @warn "CUDA unavailable, not testing GPU support"
 end
 
-@testset "GeometricFlux: graph format $graph_type" for graph_type in (:coo, :adjmat)
+# Testing all graph types. :sparse is a bit broken at the moment
+@testset "GeometricFlux: graph format $graph_type" for graph_type in (:coo, :dense) # :sparse
     global GRAPH_T = graph_type
     for t in tests
         include("$(t).jl")

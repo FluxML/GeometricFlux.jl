@@ -15,9 +15,9 @@ Null object for `FeaturedGraph`.
 struct NullGraph <: AbstractFeaturedGraph end
 
 const COO_T = Tuple{T, T} where T <: AbstractVector
-const ADJMAT_T = AbstractMatrix
 const ADJLIST_T = AbstractVector{T} where T <: AbstractVector
-# const SPARSE_T = ...  Support sparse adjacency matrices in the future
+const ADJMAT_T = AbstractMatrix
+const SPARSE_T = AbstractSparseMatrix # subset of ADJMAT_T
 
 """
     FeaturedGraph(g; [graph_type, dir, num_nodes, nf, ef, gf])
@@ -45,7 +45,8 @@ A FeaturedGraph is a LightGraphs' `AbstractGraph`, therefore any
                 the underlying representation used by the FeaturedGraph. 
                 Currently supported values are 
     - `:coo`
-    - `:adjmat`  
+    - `:sparse`
+    - `:dense`  
     Default `:coo`.
 - `dir`. The assumed edge direction when given adjacency matrix or adjacency list input data `g`. 
         Possible values are `:out` and `:in`. Defaul `:out`.
@@ -101,7 +102,7 @@ end
 
 function FeaturedGraph(data; 
                         num_nodes = nothing, 
-                        graph_type = :adjmat,
+                        graph_type = :coo,
                         dir = :out,
                         nf = nothing, 
                         ef = nothing, 
@@ -111,12 +112,14 @@ function FeaturedGraph(data;
                         # gdata = Dict{String, Any}()
                         )
 
-    @assert graph_type ∈ [:coo, :adjmat] "Invalid graph_type $graph_type requested"
+    @assert graph_type ∈ [:coo, :dense, :sparse] "Invalid graph_type $graph_type requested"
     @assert dir ∈ [:in, :out]
     if graph_type == :coo
         g, num_nodes, num_edges = to_coo(data; num_nodes, dir)
-    else graph_type == :adjmat
-        g, num_nodes, num_edges = to_adjmat(data; dir)
+    elseif graph_type == :dense
+        g, num_nodes, num_edges = to_dense(data; dir)
+    elseif graph_type == :sparse
+        g, num_nodes, num_edges = to_sparse(data; dir)
     end
 
     ## Possible future implementation of feature maps. 
@@ -151,12 +154,9 @@ the source and target nodes for each edges in `fg`.
 s, t = edge_index(fg)
 ```
 """
-edge_index(fg::FeaturedGraph{<:COO_T}) = fg.graph
+edge_index(fg::FeaturedGraph{<:COO_T}) = graph(fg)
 
-function edge_index(fg::FeaturedGraph{<:ADJMAT_T})
-    nz = findall(!=(0), graph(fg)) # vec of cartesian indexes
-    ntuple(i -> map(t->t[i], nz), 2)
-end
+edge_index(fg::FeaturedGraph{<:ADJMAT_T}) = to_coo(graph(fg))[1]
 
 """
     graph(fg::FeaturedGraph)
@@ -210,15 +210,15 @@ function adjacency_list(fg::FeaturedGraph; dir=:out)
     return [fneighs(fg, i) for i in 1:fg.num_nodes]
 end
 
-# TODO return sparse matrix
+# TODO return sparse matrix (when support is good enough)
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:COO_T}, T::DataType=Int; dir=:out)
-    A, n, m = to_adjmat(fg.graph, T, num_nodes=fg.num_nodes)
+    A, n, m = to_dense(graph(fg), T, num_nodes=fg.num_nodes)
     return dir == :out ? A : A'
 end
 
-function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:ADJMAT_T}, T::DataType=eltype(fg.graph); dir=:out)
+function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:ADJMAT_T}, T::DataType=eltype(graph(fg)); dir=:out)
     @assert dir ∈ [:in, :out]
-    A = fg.graph 
+    A = graph(fg) 
     A = T != eltype(A) ? T.(A) : A
     return dir == :out ? A : A'
 end
@@ -266,7 +266,7 @@ edge_feature(fg::FeaturedGraph) = fg.ef
 
 Return the global features of `fg`.
 """
-global_feature(fg::NullGraph) = fg.gf
+global_feature(fg::FeaturedGraph) = fg.gf
 
 # function Base.getproperty(fg::FeaturedGraph, sym::Symbol)
 #     if sym === :nf
