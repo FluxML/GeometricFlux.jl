@@ -127,8 +127,3 @@ end
 @non_differentiable to_coo(x...)
 @non_differentiable to_dense(x...)
 @non_differentiable to_sparse(x...)
-
-
-## TODO
-# to_sparse
-# to_dense
