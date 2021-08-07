@@ -406,7 +406,6 @@ end
 The definition of this is as defined in the original paper,
 Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
 """
-
 struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
     fg::V
     nn
