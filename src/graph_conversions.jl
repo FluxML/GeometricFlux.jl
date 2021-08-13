@@ -100,58 +100,6 @@ end
 
 ### SPARSE #############
 
-##########################################
-# Remove when https://github.com/JuliaGPU/CUDA.jl/pull/1093 is merged and new version tagged
-
-using CUDA.CUSPARSE: CuSparseMatrixCSR, CuSparseMatrixCSC, CuSparseMatrixCOO, CuSparseMatrixBSR
-
-CUDA.CUSPARSE.CuSparseMatrixCSC(coo::CuSparseMatrixCOO) = CuSparseMatrixCSC(CuSparseMatrixCSR(coo)) # no direct conversion
-CUDA.CUSPARSE.CuSparseMatrixCOO(csc::CuSparseMatrixCSC) = CuSparseMatrixCOO(CuSparseMatrixCSR(csc)) # no direct conversion
-CUDA.CUSPARSE.CuSparseMatrixBSR(coo::CuSparseMatrixCOO, blockdim) = CuSparseMatrixBSR(CuSparseMatrixCSR(coo), blockdim) # no direct conversion
-CUDA.CUSPARSE.CuSparseMatrixCOO(bsr::CuSparseMatrixBSR) = CuSparseMatrixCOO(CuSparseMatrixCSR(bsr)) # no direct conversion
-
-"""
-    sparse(x::DenseCuMatrix; fmt=:csc)
-    sparse(I::CuVector, J::CuVector, V::CuVector, [m, n]; fmt=:csc)
-
-Return a sparse cuda matrix, with type determined by `fmt`.
-Possible formats are :csc, :csr, :bsr, and :coo.
-"""
-function SparseArrays.sparse(x::DenseCuMatrix; fmt=:csc)
-    if fmt == :csc
-        return CuSparseMatrixCSC(x)
-    elseif fmt == :csr 
-        return CuSparseMatrixCSR(x)
-    elseif fmt == :bsr
-        return CuSparseMatrixBSR(x)
-    elseif fmt == :coo
-        return CuSparseMatrixCOO(x)
-    else
-        error("Format :$fmt not available, use :csc, :csr, :bsr or :coo.")
-    end
-end
-
-SparseArrays.sparse(I::CuVector, J::CuVector, V::CuVector; kws...) = 
-    sparse(I, J, V, maximum(I), maximum(J); kws...)
-
-SparseArrays.sparse(I::CuVector, J::CuVector, V::CuVector, m, n; kws...) = 
-    sparse(Cint.(I), Cint.(J), V, m, n; kws...)
-
-function SparseArrays.sparse(I::CuVector{Cint}, J::CuVector{Cint}, V::CuVector{Tv}, m, n; 
-            fmt=:csc) where Tv
-    spcoo = CuSparseMatrixCOO{Tv}(I, J, V, (m, n))
-    if fmt == :csc
-        return CuSparseMatrixCSC(spcoo)
-    elseif fmt == :csr 
-        return CuSparseMatrixCSR(spcoo)
-    elseif fmt == :coo
-        return spcoo
-    else
-        error("Format :$fmt not available, use :csc, :csr, or :coo.")
-    end
-end
-#############################################
-
 function to_sparse(A::ADJMAT_T, T::DataType=eltype(A); dir=:out, num_nodes=nothing)
     @assert dir ∈ [:out, :in]
     num_nodes = size(A, 1)

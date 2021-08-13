@@ -426,9 +426,8 @@ update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
 @functor GINConv
 
 function (g::GINConv)(fg::FeaturedGraph, X::AbstractMatrix)
-    gf = graph(fg)
-    GraphSignals.check_num_node(gf, X)
-    _, X = propagate(g, adjacency_list(gf), Fill(0.f0, 0, ne(gf)), X, +)
+    check_num_nodes(fg, X)
+    _, X = propagate(g, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, +)
     X
 end
 
