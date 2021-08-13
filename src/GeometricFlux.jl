@@ -29,6 +29,7 @@ export
     GatedGraphConv,
     EdgeConv,
     GINConv,
+    CGConv,
 
     # layer/pool
     GlobalPool,

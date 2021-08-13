@@ -77,3 +77,7 @@ end
 function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
     @assert nv(fg) == size(x, ndims(x))    
 end
+
+function check_num_edges(fg::FeaturedGraph, e::AbstractArray)
+    @assert ne(fg) == size(e, ndims(e))
+end
