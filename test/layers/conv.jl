@@ -356,7 +356,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex, graph_type=GRAPH_T)
             gc = GINConv(FeaturedGraph(adj), nn, eps=eps)
             @test size(gc.nn.layers[1].weight) == (out_channel, in_channel)
             @test size(gc.nn.layers[1].bias) == (out_channel, )
-            @test graph(gc.fg) === adj
+            @test adjacency_matrix(gc.fg) == adj
 
             Y = gc(FeaturedGraph(adj, nf=X))
             @test size(node_feature(Y)) == (out_channel, N)
@@ -365,9 +365,9 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex, graph_type=GRAPH_T)
             Y = gc(FeaturedGraph(adj, nf=Xt))
             @test size(node_feature(Y)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(gc(x))), 
-                                FeaturedGraph(adj, nf=X))[1]
-            @test size(g.x.nf) == size(X)
+            fg = FeaturedGraph(adj, nf=X) 
+            g = Zygote.gradient(fg -> sum(node_feature(gc(fg))), fg)[1]
+            @test size(g.nf) == size(X)
 
             g = Zygote.gradient(model -> sum(node_feature(model(FeaturedGraph(adj, nf=X)))), 
                                 gc)[1]

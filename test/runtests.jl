@@ -30,6 +30,8 @@ tests = [
     "models",
 ]
 
+!Flux.use_cuda[] && @warn("CUDA unavailable, not testing GPU support")
+
 # Testing all graph types. :sparse is a bit broken at the moment
 @testset "GeometricFlux: graph format $graph_type" for graph_type in (:coo, :dense, :sparse)
     global GRAPH_T = graph_type
@@ -41,7 +43,5 @@ tests = [
         for t in cuda_tests
             include("$(t).jl")
         end
-    else
-        @warn "CUDA unavailable, not testing GPU support"
     end
 end
