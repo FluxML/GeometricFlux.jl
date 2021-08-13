@@ -15,15 +15,33 @@
     end
 
     @testset "adjacency_matrix" begin
-        mat = adjacency_matrix(fg)
-        mat_gpu = adjacency_matrix(fg_gpu)
-        @test mat_gpu isa CuMatrix{Int}
+        function test_adj()
+            mat = adjacency_matrix(fg)
+            mat_gpu = adjacency_matrix(fg_gpu)
+            @test mat_gpu isa CuMatrix{Int}
+            true
+        end
+
+        if GRAPH_T == :coo
+            # See https://github.com/JuliaGPU/CUDA.jl/pull/1093
+            @test_broken test_adj()
+        else
+            test_adj()
+        end
     end
 
     @testset "normalized_laplacian" begin
-        mat = normalized_laplacian(fg)
-        mat_gpu = normalized_laplacian(fg_gpu)
-        @test mat_gpu isa CuMatrix{Float32}
+        function test_normlapl()
+            mat = normalized_laplacian(fg)
+            mat_gpu = normalized_laplacian(fg_gpu)
+            @test mat_gpu isa CuMatrix{Float32}
+            true
+        end
+        if GRAPH_T == :coo
+            @test_broken test_normlapl()
+        else
+            test_normlapl()
+        end
     end
 
     @testset "scaled_laplacian" begin

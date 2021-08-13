@@ -12,6 +12,7 @@ using LightGraphs
 using Statistics: mean
 using Zygote
 using Test
+CUDA.allowscalar(false)
 
 cuda_tests = [
     "cuda/featured_graph",
@@ -20,20 +21,14 @@ cuda_tests = [
 ]
 
 tests = [
-    # "featured_graph",
-    # "layers/gn",
-    # "layers/msgpass",
-    # "layers/conv",
-    # "layers/pool",
-    # "layers/misc",
-    # "models",
+    "featured_graph",
+    "layers/gn",
+    "layers/msgpass",
+    "layers/conv",
+    "layers/pool",
+    "layers/misc",
+    "models",
 ]
-
-if Flux.use_cuda[]
-    append!(tests, cuda_tests)
-else
-    @warn "CUDA unavailable, not testing GPU support"
-end
 
 # Testing all graph types. :sparse is a bit broken at the moment
 @testset "GeometricFlux: graph format $graph_type" for graph_type in (:coo, :dense, :sparse)

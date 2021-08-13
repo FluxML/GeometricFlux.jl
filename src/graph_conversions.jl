@@ -12,8 +12,8 @@ function to_coo(coo::COO_T; dir=:out, num_nodes=nothing)
     return coo, num_nodes, num_edges
 end
 
-function to_coo(adj_mat::ADJMAT_T; dir=:out, num_nodes=nothing)
-    nz = findall(!=(0), adj_mat) # vec of cartesian indexes
+function to_coo(A::ADJMAT_T; dir=:out, num_nodes=nothing)
+    nz = findall(!=(0), A) # vec of cartesian indexes
     s, t = ntuple(i -> map(t->t[i], nz), 2)
     if dir == :in
         s, t = t, s
@@ -49,21 +49,21 @@ end
 
 ### DENSE ####################
 
-to_dense(adj_mat::AbstractSparseMatrix, x...; kws...) = to_dense(collect(adj_mat), x...; kws...)
+to_dense(A::AbstractSparseMatrix, x...; kws...) = to_dense(collect(A), x...; kws...)
 
-function to_dense(adj_mat::ADJMAT_T, T::DataType=eltype(adj_mat); dir=:out, num_nodes=nothing)
+function to_dense(A::ADJMAT_T, T::DataType=eltype(A); dir=:out, num_nodes=nothing)
     @assert dir ∈ [:out, :in]
-    num_nodes = size(adj_mat, 1)
-    @assert num_nodes == size(adj_mat, 2)
-    # @assert all(x -> (x == 1) || (x == 0), adj_mat)
-    num_edges = round(Int, sum(adj_mat))
+    num_nodes = size(A, 1)
+    @assert num_nodes == size(A, 2)
+    # @assert all(x -> (x == 1) || (x == 0), A)
+    num_edges = round(Int, sum(A))
     if dir == :in
-        adj_mat = adj_mat'
+        A = A'
     end
-    if T != eltype(adj_mat)
-        adj_mat = T.(adj_mat)
+    if T != eltype(A)
+        A = T.(A)
     end
-    return adj_mat, num_nodes, num_edges
+    return A, num_nodes, num_edges
 end
 
 function to_dense(adj_list::ADJLIST_T, T::DataType=Int; dir=:out, num_nodes=nothing)
@@ -152,7 +152,7 @@ function SparseArrays.sparse(I::CuVector{Cint}, J::CuVector{Cint}, V::CuVector{T
 end
 #############################################
 
-function to_sparse(A::ADJMAT_T, T::DataType=eltype(adj_mat); dir=:out, num_nodes=nothing)
+function to_sparse(A::ADJMAT_T, T::DataType=eltype(A); dir=:out, num_nodes=nothing)
     @assert dir ∈ [:out, :in]
     num_nodes = size(A, 1)
     @assert num_nodes == size(A, 2)
