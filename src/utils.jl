@@ -61,6 +61,14 @@ function add_self_loops(adjlist::AbstractVector{<:AbstractVector})
     return anew
 end
 
+sort_edge_index(eindex::Tuple) = sort_edge_index(eindex...)
+
+function sort_edge_index(u, v)
+    uv = collect(zip(u, v))
+    p = sortperm(uv) # isless lexicographically defined for tuples
+    return u[p], v[p]
+end
+
 @non_differentiable accumulated_edges(x...)
 @non_differentiable generate_cluster(x...)
 @non_differentiable edge_index_table(x...)

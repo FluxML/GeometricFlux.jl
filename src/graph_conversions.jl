@@ -1,14 +1,15 @@
 ### CONVERT_TO_COO REPRESENTATION ########
 
-function to_coo(eindex::COO_T; dir=:out, num_nodes=nothing)
-    s, t = eindex   
+function to_coo(coo::COO_T; dir=:out, num_nodes=nothing)
+    s, t, val = coo   
     num_nodes = isnothing(num_nodes) ? max(maximum(s), maximum(t)) : num_nodes 
+    @assert isnothing(val) || length(val) == length(s)
     @assert length(s) == length(t)
     @assert min(minimum(s), minimum(t)) >= 1 
     @assert max(maximum(s), maximum(t)) <= num_nodes 
 
     num_edges = length(s)
-    return eindex, num_nodes, num_edges
+    return coo, num_nodes, num_edges
 end
 
 function to_coo(adj_mat::ADJMAT_T; dir=:out, num_nodes=nothing)
@@ -19,7 +20,7 @@ function to_coo(adj_mat::ADJMAT_T; dir=:out, num_nodes=nothing)
     end
     num_nodes = isnothing(num_nodes) ? max(maximum(s), maximum(t)) : num_nodes 
     num_edges = length(s)
-    return (s, t), num_nodes, num_edges
+    return (s, t, nothing), num_nodes, num_edges
 end
 
 function to_coo(adj_list::ADJLIST_T; dir=:out, num_nodes=nothing)
@@ -41,7 +42,7 @@ function to_coo(adj_list::ADJLIST_T; dir=:out, num_nodes=nothing)
     if dir == :in
         s, t = t, s
     end
-    (s, t), num_nodes, num_edges
+    (s, t, nothing), num_nodes, num_edges
 end
 
 ### CONVERT TO ADJACENCY MATRIX ################
@@ -83,43 +84,99 @@ function to_dense(adj_list::ADJLIST_T, T::DataType=Int; dir=:out, num_nodes=noth
     A, num_nodes, num_edges
 end
 
-function to_dense(eindex::COO_T, T::DataType=Int; dir=:out, num_nodes=nothing)
-    # `dir` will be ignored since the input `eindex` is alwasys in source target format.
+function to_dense(coo::COO_T, T::DataType=Int; dir=:out, num_nodes=nothing)
+    # `dir` will be ignored since the input `coo` is always in source -> target format.
     # The output will always be a adjmat in :out format (e.g. A[i,j] denotes from i to j)
-    s, t = eindex
+    s, t, val = coo
     n = isnothing(num_nodes) ? max(maximum(s), maximum(t)) : num_nodes
-    adj_mat = fill!(similar(s, T, (n, n)), 0)
-    adj_mat[s .+ n .* (t .- 1)] .= 1 # exploiting linear indexing
-    return adj_mat, n, length(s)
+    A = fill!(similar(s, T, (n, n)), 0)
+    if isnothing(val)
+        A[s .+ n .* (t .- 1)] .= 1 # exploiting linear indexing
+    else    
+        A[s .+ n .* (t .- 1)] .= val # exploiting linear indexing
+    end
+    return A, n, length(s)
 end
 
 ### SPARSE #############
 
-function to_sparse(adj_mat::ADJMAT_T, T::DataType=eltype(adj_mat); dir=:out, num_nodes=nothing)
-    @assert dir ∈ [:out, :in]
-    num_nodes = size(adj_mat, 1)
-    @assert num_nodes == size(adj_mat, 2)
-    # @assert all(x -> (x == 1) || (x == 0), adj_mat)
-    num_edges = round(Int, sum(adj_mat))
-    if dir == :in
-        adj_mat = adj_mat'
+##########################################
+# Remove when https://github.com/JuliaGPU/CUDA.jl/pull/1093 is merged and new version tagged
+
+using CUDA.CUSPARSE: CuSparseMatrixCSR, CuSparseMatrixCSC, CuSparseMatrixCOO, CuSparseMatrixBSR
+
+CUDA.CUSPARSE.CuSparseMatrixCSC(coo::CuSparseMatrixCOO) = CuSparseMatrixCSC(CuSparseMatrixCSR(coo)) # no direct conversion
+CUDA.CUSPARSE.CuSparseMatrixCOO(csc::CuSparseMatrixCSC) = CuSparseMatrixCOO(CuSparseMatrixCSR(csc)) # no direct conversion
+CUDA.CUSPARSE.CuSparseMatrixBSR(coo::CuSparseMatrixCOO, blockdim) = CuSparseMatrixBSR(CuSparseMatrixCSR(coo), blockdim) # no direct conversion
+CUDA.CUSPARSE.CuSparseMatrixCOO(bsr::CuSparseMatrixBSR) = CuSparseMatrixCOO(CuSparseMatrixCSR(bsr)) # no direct conversion
+
+"""
+    sparse(x::DenseCuMatrix; fmt=:csc)
+    sparse(I::CuVector, J::CuVector, V::CuVector, [m, n]; fmt=:csc)
+
+Return a sparse cuda matrix, with type determined by `fmt`.
+Possible formats are :csc, :csr, :bsr, and :coo.
+"""
+function SparseArrays.sparse(x::DenseCuMatrix; fmt=:csc)
+    if fmt == :csc
+        return CuSparseMatrixCSC(x)
+    elseif fmt == :csr 
+        return CuSparseMatrixCSR(x)
+    elseif fmt == :bsr
+        return CuSparseMatrixBSR(x)
+    elseif fmt == :coo
+        return CuSparseMatrixCOO(x)
+    else
+        error("Format :$fmt not available, use :csc, :csr, :bsr or :coo.")
     end
-    if T != eltype(adj_mat)
-        adj_mat = T.(adj_mat)
-    end
-    return sparse(adj_mat), num_nodes, num_edges
 end
+
+SparseArrays.sparse(I::CuVector, J::CuVector, V::CuVector; kws...) = 
+    sparse(I, J, V, maximum(I), maximum(J); kws...)
+
+SparseArrays.sparse(I::CuVector, J::CuVector, V::CuVector, m, n; kws...) = 
+    sparse(Cint.(I), Cint.(J), V, m, n; kws...)
+
+function SparseArrays.sparse(I::CuVector{Cint}, J::CuVector{Cint}, V::CuVector{Tv}, m, n; 
+            fmt=:csc) where Tv
+    spcoo = CuSparseMatrixCOO{Tv}(I, J, V, (m, n))
+    if fmt == :csc
+        return CuSparseMatrixCSC(spcoo)
+    elseif fmt == :csr 
+        return CuSparseMatrixCSR(spcoo)
+    elseif fmt == :coo
+        return spcoo
+    else
+        error("Format :$fmt not available, use :csc, :csr, or :coo.")
+    end
+end
+#############################################
+
+function to_sparse(A::ADJMAT_T, T::DataType=eltype(adj_mat); dir=:out, num_nodes=nothing)
+    @assert dir ∈ [:out, :in]
+    num_nodes = size(A, 1)
+    @assert num_nodes == size(A, 2)
+    num_edges = round(Int, sum(A))
+    if dir == :in
+        A = A'
+    end
+    if T != eltype(A)
+        A = T.(A)
+    end
+    return sparse(A), num_nodes, num_edges
+end
+
 
 function to_sparse(adj_list::ADJLIST_T, T::DataType=Int; dir=:out, num_nodes=nothing)
-    eindex, num_nodes, num_edges = to_coo(adj_list; dir, num_nodes)
-    to_sparse(eindex; dir, num_nodes)
+    coo, num_nodes, num_edges = to_coo(adj_list; dir, num_nodes)
+    to_sparse(coo; dir, num_nodes)
 end
 
-function to_sparse(eindex::COO_T, T::DataType=Int; dir=:out, num_nodes=nothing)
-    s, t = eindex    
-    val = fill!(similar(s, T), 1)
-    A = sparse(s, t, val)
+function to_sparse(coo::COO_T, T::DataType=Int; dir=:out, num_nodes=nothing)
+    s, t, eweight  = coo
+    eweight = isnothing(eweight) ? fill!(similar(s, T), 1) : eweight
     num_nodes = isnothing(num_nodes) ? max(maximum(s), maximum(t)) : num_nodes 
+    A = sparse(s, t, eweight, num_nodes, num_nodes)
     num_edges = length(s)
     A, num_nodes, num_edges
 end

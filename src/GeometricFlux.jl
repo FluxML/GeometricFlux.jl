@@ -22,6 +22,7 @@ export
     graph, edge_index,
     node_feature, edge_feature, global_feature,
     adjacency_list, normalized_laplacian, scaled_laplacian,
+    add_self_loops,
 
     # from LightGraphs
     adjacency_matrix, 

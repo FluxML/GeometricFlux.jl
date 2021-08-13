@@ -14,7 +14,7 @@ Null object for `FeaturedGraph`.
 """
 struct NullGraph <: AbstractFeaturedGraph end
 
-const COO_T = Tuple{T, T} where T <: AbstractVector
+const COO_T = Tuple{T, T, V} where {T <: AbstractVector,V}
 const ADJLIST_T = AbstractVector{T} where T <: AbstractVector
 const ADJMAT_T = AbstractMatrix
 const SPARSE_T = AbstractSparseMatrix # subset of ADJMAT_T
@@ -27,12 +27,13 @@ A type representing a graph structure and storing also arrays
 that contain features associated to nodes, edges, and the whole graph. 
     
 A `FeaturedGraph` can be constructed out of different objects `g` representing
-the connections inside the graph, while the internal representation 
+the connections inside the graph, while the internal representation type
 is governed by `graph_type`. 
-When constructed from another featured graph `fg`, the internal representationis 
+When constructed from another featured graph `fg`, the internal graph representation
 is preserved and shared. 
 
-A FeaturedGraph is a LightGraphs' `AbstractGraph`, therefore any 
+A `FeaturedGraph` is a LightGraphs' `AbstractGraph`, therefore any functionality
+from the LightGraphs' graph library can be used on it.
 
 # Arguments 
 
@@ -45,7 +46,8 @@ A FeaturedGraph is a LightGraphs' `AbstractGraph`, therefore any
                 the underlying representation used by the FeaturedGraph. 
                 Currently supported values are 
     - `:coo`. Graph represented as a tuple `(source, target)`, such that the `k`-th edge 
-              connects the node `source[k]` to node `target[k]`
+              connects the node `source[k]` to node `target[k]`.
+              Optionally, also edge weights can be given: `(source, target, weights)`.
     - `:sparse`. A sparse adjacency matrix representation.
     - `:dense`. A dense adjacency matrix representation.  
     Default `:coo`.
@@ -139,8 +141,17 @@ function FeaturedGraph(data;
     FeaturedGraph(g, num_nodes, num_edges, nf, ef, gf)
 end
 
-FeaturedGraph(s::AbstractVector, t::AbstractVector; kws...) = FeaturedGraph((s,t); kws...)
-FeaturedGraph(g::AbstractGraph; kws...) = FeaturedGraph(adjacency_matrix(g, dir=:out); kws...)
+# COO convenience constructors
+FeaturedGraph(s::AbstractVector, t::AbstractVector, v = nothing; kws...) = FeaturedGraph((s, t, v); kws...)
+FeaturedGraph((s, t)::NTuple{2}; kws...) = FeaturedGraph((s, t, nothing); kws...)
+
+# FeaturedGraph(g::AbstractGraph; kws...) = FeaturedGraph(adjacency_matrix(g, dir=:out); kws...)
+
+function FeaturedGraph(g::AbstractGraph; kws...)
+    s = LightGraphs.src.(LightGraphs.edges(g))
+    t = LightGraphs.dst.(LightGraphs.edges(g)) 
+    FeaturedGraph((s, t); kws...)
+end
 
 function FeaturedGraph(fg::FeaturedGraph; 
                 nf=node_feature(fg), ef=edge_feature(fg), gf=global_feature(fg))
@@ -160,14 +171,17 @@ the source and target nodes for each edges in `fg`.
 s, t = edge_index(fg)
 ```
 """
-edge_index(fg::FeaturedGraph{<:COO_T}) = graph(fg)
+edge_index(fg::FeaturedGraph{<:COO_T}) = graph(fg)[1:2]
 
-edge_index(fg::FeaturedGraph{<:ADJMAT_T}) = to_coo(graph(fg))[1]
+edge_index(fg::FeaturedGraph{<:ADJMAT_T}) = to_coo(graph(fg))[1][1:2]
+
+edge_weight(fg::FeaturedGraph{<:COO_T}) = graph(fg)[3]
 
 """
     graph(fg::FeaturedGraph)
 
-Re
+Return the underlying implementation of the graph structure of `fg`,
+either an adjacency matrix or an edge list in the COO format.
 """
 graph(fg::FeaturedGraph) = fg.graph
 
@@ -184,7 +198,7 @@ LightGraphs.has_edge(fg::FeaturedGraph{<:ADJMAT_T}, i::Integer, j::Integer) = gr
 
 LightGraphs.nv(fg::FeaturedGraph) = fg.num_nodes
 LightGraphs.ne(fg::FeaturedGraph) = fg.num_edges
-LightGraphs.has_vertex(fg::FeaturedGraph, i::Int) = i in 1:fg.num_nodes
+LightGraphs.has_vertex(fg::FeaturedGraph, i::Int) = 1 <= i <= fg.num_nodes
 LightGraphs.vertices(fg::FeaturedGraph) = 1:fg.num_nodes
 
 function LightGraphs.outneighbors(fg::FeaturedGraph{<:COO_T}, i::Integer)
@@ -218,6 +232,7 @@ end
 
 function LightGraphs.adjacency_matrix(fg::FeaturedGraph{<:COO_T}, T::DataType=Int; dir=:out)
     A, n, m = to_sparse(graph(fg), T, num_nodes=fg.num_nodes)
+    @assert size(A) == (n, n)
     return dir == :out ? A : A'
 end
 
@@ -305,7 +320,13 @@ Normalized Laplacian matrix of graph `g`.
 """
 function normalized_laplacian(fg::FeaturedGraph, T::DataType=Float32; selfloop::Bool=false, dir::Symbol=:out)
     A = adjacency_matrix(fg, T; dir=dir)
-    selfloop && (A += I)
+    sz = size(A)
+    @assert sz[1] == sz[2]
+    if selfloop
+        A += I - Diagonal(A)
+    else
+        A -= Diagonal(A) 
+    end
     degs = vec(sum(A; dims=2))
     inv_sqrtD = Diagonal(inv.(sqrt.(degs)))
     return I - inv_sqrtD * A * inv_sqrtD
@@ -346,6 +367,7 @@ but also adding edges connecting the nodes to themselves.
 function add_self_loops(fg::FeaturedGraph{<:COO_T})
     s, t = edge_index(fg)
     @assert edge_feature(fg) === nothing
+    @assert edge_weight(fg) === nothing
     mask_old_loops = s .!= t
     s = s[mask_old_loops]
     t = t[mask_old_loops]
@@ -354,19 +376,32 @@ function add_self_loops(fg::FeaturedGraph{<:COO_T})
     s = [s; nodes]
     t = [t; nodes]
 
-    FeaturedGraph((s, t), fg.num_nodes, fg.num_edges,
+    FeaturedGraph((s, t, nothing), fg.num_nodes, length(s),
+        node_feature(fg), edge_feature(fg), global_feature(fg))
+end
+
+function add_self_loops(fg::FeaturedGraph{<:ADJMAT_T})
+    A = graph(fg)
+    @assert edge_feature(fg) === nothing
+    nold = sum(Diagonal(A)) |> Int
+    A = A - Diagonal(A) + I
+    num_edges =  fg.num_edges - nold + fg.num_nodes
+    FeaturedGraph(A, fg.num_nodes, num_edges,
         node_feature(fg), edge_feature(fg), global_feature(fg))
 end
 
 
 function remove_self_loops(fg::FeaturedGraph{<:COO_T})
     s, t = edge_index(fg)
+    # TODO remove these constraints
     @assert edge_feature(fg) === nothing
+    @assert edge_weight(fg) === nothing
+    
     mask_old_loops = s .!= t
     s = s[mask_old_loops]
     t = t[mask_old_loops]
 
-    FeaturedGraph((s, t), fg.num_nodes, fg.num_edges,
+    FeaturedGraph((s, t, nothing), fg.num_nodes, length(s),
         node_feature(fg), edge_feature(fg), global_feature(fg))
 end
 
@@ -375,8 +410,8 @@ end
 @non_differentiable adjacency_matrix(x...)
 @non_differentiable adjacency_list(x...)
 @non_differentiable degree(x...)
-@non_differentiable add_self_loops(x...)
-@non_differentiable remove_self_loops(x...)
+@non_differentiable add_self_loops(x...)     # TODO this is wrong, since fg carries feature arrays, needs rrule
+@non_differentiable remove_self_loops(x...)  # TODO this is wrong, since fg carries feature arrays, needs rrule
 
 # # delete when https://github.com/JuliaDiff/ChainRules.jl/pull/472 is merged
 # function ChainRulesCore.rrule(::typeof(copy), x)

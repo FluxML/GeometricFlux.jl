@@ -1,5 +1,6 @@
 using GeometricFlux
 using GeometricFlux.Datasets
+using GeometricFlux: sort_edge_index
 using Flux
 using CUDA
 using Flux: gpu
@@ -19,13 +20,13 @@ cuda_tests = [
 ]
 
 tests = [
-    "featured_graph",
-    "layers/gn",
-    "layers/msgpass",
-    "layers/conv",
-    "layers/pool",
-    "layers/misc",
-    "models",
+    # "featured_graph",
+    # "layers/gn",
+    # "layers/msgpass",
+    # "layers/conv",
+    # "layers/pool",
+    # "layers/misc",
+    # "models",
 ]
 
 if Flux.use_cuda[]
