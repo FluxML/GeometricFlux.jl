@@ -4,6 +4,7 @@ using GeometricFlux
 makedocs(
     sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
+      assets = ["assets/flux.css"],
       canonical = "https://fluxml.ai/GeometricFlux.jl/stable/",
       analytics = "G-M61P0B2Y8E",
     ),
