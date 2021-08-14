@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.7]
+
+- drop support of julia v1.4 and v1.5
+- support CUDA v3.3
+- support Flux v0.12
+- fix stable doc
+- add benchmark script
+- migrate scatter to NNlib
+- make gradient of GatedGraphConv available
+- Implement GINConv layer. (#186)
+- check consistency for vertex or edge number between graph and features
+- add manual for pooling layers and bypass_graph
+- deprecate FeatureSelector
+- not export GraphNetwork and MessagePassing APIs
+- new implementation for message-passing scheme
+
 ## [0.7.6]
 
 - Add dimensional check for each layer
