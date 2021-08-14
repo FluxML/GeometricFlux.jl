@@ -4,7 +4,7 @@ using GeometricFlux
 makedocs(
     sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
-      canonical = "https://yuehhua.github.io/GeometricFlux.jl/stable/",
+      canonical = "https://fluxml.ai/GeometricFlux.jl/stable/",
       analytics = "G-M61P0B2Y8E",
     ),
     clean = false,
