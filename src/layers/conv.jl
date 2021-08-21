@@ -499,10 +499,10 @@ end
 (l::CGConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf=l(fg, node_feature(fg),
                                                         edge_feature(fg)),
                                                ef=edge_feature(fg))
-(l::CGConv)(M::AbstractMatrix; edge=false) =
-    if !edge
-        l(l.fg, M, edge_feature(l.fg))
-    else
+(l::CGConv)(M::AbstractMatrix; as_edge=false) =
+    if as_edge
         l(l.fg, node_feature(l.fg), M)
+    else
+        l(l.fg, M, edge_feature(l.fg))
     end
 (l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)

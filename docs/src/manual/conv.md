@@ -127,7 +127,7 @@ Reference: [How Powerful are Graph Neural Networks?](https://arxiv.org/pdf/1810.
 \textbf{x}_i' = \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \sigma\left( \textbf{z}_{i,j} \textbf{W}_f + \textbf{b}_f \right) \odot \text{softplus}\left(\textbf{z}_{i,j} \textbf{W}_s + \textbf{b}_s \right)
 ```
 
-where ``\textbf{z}_{i,j} = [\textbf{x}_i, \textbf{x}_j}, \textbf{e}_{i,j}]`` denotes the concatenation of node features, neighboring node features, and edge features.
+where ``\textbf{z}_{i,j} = [\textbf{x}_i, \textbf{x}_j}, \textbf{e}_{i,j}]`` denotes the concatenation of node features, neighboring node features, and edge features. The operation ``\odot`` represents elementwise multiplication, and ``\sigma`` denotes the sigmoid function.
 
 ```@docs
 CGConv
