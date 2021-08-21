@@ -454,8 +454,12 @@ Crystal Graph Convolutional network. Uses both node and edge features.
 
 # Usage
 
-You can call `CGConv` in several different ways, including
-- With FeaturedGraph
+You can call `CGConv` in several different ways:
+                                    
+- Pass a FeaturedGraph: `CGConv(fg)`, returns `FeaturedGraph` 
+- Pass both node and edge features: `CGConv(X, E)` 
+- Pass one matrix, which can either be node features or edge features: `CGConv(M; edge)`:
+    `edge` is default false, meaning that `M` denotes node features.
 """
 struct CGConv{V <: AbstractFeaturedGraph, T,
               A <: AbstractMatrix{T}, B} <: MessagePassing
