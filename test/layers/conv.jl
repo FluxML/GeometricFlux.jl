@@ -1,4 +1,5 @@
 in_channel = 3
+in_channel_edge = 1
 out_channel = 5
 N = 4
 T = Float32
@@ -377,6 +378,28 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             @test size(g.nn.layers[1].weight) == size(gc.nn.layers[1].weight)
             @test size(g.nn.layers[1].bias) == size(gc.nn.layers[1].bias)
             @test !in(:eps, Flux.trainable(gc))
+        end
+    end
+
+    @testset "CGConv" begin
+        fg = FeaturedGraph(adj)
+        X = rand(Float32, in_channel, N)
+        E = rand(Float32, in_channel_edge, ne(fg))
+        Xt = transpose(rand(Float32, N, in_channel))
+        @testset "layer with graph" begin
+            cgc = CGConv(FeaturedGraph(adj),
+                         (in_channel, in_channel_edge))
+            @test size(cgc.Wf) == (in_channel, 2 * in_channel + in_channel_edge)
+            @test size(cgc.Ws) == (in_channel, 2 * in_channel + in_channel_edge)
+            @test size(cgc.bf) == (in_channel,)
+            @test size(cgc.bs) == (in_channel,)
+
+            Y = cgc(X, E)
+            @test size(Y) == (in_channel, N)
+
+            Yg = cgc(FeaturedGraph(adj, nf=X, ef=E))
+            @test size(node_feature(Yg)) == (in_channel, N)
+            @test edge_feature(Yg) == E
         end
     end
 end

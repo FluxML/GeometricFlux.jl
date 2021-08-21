@@ -436,3 +436,77 @@ end
 
 (l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
 (l::GINConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+
+
+"""
+    CGConv([fg,] (node_dim, edge_dim), out, init)
+
+Crystal Graph Convolutional network. Uses both node and edge features.
+
+# Arguments
+
+- `fg`: Optional [`FeaturedGraph`] argument(@ref)
+- `node_dim`: Dimensionality of the input node features. Also is necessarily the output dimensionality.
+- `edge_dim`: Dimensionality of the input edge features.
+- `out`: Dimensionality of the output features.
+- `init`: Initialization algorithm for each of the weight matrices
+- `bias`: Whether or not to learn an additive bias parameter.
+
+# Usage
+
+You can call `CGConv` in several different ways:
+                                    
+- Pass a FeaturedGraph: `CGConv(fg)`, returns `FeaturedGraph` 
+- Pass both node and edge features: `CGConv(X, E)` 
+- Pass one matrix, which can either be node features or edge features: `CGConv(M; edge)`:
+    `edge` is default false, meaning that `M` denotes node features.
+"""
+struct CGConv{V <: AbstractFeaturedGraph, T,
+              A <: AbstractMatrix{T}, B} <: MessagePassing
+    fg::V
+    Wf::A
+    Ws::A
+    bf::B
+    bs::B
+end
+
+@functor CGConv
+
+function CGConv(fg::AbstractFeaturedGraph, dims::NTuple{2,Int};
+                init=glorot_uniform, bias=true)
+    node_dim, edge_dim = dims
+    Wf = init(node_dim, 2*node_dim + edge_dim)
+    Ws = init(node_dim, 2*node_dim + edge_dim)
+    bf = Flux.create_bias(Wf, bias, node_dim)
+    bs = Flux.create_bias(Ws, bias, node_dim)
+    CGConv(fg, Wf, Ws, bf, bs)
+end
+
+function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true)
+    CGConv(NullGraph(), dims; init=init, bias=bias)
+end
+
+message(c::CGConv,
+        x_i::AbstractVector, x_j::AbstractVector, e::AbstractVector) = begin
+    z = vcat(x_i, x_j, e)
+    σ.(c.Wf * z + c.bf) .* softplus.(c.Ws * z + c.bs)
+end
+update(c::CGConv, m::AbstractVector, x) = x + m
+
+function (c::CGConv)(fg::FeaturedGraph, X::AbstractMatrix, E::AbstractMatrix)
+    check_num_nodes(fg, X)
+    check_num_edges(fg, E)
+    _, Y = propagate(c, adjacency_list(fg), E, X, +)
+    Y
+end
+
+(l::CGConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf=l(fg, node_feature(fg),
+                                                        edge_feature(fg)),
+                                               ef=edge_feature(fg))
+(l::CGConv)(M::AbstractMatrix; as_edge=false) =
+    if as_edge
+        l(l.fg, node_feature(l.fg), M)
+    else
+        l(l.fg, M, edge_feature(l.fg))
+    end
+(l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)

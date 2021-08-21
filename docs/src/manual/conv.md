@@ -120,3 +120,17 @@ where ``f_{\Theta}`` denotes a neural network parametrized by ``\Theta``, *i.e.*
 GINConv
 ```
 Reference: [How Powerful are Graph Neural Networks?](https://arxiv.org/pdf/1810.00826.pdf)
+
+## Crystal Graph Convolutional Network
+
+```math
+\textbf{x}_i' = \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \sigma\left( \textbf{z}_{i,j} \textbf{W}_f + \textbf{b}_f \right) \odot \text{softplus}\left(\textbf{z}_{i,j} \textbf{W}_s + \textbf{b}_s \right)
+```
+
+where ``\textbf{z}_{i,j} = [\textbf{x}_i, \textbf{x}_j}, \textbf{e}_{i,j}]`` denotes the concatenation of node features, neighboring node features, and edge features. The operation ``\odot`` represents elementwise multiplication, and ``\sigma`` denotes the sigmoid function.
+
+```@docs
+CGConv
+```
+
+Reference: [Crystal Graph Convolutional Neural Networks for an Accurate and Interpretable Prediction of Material Properties](https://arxiv.org/pdf/1710.10324.pdf)
