@@ -16,7 +16,7 @@ Graph convolutional layer.
 The input to the layer is a node feature array `X` 
 of size `(num_features, num_nodes)`.
 """
-struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph}
+struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph} <: AbstractGraphLayer
     weight::A
     bias::B
     σ::F
@@ -42,7 +42,6 @@ function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
 end
 
 (l::GCNConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GCNConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GCNConv)
     out, in = size(l.weight)
@@ -66,7 +65,7 @@ Chebyshev spectral graph convolutional layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 """
-struct ChebConv{A<:AbstractArray{<:Number,3}, B, S<:AbstractFeaturedGraph}
+struct ChebConv{A<:AbstractArray{<:Number,3}, B, S<:AbstractFeaturedGraph} <: AbstractGraphLayer
     weight::A
     bias::B
     fg::S
@@ -104,7 +103,6 @@ function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
 end
 
 (l::ChebConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::ChebConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::ChebConv)
     out, in, k = size(l.weight)
@@ -164,7 +162,6 @@ function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
 end
 
 (l::GraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GraphConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -272,7 +269,6 @@ function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
 end
 
 (l::GATConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GATConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -340,7 +336,6 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
 end
 
 (l::GatedGraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::GatedGraphConv)(x::AbstractMatrix) = l(l.fg, x)
 
 
 function Base.show(io::IO, l::GatedGraphConv)
@@ -383,7 +378,6 @@ function (ec::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
 end
 
 (l::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-(l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(", l.nn)
@@ -393,7 +387,7 @@ end
 
 
 """
-    GINConv([fg,] nn, [eps])
+    GINConv([fg,] nn, [eps=0])
 
     Graph Isomorphism Network.
 
@@ -401,26 +395,26 @@ end
 
 - `fg`: Optionally pass in a FeaturedGraph as input.
 - `nn`: A neural network/layer.
-- `eps`: Weighting factor. Default 0.
+- `eps`: Weighting factor.
 
 The definition of this is as defined in the original paper,
 Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
 """
-struct GINConv{V<:AbstractFeaturedGraph,R<:Real} <: MessagePassing
-    fg::V
+struct GINConv{G,R} <: MessagePassing
+    fg::G
     nn
     eps::R
+
+    function GINConv(fg::G, nn, eps::R=0f0) where {G<:AbstractFeaturedGraph,R<:Real}
+        new{G,R}(fg, nn, eps)
+    end
 end
 
-function GINConv(fg::AbstractFeaturedGraph, nn; eps=0f0)
-    GINConv(fg, nn, eps)
-end
-
-function GINConv(nn; eps=0f0) 
+function GINConv(nn, eps::Real=0f0)
     GINConv(NullGraph(), nn, eps)
 end
 
-Flux.trainable(g::GINConv) = (fg=g.fg,nn=g.nn)
+Flux.trainable(g::GINConv) = (fg=g.fg, nn=g.nn)
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
 update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
@@ -434,12 +428,11 @@ function (g::GINConv)(fg::FeaturedGraph, X::AbstractMatrix)
     X
 end
 
-(l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
 (l::GINConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
 
 
 """
-    CGConv([fg,] (node_dim, edge_dim), out, init)
+    CGConv([fg,] (node_dim, edge_dim), out, init, bias=true, as_edge=false)
 
 Crystal Graph Convolutional network. Uses both node and edge features.
 
@@ -451,6 +444,7 @@ Crystal Graph Convolutional network. Uses both node and edge features.
 - `out`: Dimensionality of the output features.
 - `init`: Initialization algorithm for each of the weight matrices
 - `bias`: Whether or not to learn an additive bias parameter.
+- `as_edge`: When call to layer `CGConv(M)`, accept input feature as node features or edge features.
 
 # Usage
 
@@ -458,11 +452,9 @@ You can call `CGConv` in several different ways:
                                     
 - Pass a FeaturedGraph: `CGConv(fg)`, returns `FeaturedGraph` 
 - Pass both node and edge features: `CGConv(X, E)` 
-- Pass one matrix, which can either be node features or edge features: `CGConv(M; edge)`:
-    `edge` is default false, meaning that `M` denotes node features.
+- Pass one matrix, which is determined as node features or edge features by `as_edge` keyword argument.
 """
-struct CGConv{V <: AbstractFeaturedGraph, T,
-              A <: AbstractMatrix{T}, B} <: MessagePassing
+struct CGConv{E, V<:AbstractFeaturedGraph, A<:AbstractMatrix, B} <: MessagePassing
     fg::V
     Wf::A
     Ws::A
@@ -472,18 +464,20 @@ end
 
 @functor CGConv
 
-function CGConv(fg::AbstractFeaturedGraph, dims::NTuple{2,Int};
-                init=glorot_uniform, bias=true)
+function CGConv(fg::G, dims::NTuple{2,Int};
+                init=glorot_uniform, bias=true, as_edge=false) where {G<:AbstractFeaturedGraph}
     node_dim, edge_dim = dims
     Wf = init(node_dim, 2*node_dim + edge_dim)
     Ws = init(node_dim, 2*node_dim + edge_dim)
     bf = Flux.create_bias(Wf, bias, node_dim)
     bs = Flux.create_bias(Ws, bias, node_dim)
-    CGConv(fg, Wf, Ws, bf, bs)
+    T, S = typeof(Wf), typeof(bf)
+
+    CGConv{as_edge,G,T,S}(fg, Wf, Ws, bf, bs)
 end
 
-function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true)
-    CGConv(NullGraph(), dims; init=init, bias=bias)
+function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true, as_edge=false)
+    CGConv(NullGraph(), dims; init=init, bias=bias, as_edge=as_edge)
 end
 
 message(c::CGConv,
@@ -503,10 +497,8 @@ end
 (l::CGConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf=l(fg, node_feature(fg),
                                                         edge_feature(fg)),
                                                ef=edge_feature(fg))
-(l::CGConv)(M::AbstractMatrix; as_edge=false) =
-    if as_edge
-        l(l.fg, node_feature(l.fg), M)
-    else
-        l(l.fg, M, edge_feature(l.fg))
-    end
+
 (l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)
+
+(l::CGConv{true})(M::AbstractMatrix) = l(l.fg, node_feature(l.fg), M)
+(l::CGConv{false})(M::AbstractMatrix) = l(l.fg, M, edge_feature(l.fg))

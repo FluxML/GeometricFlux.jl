@@ -357,7 +357,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
         eps = 0.001
 
         @testset "layer with graph" begin
-            gc = GINConv(FeaturedGraph(adj), nn, eps=eps)
+            gc = GINConv(FeaturedGraph(adj), nn, eps)
             @test size(gc.nn.layers[1].weight) == (out_channel, in_channel)
             @test size(gc.nn.layers[1].bias) == (out_channel, )
             @test graph(gc.fg) === adj

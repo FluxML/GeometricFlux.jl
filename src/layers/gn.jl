@@ -10,7 +10,7 @@ aggregate(aggr::typeof(max), X) = vec(maximum(X, dims=2))
 aggregate(aggr::typeof(min), X) = vec(minimum(X, dims=2))
 aggregate(aggr::typeof(mean), X) = vec(aggr(X, dims=2))
 
-abstract type GraphNet end
+abstract type GraphNet <: AbstractGraphLayer end
 
 @inline update_edge(gn::GraphNet, e, vi, vj, u) = e
 @inline update_vertex(gn::GraphNet, ē, vi, u) = vi

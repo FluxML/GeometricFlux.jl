@@ -6,7 +6,7 @@ N = 4
 adj = [0 1 0 1;
        1 0 1 0;
        0 1 0 1;
-       1 0 1 0]
+       1 0 1 0] |> gpu
 
 fg = FeaturedGraph(adj)
 
@@ -15,7 +15,7 @@ fg = FeaturedGraph(adj)
         gc = GCNConv(fg, in_channel=>out_channel) |> gpu
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        @test Array(adjacency_matrix(gc.fg)) == adj
+        @test collect(graph(gc.fg)) == Array(adj)
 
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
@@ -35,7 +35,7 @@ fg = FeaturedGraph(adj)
         cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        @test Array(adjacency_matrix(cc.fg)) == adj
+        @test collect(graph(cc.fg)) == Array(adj)
         @test cc.k == k
         @test cc.in_channel == in_channel
         @test cc.out_channel == out_channel
@@ -44,8 +44,8 @@ fg = FeaturedGraph(adj)
         Y = cc(X)
         @test size(Y) == (out_channel, N)
 
-        # g = Zygote.gradient(x -> sum(cc(x)), X)[1]
-        # @test size(g) == size(X)
+        g = Zygote.gradient(x -> sum(cc(x)), X)[1]
+        @test size(g) == size(X)
 
         # g = Zygote.gradient(model -> sum(model(X)), cc)[1]
         # @test size(g.weight) == size(cc.weight)
