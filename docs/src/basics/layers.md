@@ -12,7 +12,7 @@ In the example above, The first argument `adj_mat` is the representation of a gr
 The initialization function `GCNConv(...)` constructs a `GCNConv` layer. For most of the layer types in GeometricFlux, a layer can be initialized in at least two ways:
 
 * Initializing with a predefined adjacency matrix or `FeaturedGraph`, followed by the other parameters. For most of the layer types, this is for datasets where each input has the same graph structure.
-* Initializing without an initial graph argument, only supplying the relevant parameters. This allows the layer to accept different graph infrastructures.
+* Initializing *without* an initial graph argument, only supplying the relevant parameters. This allows the layer to accept different graph structures.
 
 # Applying layers
 
