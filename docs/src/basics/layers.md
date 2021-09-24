@@ -18,7 +18,7 @@ The initialization function `GCNConv(...)` constructs a `GCNConv` layer. For mos
 
 When using GNN layers, the general guidelines are:
 
-* If you pass in a ``n \times d`` matrix of node features, and the layer maps node features ``\mathbb R^d \rightarrow \mathbb R^k`` then the output will be in matrix with dimensions ``n \times k``. The same ostensibly goes for edge features but as of now no layer type supports outputting new edge features.
+* If you pass in a ``n \times d`` matrix of node features, and the layer maps node features ``\mathbb{R}^d \rightarrow \mathbb{R}^k`` then the output will be in matrix with dimensions ``n \times k``. The same ostensibly goes for edge features but as of now no layer type supports outputting new edge features.
 * If you pass in a `FeaturedGraph`, the output will be also be a `FeaturedGraph` with modified node (and/or edge) features. Add `node_feature` as the following entry in the Flux chain (or simply call `node_feature()` on the output) if you wish to subsequently convert them to matrix form.
 
 
