@@ -1,24 +1,17 @@
-in_channel = 3
-in_channel_edge = 1
-out_channel = 5
-N = 4
-T = Float32
-adj = T[0. 1. 0. 1.;
-       1. 0. 1. 0.;
-       0. 1. 0. 1.;
-       1. 0. 1. 0.]
-
-fg = FeaturedGraph(adj)
-    
-adj_single_vertex = T[0. 0. 0. 1.;
-                      0. 0. 0. 0.;
-                      0. 0. 0. 1.;
-                      1. 0. 1. 0.]
-
-fg_single_vertex = FeaturedGraph(adj_single_vertex)
-            
-
 @testset "layer" begin
+    T = Float32
+    in_channel = 3
+    in_channel_edge = 1
+    out_channel = 5
+
+    N = 4
+    E = 4
+    adj = T[0. 1. 0. 1.;
+            1. 0. 1. 0.;
+            0. 1. 0. 1.;
+            1. 0. 1. 0.]
+    fg = FeaturedGraph(adj)
+
     @testset "GCNConv" begin
         X = rand(T, in_channel, N)
         Xt = transpose(rand(T, N, in_channel))
@@ -26,7 +19,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             gc = GCNConv(fg, in_channel=>out_channel)
             @test size(gc.weight) == (out_channel, in_channel)
             @test size(gc.bias) == (out_channel,)
-            @test graph(gc.fg) === adj
+            @test adjacency_matrix(gc.fg) == adj
 
             Y = gc(X)
             @test size(Y) == (out_channel, N)
@@ -82,7 +75,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             cc = ChebConv(fg, in_channel=>out_channel, k)
             @test size(cc.weight) == (out_channel, in_channel, k)
             @test size(cc.bias) == (out_channel,)
-            @test graph(cc.fg) === adj
+            @test adjacency_matrix(cc.fg) == adj
             @test cc.k == k
             
             Y = cc(X)
@@ -190,20 +183,26 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
     end
 
     @testset "GATConv" begin
+        adj1 = [1 1 0 1;
+                1 1 1 0;
+                0 1 1 1;
+                1 0 1 1]
+        fg1 = FeaturedGraph(adj1)
+
+        # isolated_vertex
+        adj2 = [1 0 0 1;
+                0 1 0 0;
+                0 0 1 1;
+                1 0 1 1]
+        fg2 = FeaturedGraph(adj2)
 
         X = rand(T, in_channel, N)
         Xt = transpose(rand(T, N, in_channel))
 
         @testset "layer with graph" begin
-            for heads = [1, 2], concat = [true, false], adj_gat in [adj, adj_single_vertex]
+            for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
                 fg_gat = FeaturedGraph(adj_gat)
                 gat = GATConv(fg_gat, in_channel=>out_channel, heads=heads, concat=concat)
-
-                if adj_gat == adj
-                    @test adjacency_list(gat.fg) == [[2,4], [1,3], [2,4], [1,3]]
-                elseif adj_gat == adj_single_vertex
-                    @test adjacency_list(gat.fg) == [[4], Int64[], [4], [1, 3]]
-                end
 
                 @test size(gat.weight) == (out_channel * heads, in_channel)
                 @test size(gat.bias) == (out_channel * heads,)
@@ -227,7 +226,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
         end
 
         @testset "layer without graph" begin
-            for heads = [1, 2], concat = [true, false], adj_gat in [adj, adj_single_vertex]
+            for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
                 fg_gat = FeaturedGraph(adj_gat, nf=X)
                 gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
                 @test size(gat.weight) == (out_channel * heads, in_channel)
@@ -360,7 +359,7 @@ fg_single_vertex = FeaturedGraph(adj_single_vertex)
             gc = GINConv(FeaturedGraph(adj), nn, eps)
             @test size(gc.nn.layers[1].weight) == (out_channel, in_channel)
             @test size(gc.nn.layers[1].bias) == (out_channel, )
-            @test graph(gc.fg) === adj
+            @test adjacency_matrix(gc.fg) == adj
 
             Y = gc(FeaturedGraph(adj, nf=X))
             @test size(node_feature(Y)) == (out_channel, N)

@@ -5,6 +5,7 @@ version = "0.7.7"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
@@ -20,9 +21,10 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-CUDA = "3.3"
+CUDA = "3"
+ChainRulesCore = "1.7"
 DataStructures = "0.18"
-FillArrays = "0.11, 0.12"
+FillArrays = "0.12"
 Flux = "0.12"
 GraphMLDatasets = "0.1"
 GraphSignals = "0.3"

@@ -6,9 +6,9 @@ N = 4
 adj = [0 1 0 1;
        1 0 1 0;
        0 1 0 1;
-       1 0 1 0] |> gpu
+       1 0 1 0]
 
-fg = FeaturedGraph(adj)
+fg = FeaturedGraph(adj) |> gpu
 
 @testset "cuda/conv" begin
     @testset "GCNConv" begin
@@ -47,9 +47,9 @@ fg = FeaturedGraph(adj)
         g = Zygote.gradient(x -> sum(cc(x)), X)[1]
         @test size(g) == size(X)
 
-        # g = Zygote.gradient(model -> sum(model(X)), cc)[1]
-        # @test size(g.weight) == size(cc.weight)
-        # @test size(g.bias) == size(cc.bias)
+        g = Zygote.gradient(model -> sum(model(X)), cc)[1]
+        @test size(g.weight) == size(cc.weight)
+        @test size(g.bias) == size(cc.bias)
     end
 
     @testset "GraphConv" begin

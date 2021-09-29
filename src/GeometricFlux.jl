@@ -5,6 +5,7 @@ using LinearAlgebra: Adjoint, norm, Transpose
 using Reexport
 
 using CUDA
+using ChainRulesCore: @non_differentiable
 using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
@@ -66,7 +67,6 @@ include("layers/pool.jl")
 include("models.jl")
 include("layers/misc.jl")
 
-include("cuda/msgpass.jl")
 include("cuda/conv.jl")
 
 using .Datasets
