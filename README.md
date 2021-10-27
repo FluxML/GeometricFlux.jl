@@ -34,7 +34,7 @@ GeometricFlux handles graph data (the topology plus node/vertex/graph features)
 thanks to the type `FeaturedGraph`.
 
 A `FeaturedGraph` can be constructed out of 
-adjacency matrices, adjacency lists, LightGraphs' types...
+adjacency matrices, adjacency lists, Graphs' types...
 
 ```julia
 fg = FeaturedGraph(adj_list)   

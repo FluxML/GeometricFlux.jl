@@ -10,7 +10,7 @@ A static graph is used to reduce redundant computation during passing through la
 GCNConv(adj_mat, feat=>h1, relu)
 ```
 
-`Simple(Di)Graph`, `SimpleWeighted(Di)Graph` or `Meta(Di)Graph` provided by the packages LightGraphs, SimpleWeightedGraphs and MetaGraphs, respectively, are valid arguments for passing as a static graph to this layer. An adjacency list is also accepted in the type of `Vector{Vector}` is also accepted.
+`Simple(Di)Graph`, `SimpleWeighted(Di)Graph` or `Meta(Di)Graph` provided by the packages Graphs, SimpleWeightedGraphs and MetaGraphs, respectively, are valid arguments for passing as a static graph to this layer. An adjacency list is also accepted in the type of `Vector{Vector}` is also accepted.
 
 ## Variable graph
 
@@ -20,7 +20,7 @@ Variable graphs are supported through `FeaturedGraph`, which contains both the g
 FeaturedGraph(adj_mat, features)
 ```
 
-`Simple(Di)Graph`, `SimpleWeighted(Di)Graph` or `Meta(Di)Graph` provided by the packages LightGraphs, SimpleWeightedGraphs and MetaGraphs, respectively, are acceptable for constructing a `FeaturedGraph`. An adjacency list is also accepted, too.
+`Simple(Di)Graph`, `SimpleWeighted(Di)Graph` or `Meta(Di)Graph` provided by the packages Graphs, SimpleWeightedGraphs and MetaGraphs, respectively, are acceptable for constructing a `FeaturedGraph`. An adjacency list is also accepted, too.
 
 ## Cached graph in layers
 
