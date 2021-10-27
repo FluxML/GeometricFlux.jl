@@ -1,4 +1,4 @@
-using Flux, GeometricFlux, LightGraphs, BenchmarkTools, CUDA
+using Flux, GeometricFlux, Graphs, BenchmarkTools, CUDA
 using DataFrames, Statistics, JLD2, SparseArrays
 
 BenchmarkTools.ratio(::Missing, x) = Inf

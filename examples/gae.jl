@@ -6,8 +6,8 @@ using Flux: @epochs
 using JLD2
 using Statistics: mean
 using SparseArrays
-using LightGraphs.SimpleGraphs
-using LightGraphs: adjacency_matrix
+using Graphs.SimpleGraphs
+using Graphs: adjacency_matrix
 using CUDA
 
 @load "data/cora_features.jld2" features

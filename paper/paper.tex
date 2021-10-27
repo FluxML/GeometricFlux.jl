@@ -139,7 +139,7 @@ graph is packed within FeaturedGraph data structure as input of GNN layer. Stati
 processed for efficiency in prior during constructing GNN layer and variable graphs are
 processed during network training time. In this framework, graph network block is designed as
 fundamental layers. Each layer accepts input of node features, edge features, global features
-and graph. Graph structures from LightGraphs.jl, SimpleWeightedGraphs.jl and MetaGraphs.jl
+and graph. Graph structures from Graphs.jl, SimpleWeightedGraphs.jl and MetaGraphs.jl
 are accepted. FeaturedGraph is designed as generic data structure for containing different
 kinds of features and graph structure.
 
@@ -157,16 +157,16 @@ Conclusively, layers implemented in GeometricFlux are compatible with regular Fl
 \section{Integration with JuliaGraphs}
 
 JuliaGraphs already forms a whole ecosystem for graph operations, graph visualization and
-solving problems in graph theory. LightGraphs.jl and SimpleWeightedGraphs.jl provides the
+solving problems in graph theory. Graphs.jl and SimpleWeightedGraphs.jl provides the
 graph construction and representation in unweighted and weighted graphs.
 MetaGraphs.jl provides user the chance to assign properties on nodes, edges or global graph.
 Integration with JuliaGraphs ecosystem provides more ways to assign graph to model and
 reduce the effort of transformation between data types. Graph representation constructed
-from LightGraphs.jl, SimpleWeightedGraphs.jl and MetaGraphs.jl are accepted in construction
+from Graphs.jl, SimpleWeightedGraphs.jl and MetaGraphs.jl are accepted in construction
 of geometric deep learning model in GeometricFlux. Under construction of graph convolutional
 layer, a static graph is accepted as one of arguments of neural network layer during
 configuring model. In the context of using variable graph, FeaturedGraph also accepts graph
-representation constructed from LightGraphs.jl, SimpleWeightedGraphs.jl and MetaGraphs.jl
+representation constructed from Graphs.jl, SimpleWeightedGraphs.jl and MetaGraphs.jl
 and can be fed as sample directly to model. This feature accepts graph representations
 from JuliaGraphs ecosystem to geometric deep learning model.
 

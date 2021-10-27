@@ -2,7 +2,7 @@ using GeometricFlux, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
 using Flux: onehotbatch, onecold, logitcrossentropy, throttle
 using Flux: @epochs
 using Statistics: mean
-using LightGraphs: adjacency_matrix
+using Graphs: adjacency_matrix
 
 # Load the dataset
 @load "data/cora_features.jld2" features

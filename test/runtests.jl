@@ -4,7 +4,7 @@ using Flux
 using Flux: @functor
 using FillArrays
 using GraphSignals
-using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
+using Graphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using LinearAlgebra
 using NNlib
 using SparseArrays: SparseMatrixCSC
