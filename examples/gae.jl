@@ -7,7 +7,6 @@ using JLD2
 using Statistics: mean
 using SparseArrays
 using Graphs.SimpleGraphs
-using Graphs: adjacency_matrix
 using CUDA
 
 @load "data/cora_features.jld2" features
@@ -21,13 +20,13 @@ target_catg = 7
 epochs = 200
 
 ## Preprocessing data
-adj_mat = Matrix{Float32}(adjacency_matrix(g)) |> gpu
+fg = FeaturedGraph(g) |> gpu
 train_X = Matrix{Float32}(features) |> gpu  # dim: num_features * num_nodes
-train_y = adj_mat  # dim: num_nodes * num_nodes
+train_y = fg  # dim: num_nodes * num_nodes
 
 ## Model
-encoder = Chain(GCNConv(adj_mat, num_features=>hidden1, relu),
-                GCNConv(adj_mat, hidden1=>hidden2))
+encoder = Chain(GCNConv(fg, num_features=>hidden1, relu),
+                GCNConv(fg, hidden1=>hidden2))
 model = Chain(GAE(encoder, σ)) |> gpu
 
 ## Loss

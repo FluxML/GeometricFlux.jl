@@ -2,7 +2,6 @@ using GeometricFlux, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
 using Flux: onehotbatch, onecold, logitcrossentropy, throttle
 using Flux: @epochs
 using Statistics: mean
-using Graphs: adjacency_matrix
 
 # Load the dataset
 @load "data/cora_features.jld2" features
@@ -19,22 +18,22 @@ epochs = 40
 # Preprocess the data and compute adjacency matrix
 train_X = Matrix{Float32}(features)  # dim: num_features * num_nodes
 train_y = Float32.(labels)  # dim: target_catg * num_nodes
-adj_mat = Matrix{Float32}(adjacency_matrix(g))
+fg = FeaturedGraph(g)
 
 # Define the Neural GDE
 diffeqarray_to_array(x) = reshape(cpu(x), size(x)[1:2])
 
 node = NeuralODE(
-    GCNConv(adj_mat, hidden=>hidden),
+    GCNConv(fg, hidden=>hidden),
     (0.f0, 1.f0), Tsit5(), save_everystep = false,
     reltol = 1e-3, abstol = 1e-3, save_start = false
 )
 
-model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
+model = Chain(GCNConv(fg, num_features=>hidden, relu),
               Dropout(0.5),
               node,
               diffeqarray_to_array,
-              GCNConv(adj_mat, hidden=>target_catg),
+              GCNConv(fg, hidden=>target_catg),
               softmax)
 
 # Loss
