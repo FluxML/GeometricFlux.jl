@@ -1,5 +1,6 @@
 using GeometricFlux
 using GeometricFlux.Datasets
+using CUDA
 using Flux
 using Flux: @functor
 using FillArrays
@@ -26,8 +27,7 @@ tests = [
     "models",
 ]
 
-if Flux.use_cuda[]
-    using CUDA
+if CUDA.functional()
     using Flux: gpu
     using NNlibCUDA
     append!(tests, cuda_tests)
