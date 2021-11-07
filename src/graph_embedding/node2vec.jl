@@ -1,21 +1,23 @@
-Alias = Tuple{SparseVector{Int}, SparseVector{Float64}}
+const Alias = Tuple{SparseVector{Int}, SparseVector{Float64}}
 
 """
-    Computes node embeddings on graph `g`, as per [1]
+    node2vec(g; walks_per_node, len, p, q)
 
-Conducts biased random walks on the graph, then computes word embeddings
-by treating those random walks like sentences.
+Computes node embeddings on graph `g`, as per [1]. Performs biased random walks on the graph,
+then computes word embeddings by treating those random walks like sentences.
 
 # Arguments
+
+- `g::AbstractGraph`: The graph to perform random walk on.
 - `walks_per_node::Int`: Number of walks starting on each node,
 total number of walks is `nv(g) * walks_per_node`
 - `len::Int`: Length of random walks
-- `p::Float64`: Return parameter from [1]
-- `q::Float64`: In-out parameter from [1]
+- `p::Real`: Return parameter from [1]
+- `q::Real`: In-out parameter from [1]
 
 [1] https://cs.stanford.edu/~jure/pubs/node2vec-kdd16.pdf
 """
-function node2vec(g::AbstractGraph; walks_per_node::Int, len::Int, p::Float64, q::Float64)::Vector{Vector{Int}}
+function node2vec(g::AbstractGraph; walks_per_node::Int=100, len::Int=5, p::Real=0.5, q::Real=0.5)
     walks = simulate_walks(g; walks_per_node=walks_per_node, len=len, p=p, q=q)
     model = walks2vec(walks)
     return copy(model.vectors)
@@ -68,7 +70,7 @@ function node2vec_walk(
     current::Int = start_node
     for _ in 2:walk_length
         curr = walk[end]
-        cur_nbrs = sort(neighbors(g, curr))
+        cur_nbrs = sort(Graphs.neighbors(g, curr))
         if length(walk) == 1
             push!(walk, cur_nbrs[alias_sample(alias_nodes[curr]...)])
         else
@@ -82,8 +84,8 @@ end
 
 "Returns J and q for a given edge"
 function get_alias_edge(g::AbstractGraph, src::Int, dst::Int, p::Float64, q::Float64)::Alias
-    unnormalized_probs = spzeros(length(neighbors(g, dst)))
-    for (i, dst_nbr) in enumerate(sort(neighbors(g, dst)))
+    unnormalized_probs = spzeros(length(Graphs.neighbors(g, dst)))
+    for (i, dst_nbr) in enumerate(sort(Graphs.neighbors(g, dst)))
         if dst_nbr == src
             unnormalized_probs[i] = 1/p
         elseif has_edge(g, dst_nbr, src)
@@ -109,12 +111,12 @@ function preprocess_modified_weights(g::AbstractGraph, p::Float64, q::Float64)
     alias_edges::Dict{Tuple{Int, Int}, Alias} = Dict()
 
     for node in vertices(g)
-        probs = [1 / length(neighbors(g, node)) for _ in neighbors(g, node)]
+        probs = [1 / length(Graphs.neighbors(g, node)) for _ in Graphs.neighbors(g, node)]
         alias_nodes[node] =  alias_setup(probs)
     end
     for edge in edges(g)
         alias_edges[(edge.src, edge.dst)] = get_alias_edge(g, edge.src, edge.dst, p, q)
-        if !is_directed(g)
+        if !Graphs.is_directed(g)
             alias_edges[(edge.dst, edge.src)] = get_alias_edge(g, edge.dst, edge.src, p, q)
         end
     end
