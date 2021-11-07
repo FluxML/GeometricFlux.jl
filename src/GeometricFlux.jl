@@ -13,6 +13,10 @@ using NNlib, NNlibCUDA
 using GraphSignals
 using Graphs
 using Zygote
+using Random
+using SparseArrays
+using DelimitedFiles
+import Word2Vec: word2vec, wordvectors
 
 export
     # layers/graphlayers
@@ -52,7 +56,10 @@ export
     bypass_graph,
 
     # utils
-    generate_cluster
+    generate_cluster,
+
+    #node2vec
+    node2vec
 
 include("datasets.jl")
 
@@ -66,6 +73,9 @@ include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
 include("layers/misc.jl")
+
+include("graph_embedding/alias-sampling.jl")
+include("graph_embedding/node2vec.jl")
 
 include("cuda/conv.jl")
 
