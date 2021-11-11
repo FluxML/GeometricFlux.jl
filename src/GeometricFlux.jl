@@ -74,7 +74,7 @@ include("layers/pool.jl")
 include("models.jl")
 include("layers/misc.jl")
 
-include("graph_embedding/alias-sampling.jl")
+include("graph_embedding/sampling.jl")
 include("graph_embedding/node2vec.jl")
 
 include("cuda/conv.jl")
