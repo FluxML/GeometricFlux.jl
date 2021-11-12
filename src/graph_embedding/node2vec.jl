@@ -8,7 +8,7 @@ then computes word embeddings by treating those random walks like sentences.
 
 # Arguments
 
-- `g::AbstractGraph`: The graph to perform random walk on.
+- `g::FeaturedGraph`: The graph to perform random walk on.
 - `walks_per_node::Int`: Number of walks starting on each node,
 total number of walks is `nv(g) * walks_per_node`
 - `len::Int`: Length of random walks
@@ -17,7 +17,7 @@ total number of walks is `nv(g) * walks_per_node`
 
 [1] https://cs.stanford.edu/~jure/pubs/node2vec-kdd16.pdf
 """
-function node2vec(g::AbstractGraph; walks_per_node::Int=100, len::Int=5, p::Real=0.5, q::Real=0.5)
+function node2vec(g::FeaturedGraph; walks_per_node::Int=100, len::Int=5, p::Real=0.5, q::Real=0.5)
     walks = simulate_walks(g; walks_per_node=walks_per_node, len=len, p=p, q=q)
     model = walks2vec(walks)
     return copy(model.vectors)
@@ -61,7 +61,7 @@ weighted by alias sampling probabilities `alias_nodes`
 and `alias_edges`
 """
 function node2vec_walk(
-    g::AbstractGraph,
+    g::FeaturedGraph,
     alias_nodes::Dict{Int, Alias},
     alias_edges::Dict{Tuple{Int, Int}, Alias};
     start_node::Int,
@@ -70,7 +70,7 @@ function node2vec_walk(
     current::Int = start_node
     for _ in 2:walk_length
         curr = walk[end]
-        cur_nbrs = sort(Graphs.outneighbors(g, curr))
+        cur_nbrs = sort(outneighbors(g, curr))
         if length(walk) == 1
             push!(walk, cur_nbrs[alias_sample(alias_nodes[curr]...)])
         else
@@ -83,15 +83,15 @@ function node2vec_walk(
 end
 
 "Returns J and q for a given edge"
-function get_alias_edge(g::AbstractGraph, src::Int, dst::Int, p::Float64, q::Float64)::Alias
-    unnormalized_probs = spzeros(length(Graphs.outneighbors(g, dst)))
-    for (i, dst_nbr) in enumerate(sort(Graphs.outneighbors(g, dst)))
+function get_alias_edge(g::FeaturedGraph, src::Int, dst::Int, p::Float64, q::Float64)::Alias
+    unnormalized_probs = spzeros(length(outneighbors(g, dst)))
+    for (i, (dst_nbr, weight)) in enumerate(weighted_outneighbors(g, dst))
         if dst_nbr == src
-            unnormalized_probs[i] = 1/p
+            unnormalized_probs[i] = weight/p
         elseif has_edge(g, dst_nbr, src)
-            unnormalized_probs[i] = 1
+            unnormalized_probs[i] = weight
         else
-            unnormalized_probs[i] = 1/q
+            unnormalized_probs[i] = weight/q
         end
     end
     normalized_probs = unnormalized_probs ./ sum(unnormalized_probs)
@@ -105,13 +105,13 @@ using return parameter `p` and In-out parameter `q`
 Implementation as specified in the node2vec paper by Grover and Leskovec (2016)
 https://cs.stanford.edu/~jure/pubs/node2vec-kdd16.pdf
 """
-function preprocess_modified_weights(g::AbstractGraph, p::Float64, q::Float64)
+function preprocess_modified_weights(g::FeaturedGraph, p::Float64, q::Float64)
 
     alias_nodes::Dict{Int, Alias} = Dict()
     alias_edges::Dict{Tuple{Int, Int}, Alias} = Dict()
 
     for node in vertices(g)
-        probs = [1 / length(Graphs.outneighbors(g, node)) for _ in Graphs.outneighbors(g, node)]
+        probs = [1 / length(outneighbors(g, node)) for _ in outneighbors(g, node)]
         alias_nodes[node] =  alias_setup(probs)
     end
     for edge in edges(g)
@@ -125,7 +125,7 @@ end
 
 
 "Given a graph, compute `walks_per_node` * nv(g) random walks."
-function simulate_walks(g::AbstractGraph; walks_per_node::Int, len::Int, p::Float64, q::Float64)::Vector{Vector{Int}}
+function simulate_walks(g::FeaturedGraph; walks_per_node::Int, len::Int, p::Float64, q::Float64)::Vector{Vector{Int}}
     alias_nodes, alias_edges = preprocess_modified_weights(g, p, q)
     walks::Vector{Vector{Int}} = []
     for _ in 1:walks_per_node
