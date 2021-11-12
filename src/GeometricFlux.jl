@@ -12,10 +12,12 @@ using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
 using NNlib, NNlibCUDA
 using GraphSignals
 using Graphs
-using Zygote
 using Random
+using Zygote
 using SparseArrays
 using DelimitedFiles
+
+import Graphs: neighbors, is_directed
 import Word2Vec: word2vec, wordvectors
 
 export

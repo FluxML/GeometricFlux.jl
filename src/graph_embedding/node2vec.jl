@@ -70,7 +70,7 @@ function node2vec_walk(
     current::Int = start_node
     for _ in 2:walk_length
         curr = walk[end]
-        cur_nbrs = sort(Graphs.neighbors(g, curr))
+        cur_nbrs = sort(Graphs.outneighbors(g, curr))
         if length(walk) == 1
             push!(walk, cur_nbrs[alias_sample(alias_nodes[curr]...)])
         else
@@ -84,8 +84,8 @@ end
 
 "Returns J and q for a given edge"
 function get_alias_edge(g::AbstractGraph, src::Int, dst::Int, p::Float64, q::Float64)::Alias
-    unnormalized_probs = spzeros(length(Graphs.neighbors(g, dst)))
-    for (i, dst_nbr) in enumerate(sort(Graphs.neighbors(g, dst)))
+    unnormalized_probs = spzeros(length(Graphs.outneighbors(g, dst)))
+    for (i, dst_nbr) in enumerate(sort(Graphs.outneighbors(g, dst)))
         if dst_nbr == src
             unnormalized_probs[i] = 1/p
         elseif has_edge(g, dst_nbr, src)
@@ -111,12 +111,12 @@ function preprocess_modified_weights(g::AbstractGraph, p::Float64, q::Float64)
     alias_edges::Dict{Tuple{Int, Int}, Alias} = Dict()
 
     for node in vertices(g)
-        probs = [1 / length(Graphs.neighbors(g, node)) for _ in Graphs.neighbors(g, node)]
+        probs = [1 / length(Graphs.outneighbors(g, node)) for _ in Graphs.outneighbors(g, node)]
         alias_nodes[node] =  alias_setup(probs)
     end
     for edge in edges(g)
         alias_edges[(edge.src, edge.dst)] = get_alias_edge(g, edge.src, edge.dst, p, q)
-        if !Graphs.is_directed(g)
+        if !is_directed(g)
             alias_edges[(edge.dst, edge.src)] = get_alias_edge(g, edge.dst, edge.src, p, q)
         end
     end
