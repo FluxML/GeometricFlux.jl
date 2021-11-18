@@ -5,7 +5,7 @@ using Flux
 using Flux: @functor
 using FillArrays
 using GraphSignals
-using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
+using Graphs
 using LinearAlgebra
 using NNlib, NNlibCUDA
 using SparseArrays: SparseMatrixCSC
