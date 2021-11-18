@@ -324,13 +324,15 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
     adj = adjacency_list(fg)
     if m < ggc.out_ch
-        Hpad = similar(H, S, ggc.out_ch - m, n)
-        H = vcat(H, fill!(Hpad, 0))
+        Hpad = Zygote.ignore() do
+            fill!(similar(H, S, ggc.out_ch - m, n), 0)
+        end
+        H = vcat(H, Hpad)
     end
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
         _, M = propagate(ggc, adj, Fill(0.f0, 0, ne(fg)), M, +)
-        H, _ = ggc.gru(H, M)  # BUG: FluxML/Flux.jl#1381
+        H, _ = ggc.gru(H, M)
     end
     H
 end
