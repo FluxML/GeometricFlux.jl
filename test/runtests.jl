@@ -1,12 +1,13 @@
 using GeometricFlux
 using GeometricFlux.Datasets
+using CUDA
 using Flux
 using Flux: @functor
 using FillArrays
 using GraphSignals
 using LightGraphs: SimpleGraph, SimpleDiGraph, add_edge!, nv, ne
 using LinearAlgebra
-using NNlib
+using NNlib, NNlibCUDA
 using SparseArrays: SparseMatrixCSC
 using Statistics: mean
 using Zygote
@@ -26,10 +27,7 @@ tests = [
     "models",
 ]
 
-if Flux.use_cuda[]
-    using CUDA
-    using Flux: gpu
-    using NNlibCUDA
+if CUDA.functional()
     append!(tests, cuda_tests)
 else
     @warn "CUDA unavailable, not testing GPU support"
