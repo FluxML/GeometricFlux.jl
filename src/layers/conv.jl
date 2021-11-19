@@ -37,8 +37,10 @@ GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
 @functor GCNConv
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    L̃ = normalized_laplacian(fg, eltype(x); selfloop=true)
-    l.σ.(l.weight * x * L̃ .+ l.bias)
+    Ã = Zygote.ignore() do
+        GraphSignals.normalized_adjacency_matrix(fg, eltype(x); selfloop=true)
+    end
+    l.σ.(l.weight * x * Ã .+ l.bias)
 end
 
 (l::GCNConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
@@ -86,10 +88,12 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
 @functor ChebConv
 
 function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
-    check_num_nodes(fg, X)
+    GraphSignals.check_num_nodes(fg, X)
     @assert size(X, 1) == size(c.weight, 2) "Input feature size must match input channel size."
     
-    L̃ = scaled_laplacian(fg, eltype(X))    
+    L̃ = Zygote.ignore() do
+        GraphSignals.scaled_laplacian(fg, eltype(X))
+    end
 
     Z_prev = X
     Z = X * L̃
@@ -156,12 +160,13 @@ message(gc::GraphConv, x_i, x_j::AbstractVector, e_ij) = gc.weight2 * x_j
 update(gc::GraphConv, m::AbstractVector, x::AbstractVector) = gc.σ.(gc.weight1*x .+ m .+ gc.bias)
 
 function (gc::GraphConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    check_num_nodes(fg, x)
-    _, x = propagate(gc, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), x, +)
+    GraphSignals.check_num_nodes(fg, x)
+    _, x, _ = propagate(gc, graph(fg), edge_feature(fg), x, global_feature(fg), +)
     x
 end
 
 (l::GraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+# (l::GraphConv)(fg::FeaturedGraph) = propagate(l, fg, +)  # edge number check break this
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -239,21 +244,21 @@ function apply_batch_message(gat::GATConv, i, js, X::AbstractMatrix)
     reshape(msgs, (n-1)*gat.heads, :)
 end
 
-update_batch_edge(gat::GATConv, adj, E::AbstractMatrix, X::AbstractMatrix, u) = update_batch_edge(gat, adj, X)
-
-function update_batch_edge(gat::GATConv, adj, X::AbstractMatrix)
-    n = size(adj, 1)
-    # a vertex must always receive a message from itself
-    Zygote.ignore() do
-        GraphLaplacians.add_self_loop!(adj, n)
-    end
-    mapreduce(i -> apply_batch_message(gat, i, adj[i], X), hcat, 1:n)
+function update_batch_edge(gat::GATConv, sg::SparseGraph, E::AbstractMatrix, X::AbstractMatrix, u)
+    @assert check_self_loops(sg) "a vertex must have self loop (receive a message from itself)."
+    mapreduce(i -> apply_batch_message(gat, i, neighbors(sg, i), X), hcat, 1:nv(sg))
 end
 
-# The same as update function in batch manner
-update_batch_vertex(gat::GATConv, M::AbstractMatrix, X::AbstractMatrix, u) = update_batch_vertex(gat, M)
+function check_self_loops(sg::SparseGraph)
+    for i in 1:nv(sg)
+        if !(i in GraphSignals.rowvalview(sg.S, i))
+            return false
+        end
+    end
+    return true
+end
 
-function update_batch_vertex(gat::GATConv, M::AbstractMatrix)
+function update_batch_vertex(gat::GATConv, M::AbstractMatrix, X::AbstractMatrix, u)
     M = M .+ gat.bias
     if !gat.concat
         N = size(M, 2)
@@ -263,12 +268,13 @@ function update_batch_vertex(gat::GATConv, M::AbstractMatrix)
 end
 
 function (gat::GATConv)(fg::FeaturedGraph, X::AbstractMatrix)
-    check_num_nodes(fg, X)
-    _, X = propagate(gat, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, +)
-    X
+    GraphSignals.check_num_nodes(fg, X)
+    _, X, _ = propagate(gat, graph(fg), edge_feature(fg), X, global_feature(fg), +)
+    return X
 end
 
 (l::GATConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+# (l::GATConv)(fg::FeaturedGraph) = propagate(l, fg, +)  # edge number check break this
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -319,10 +325,9 @@ update(ggc::GatedGraphConv, m::AbstractVector, x) = m
 
 
 function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
-    check_num_nodes(fg, H)
+    GraphSignals.check_num_nodes(fg, H)
     m, n = size(H)
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
-    adj = adjacency_list(fg)
     if m < ggc.out_ch
         Hpad = Zygote.ignore() do
             fill!(similar(H, S, ggc.out_ch - m, n), 0)
@@ -331,13 +336,14 @@ function (ggc::GatedGraphConv)(fg::FeaturedGraph, H::AbstractMatrix{S}) where {T
     end
     for i = 1:ggc.num_layers
         M = view(ggc.weight, :, :, i) * H
-        _, M = propagate(ggc, adj, Fill(0.f0, 0, ne(fg)), M, +)
+        _, M = propagate(ggc, graph(fg), edge_feature(fg), M, global_feature(fg), +)
         H, _ = ggc.gru(H, M)
     end
     H
 end
 
 (l::GatedGraphConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+# (l::GatedGraphConv)(fg::FeaturedGraph) = propagate(l, fg, +)  # edge number check break this
 
 
 function Base.show(io::IO, l::GatedGraphConv)
@@ -374,12 +380,13 @@ message(ec::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = ec.nn(vc
 update(ec::EdgeConv, m::AbstractVector, x) = m
 
 function (ec::EdgeConv)(fg::FeaturedGraph, X::AbstractMatrix)
-    check_num_nodes(fg, X)
-    _, X = propagate(ec, adjacency_list(fg), Fill(0.f0, 0, ne(fg)), X, ec.aggr)
+    GraphSignals.check_num_nodes(fg, X)
+    _, X, _ = propagate(ec, graph(fg), edge_feature(fg), X, global_feature(fg), ec.aggr)
     X
 end
 
 (l::EdgeConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+# (l::EdgeConv)(fg::FeaturedGraph) = propagate(l, fg, l.aggr)  # edge number check break this
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(", l.nn)
@@ -425,12 +432,13 @@ update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
 
 function (g::GINConv)(fg::FeaturedGraph, X::AbstractMatrix)
     gf = graph(fg)
-    GraphSignals.check_num_node(gf, X)
-    _, X = propagate(g, adjacency_list(gf), Fill(0.f0, 0, ne(gf)), X, +)
+    GraphSignals.check_num_nodes(gf, X)
+    _, X, _ = propagate(g, graph(fg), edge_feature(fg), X, global_feature(fg), +)
     X
 end
 
-(l::GINConv)(fg::FeaturedGraph) = FeaturedGraph(fg.graph, nf = l(fg, node_feature(fg)))
+(l::GINConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+# (l::GINConv)(fg::FeaturedGraph) = propagate(l, fg, +)  # edge number check break this
 
 
 """
@@ -490,15 +498,16 @@ end
 update(c::CGConv, m::AbstractVector, x) = x + m
 
 function (c::CGConv)(fg::FeaturedGraph, X::AbstractMatrix, E::AbstractMatrix)
-    check_num_nodes(fg, X)
-    check_num_edges(fg, E)
-    _, Y = propagate(c, adjacency_list(fg), E, X, +)
+    GraphSignals.check_num_nodes(fg, X)
+    GraphSignals.check_num_edges(fg, E)
+    _, Y, _ = propagate(c, graph(fg), E, X, global_feature(fg), +)
     Y
 end
 
-(l::CGConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf=l(fg, node_feature(fg),
-                                                        edge_feature(fg)),
+(l::CGConv)(fg::FeaturedGraph) = FeaturedGraph(fg,
+                                               nf=l(fg, node_feature(fg), edge_feature(fg)),
                                                ef=edge_feature(fg))
+# (l::CGConv)(fg::FeaturedGraph) = propagate(l, fg, +)  # edge number check break this
 
 (l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)
 

@@ -13,7 +13,8 @@ makedocs(
     pages = ["Home" => "index.md",
              "Get started" => "start.md",
              "Basics" =>
-               ["Building layers" => "basics/layers.md",
+               ["Graph convolutions" => "basics/conv.md",
+                "Building layers" => "basics/layers.md",
                 "Graph passing" => "basics/passgraph.md"],
              "Cooperate with Flux layers" => "cooperate.md",
              "Abstractions" =>

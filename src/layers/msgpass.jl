@@ -22,6 +22,8 @@ specialize this method with custom behavior.
 
 See also [`update`](@ref).
 """
+function message end
+
 @inline message(mp::MessagePassing, x_i, x_j, e_ij) = x_j
 @inline message(mp::MessagePassing, i::Integer, j::Integer, x_i, x_j, e_ij) = x_j
 
@@ -45,21 +47,10 @@ specialize this method with custom behavior.
 
 See also [`message`](@ref).
 """
+function update end
+
 @inline update(mp::MessagePassing, m, x) = m
 @inline update(mp::MessagePassing, i::Integer, m, x) = m
 
-@inline apply_batch_message(mp::MessagePassing, i, js, edge_idx, E::AbstractMatrix, X::AbstractMatrix, u) =
-    mapreduce(j -> GeometricFlux.message(mp, _view(X, i), _view(X, j), _view(E, edge_idx[(i,j)])), hcat, js)
-
-@inline update_batch_vertex(mp::MessagePassing, M::AbstractMatrix, X::AbstractMatrix, u) = 
-    mapreduce(i -> GeometricFlux.update(mp, _view(M, i), _view(X, i)), hcat, 1:size(X,2))
-
-function propagate(mp::MessagePassing, fg::FeaturedGraph, aggr=+)
-    E, X = propagate(mp, adjacency_list(fg), fg.ef, fg.nf, aggr)
-    FeaturedGraph(fg, nf=X, ef=E, gf=Fill(0.f0, 0))
-end
-
-function propagate(mp::MessagePassing, adj::AbstractVector{S}, E::R, X::Q, aggr) where {S<:AbstractVector,R,Q}
-    E, X, u = propagate(mp, adj, E, X, Fill(0.f0, 0), aggr, nothing, nothing)
-    E, X
-end
+@inline update_edge(mp::MessagePassing, e, vi, vj, u) = GeometricFlux.message(mp, vi, vj, e)
+@inline update_vertex(mp::MessagePassing, ē, vi, u) = GeometricFlux.update(mp, ē, vi)
