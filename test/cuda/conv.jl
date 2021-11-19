@@ -1,8 +1,9 @@
 @testset "cuda/conv" begin
+    T = Float32
     in_channel = 3
     out_channel = 5
     N = 4
-    adj = [0 1 0 1;
+    adj = T[0 1 0 1;
            1 0 1 0;
            0 1 0 1;
            1 0 1 0]
@@ -13,7 +14,7 @@
         gc = GCNConv(fg, in_channel=>out_channel) |> gpu
         @test size(gc.weight) == (out_channel, in_channel)
         @test size(gc.bias) == (out_channel,)
-        # @test GraphSignals.adjacency_matrix(gc.fg) == adj
+        @test collect(GraphSignals.adjacency_matrix(gc.fg)) == adj
 
         X = rand(in_channel, N) |> gpu
         Y = gc(X)
@@ -33,21 +34,21 @@
         cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
         @test size(cc.weight) == (out_channel, in_channel, k)
         @test size(cc.bias) == (out_channel,)
-        # @test GraphSignals.adjacency_matrix(cc.fg) == adj
+        @test collect(GraphSignals.adjacency_matrix(cc.fg)) == adj
         @test cc.k == k
         @test size(cc.weight, 2) == in_channel
         @test size(cc.weight, 1) == out_channel
 
-        # X = rand(in_channel, N) |> gpu
-        # Y = cc(X)
-        # @test size(Y) == (out_channel, N)
+        X = rand(in_channel, N) |> gpu
+        Y = cc(X)
+        @test size(Y) == (out_channel, N)
 
-        # g = Zygote.gradient(x -> sum(cc(x)), X)[1]
-        # @test size(g) == size(X)
+        g = Zygote.gradient(x -> sum(cc(x)), X)[1]
+        @test size(g) == size(X)
 
-        # g = Zygote.gradient(model -> sum(model(X)), cc)[1]
-        # @test size(g.weight) == size(cc.weight)
-        # @test size(g.bias) == size(cc.bias)
+        g = Zygote.gradient(model -> sum(model(X)), cc)[1]
+        @test size(g.weight) == size(cc.weight)
+        @test size(g.bias) == size(cc.bias)
     end
 
     # @testset "GraphConv" begin
