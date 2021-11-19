@@ -32,7 +32,7 @@
     @testset "no message or update" begin
         fg_ = l(fg)
 
-        @test adjacency_matrix(fg_) == adj
+        @test GraphSignals.adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (in_channel, num_V)
         @test size(edge_feature(fg_)) == (0, num_E)
         @test size(global_feature(fg_)) == (0,)
@@ -42,7 +42,7 @@
     @testset "message function" begin
         fg_ = l(fg)
 
-        @test adjacency_matrix(fg_) == adj
+        @test GraphSignals.adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (out_channel, num_V)
         @test size(edge_feature(fg_)) == (0, num_E)
         @test size(global_feature(fg_)) == (0,)
@@ -52,7 +52,7 @@
     @testset "message and update" begin
         fg_ = l(fg)
 
-        @test adjacency_matrix(fg_) == adj
+        @test GraphSignals.adjacency_matrix(fg_) == adj
         @test size(node_feature(fg_)) == (out_channel, num_V)
         @test size(edge_feature(fg_)) == (0, num_E)
         @test size(global_feature(fg_)) == (0,)

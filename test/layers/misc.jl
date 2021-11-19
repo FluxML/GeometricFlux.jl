@@ -16,7 +16,7 @@
                                 x -> x .+ 2.,
                                 x -> x .+ 3.)
         fg_ = layer(fg)
-        @test adjacency_matrix(fg_) == adj
+        @test GraphSignals.adjacency_matrix(fg_) == adj
         @test node_feature(fg_) == nf .+ 1.
         @test edge_feature(fg_) == ef .+ 2.
         @test global_feature(fg_) == gf .+ 3.

@@ -37,10 +37,10 @@ GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
 @functor GCNConv
 
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
-    L̃ = Zygote.ignore() do
-        GraphSignals.normalized_laplacian(fg, eltype(x); selfloop=true)
+    Ã = Zygote.ignore() do
+        GraphSignals.normalized_adjacency_matrix(fg, eltype(x); selfloop=true)
     end
-    l.σ.(l.weight * x * L̃ .+ l.bias)
+    l.σ.(l.weight * x * Ã .+ l.bias)
 end
 
 (l::GCNConv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))

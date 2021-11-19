@@ -19,8 +19,8 @@ cuda_tests = [
 ]
 
 tests = [
-    "layers/gn",
-    "layers/msgpass",
+    # "layers/gn",
+    # "layers/msgpass",
     "layers/conv",
     "layers/pool",
     "layers/misc",
