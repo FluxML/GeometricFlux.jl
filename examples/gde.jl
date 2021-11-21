@@ -1,4 +1,4 @@
-using GeometricFlux, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
+using GeometricFlux, GraphSignals, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
 using Flux: onehotbatch, onecold, logitcrossentropy, throttle
 using Flux: @epochs
 using Statistics: mean
