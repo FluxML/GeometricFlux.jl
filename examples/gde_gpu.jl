@@ -1,4 +1,4 @@
-using GeometricFlux, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
+using GeometricFlux, GraphSignals, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
 using Flux: onehotbatch, onecold, logitcrossentropy, throttle
 using Flux: @epochs
 using Statistics: mean
@@ -19,7 +19,7 @@ epochs = 40
 # Preprocess the data and compute adjacency matrix
 train_X = Matrix{Float32}(features) |> gpu  # dim: num_features * num_nodes
 train_y = Float32.(labels) |> gpu  # dim: target_catg * num_nodes
-fg = FeaturedGraph(g) |> gpu
+fg = FeaturedGraph(g)
 
 # Define the Neural GDE
 diffeqarray_to_array(x) = reshape(gpu(x), size(x)[1:2])

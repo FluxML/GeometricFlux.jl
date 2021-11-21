@@ -23,7 +23,7 @@ epochs = 200
 ## Preprocessing data
 masks = [rand(Float32, num_nodes, num_nodes).>0.1 for i in 1:10]
 adj_mat = Matrix{Float32}(adjacency_matrix(g))
-train_data = [(FeaturedGraph(adj_mat.*M, Matrix{Float32}(features)), adj_mat) for M in masks]
+train_data = [(FeaturedGraph(adj_mat.*M, nf=Matrix{Float32}(features)), adj_mat) for M in masks]
 
 ## Model
 model = VGAE(GCNConv(num_features=>h_dim, relu;), h_dim, z_dim, σ)
@@ -34,7 +34,7 @@ ps = Flux.params(model)
 l2_norm(p) = sum(abs2, p)
 
 function loss(fg, Y, X=node_feature(fg), T=eltype(X), β=one(T), λ=T(0.01); debug=false)
-    μ̂, logσ̂ = summarize(encoder, fg)
+    μ̂, logσ̂ = GeometricFlux.summarize(encoder, fg)
     Z = node_feature(encoder(fg))
     kl_q_p = -T(0.5) * sum(one(T) .+ T(2).*logσ̂ .- μ̂.^2 .- exp.(T(2).*logσ̂))
     logp_y_z = -sum(logitbinarycrossentropy(decoder(Z), Y, agg=identity)) / size(Y,2)
