@@ -36,6 +36,8 @@ GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
 
 @functor GCNConv
 
+Flux.trainable(l::GCNConv) = (l.weight, l.bias)
+
 function (l::GCNConv)(fg::FeaturedGraph, x::AbstractMatrix)
     Ã = Zygote.ignore() do
         GraphSignals.normalized_adjacency_matrix(fg, eltype(x); selfloop=true)
@@ -86,6 +88,8 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
     ChebConv(NullGraph(), ch, k; kwargs...)
 
 @functor ChebConv
+
+Flux.trainable(l::ChebConv) = (l.weight, l.bias)
 
 function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
     GraphSignals.check_num_nodes(fg, X)
@@ -155,6 +159,8 @@ GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
 
 @functor GraphConv
 
+Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
+
 message(gc::GraphConv, x_i, x_j::AbstractVector, e_ij) = gc.weight2 * x_j
 
 update(gc::GraphConv, m::AbstractVector, x::AbstractVector) = gc.σ.(gc.weight1*x .+ m .+ gc.bias)
@@ -223,6 +229,8 @@ end
 GATConv(ch::Pair{Int,Int}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
 @functor GATConv
+
+Flux.trainable(l::GATConv) = (l.weight, l.bias, l.a)
 
 # Here the α that has not been softmaxed is the first number of the output message
 function message(gat::GATConv, x_i::AbstractVector, x_j::AbstractVector)
@@ -319,6 +327,8 @@ GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
 
 @functor GatedGraphConv
 
+Flux.trainable(l::GatedGraphConv) = (l.weight, l.gru)
+
 message(ggc::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
 
 update(ggc::GatedGraphConv, m::AbstractVector, x) = m
@@ -376,6 +386,8 @@ EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
 
 @functor EdgeConv
 
+Flux.trainable(l::EdgeConv) = (l.nn,)
+
 message(ec::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
 update(ec::EdgeConv, m::AbstractVector, x) = m
 
@@ -423,12 +435,12 @@ function GINConv(nn, eps::Real=0f0)
     GINConv(NullGraph(), nn, eps)
 end
 
+@functor GINConv
+
 Flux.trainable(g::GINConv) = (fg=g.fg, nn=g.nn)
 
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
 update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
-
-@functor GINConv
 
 function (g::GINConv)(fg::FeaturedGraph, X::AbstractMatrix)
     gf = graph(fg)
@@ -473,6 +485,8 @@ struct CGConv{E, V<:AbstractFeaturedGraph, A<:AbstractMatrix, B} <: MessagePassi
 end
 
 @functor CGConv
+
+Flux.trainable(l::CGConv) = (l.Wf, l.Ws, l.bf, l.bs)
 
 function CGConv(fg::G, dims::NTuple{2,Int};
                 init=glorot_uniform, bias=true, as_edge=false) where {G<:AbstractFeaturedGraph}

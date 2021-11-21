@@ -1,4 +1,5 @@
 using GeometricFlux
+using GraphSignals
 using Flux
 using Flux: onehotbatch, onecold, logitcrossentropy, throttle
 using Flux: @epochs
@@ -7,9 +8,6 @@ using Statistics
 using SparseArrays
 using Graphs.SimpleGraphs
 using CUDA
-using Random
-
-Random.seed!([0x6044b4da, 0xd873e4f9, 0x59d90c0a, 0xde01aa81])
 
 @load "data/cora_features.jld2" features
 @load "data/cora_labels.jld2" labels
@@ -19,21 +17,25 @@ num_nodes = 2708
 num_features = 1433
 hidden = 16
 target_catg = 7
-epochs = 100
+epochs = 200
+λ = 5e-4
 
 ## Preprocessing data
 train_X = Matrix{Float32}(features) |> gpu  # dim: num_features * num_nodes
 train_y = Matrix{Float32}(labels) |> gpu  # dim: target_catg * num_nodes
-fg = FeaturedGraph(g) |> gpu
+fg = FeaturedGraph(g)  # pass to gpu together in model layers
 
 ## Model
 model = Chain(GCNConv(fg, num_features=>hidden, relu),
               Dropout(0.5),
               GCNConv(fg, hidden=>target_catg),
-              ) |> gpu
+              ) |> gpu;
+# do not show model architecture, showing CuSparseMatrix will trigger errors
 
 ## Loss
-loss(x, y) = logitcrossentropy(model(x), y)
+l2norm(x) = sum(abs2, x)
+# cross entropy with first layer L2 regularization 
+loss(x, y) = logitcrossentropy(model(x), y) + λ*sum(l2norm, Flux.params(model[1]))
 accuracy(x, y) = mean(onecold(softmax(cpu(model(x)))) .== onecold(cpu(y)))
 
 
