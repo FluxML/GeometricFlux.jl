@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0]
+
+- correct GCNConv with normalized_adjacency_matrix
+- add L2 regularization to gcn example
+- migrate Graphs, GraphSignals, GraphLaplacians and examples
+- resolve gradient bug for GatedGraphConv
+
 ## [0.7.7]
 
 - drop support of julia v1.4 and v1.5
