@@ -1,17 +1,15 @@
-using Flux: Dense
-
-in_channel = 3
-out_channel = 5
-N = 4
-T = Float32
-adj = [0. 1. 0. 1.;
-       1. 0. 1. 0.;
-       0. 1. 0. 1.;
-       1. 0. 1. 0.]
-
-fg = FeaturedGraph(adj)
-
 @testset "models" begin
+    in_channel = 3
+    out_channel = 5
+    N = 4
+    T = Float32
+    adj = T[0. 1. 0. 1.;
+            1. 0. 1. 0.;
+            0. 1. 0. 1.;
+            1. 0. 1. 0.]
+
+    fg = FeaturedGraph(adj)
+
     @testset "GAE" begin
         gc = GCNConv(fg, in_channel=>out_channel)
         gae = GAE(gc)
