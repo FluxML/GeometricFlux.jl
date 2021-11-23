@@ -16,12 +16,12 @@ using Test
 
 cuda_tests = [
     "cuda/conv",
-    # "cuda/msgpass",
+    "cuda/msgpass",
 ]
 
 tests = [
-    # "layers/gn",
-    # "layers/msgpass",
+    "layers/gn",
+    "layers/msgpass",
     "layers/conv",
     "layers/pool",
     "layers/misc",

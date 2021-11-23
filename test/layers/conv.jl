@@ -124,63 +124,63 @@
         end
     end
 
-    # @testset "GraphConv" begin
-    #     X = rand(T, in_channel, N)
-    #     Xt = transpose(rand(T, N, in_channel))
-    #     @testset "layer with graph" begin
-    #         gc = GraphConv(fg, in_channel=>out_channel)
-    #         @test adjacency_list(gc.fg) == [[2,4], [1,3], [2,4], [1,3]]
-    #         @test size(gc.weight1) == (out_channel, in_channel)
-    #         @test size(gc.weight2) == (out_channel, in_channel)
-    #         @test size(gc.bias) == (out_channel,)
+    @testset "GraphConv" begin
+        X = rand(T, in_channel, N)
+        Xt = transpose(rand(T, N, in_channel))
+        @testset "layer with graph" begin
+            gc = GraphConv(fg, in_channel=>out_channel)
+            @test adjacency_list(gc.fg) == [[2,4], [1,3], [2,4], [1,3]]
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
 
-    #         Y = gc(X)
-    #         @test size(Y) == (out_channel, N)
+            Y = gc(X)
+            @test size(Y) == (out_channel, N)
 
-    #         # Test with transposed features
-    #         Y = gc(Xt)
-    #         @test size(Y) == (out_channel, N)
+            # Test with transposed features
+            Y = gc(Xt)
+            @test size(Y) == (out_channel, N)
 
-    #         g = Zygote.gradient(x -> sum(gc(x)), X)[1]
-    #         @test size(g) == size(X)
+            g = Zygote.gradient(x -> sum(gc(x)), X)[1]
+            @test size(g) == size(X)
 
-    #         g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-    #         @test size(g.weight1) == size(gc.weight1)
-    #         @test size(g.weight2) == size(gc.weight2)
-    #         @test size(g.bias) == size(gc.bias)
-    #     end
+            g = Zygote.gradient(model -> sum(model(X)), gc)[1]
+            @test size(g.weight1) == size(gc.weight1)
+            @test size(g.weight2) == size(gc.weight2)
+            @test size(g.bias) == size(gc.bias)
+        end
 
-    #     @testset "layer without graph" begin
-    #         gc = GraphConv(in_channel=>out_channel)
-    #         @test size(gc.weight1) == (out_channel, in_channel)
-    #         @test size(gc.weight2) == (out_channel, in_channel)
-    #         @test size(gc.bias) == (out_channel,)
+        @testset "layer without graph" begin
+            gc = GraphConv(in_channel=>out_channel)
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
 
-    #         fg = FeaturedGraph(adj, nf=X)
-    #         fg_ = gc(fg)
-    #         @test size(node_feature(fg_)) == (out_channel, N)
-    #         @test_throws MethodError gc(X)
+            fg = FeaturedGraph(adj, nf=X)
+            fg_ = gc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws MethodError gc(X)
 
-    #         # Test with transposed features
-    #         fgt = FeaturedGraph(adj, nf=Xt)
-    #         fgt_ = gc(fgt)
-    #         @test size(node_feature(fgt_)) == (out_channel, N)
+            # Test with transposed features
+            fgt = FeaturedGraph(adj, nf=Xt)
+            fgt_ = gc(fgt)
+            @test size(node_feature(fgt_)) == (out_channel, N)
 
-    #         g = Zygote.gradient(x -> sum(node_feature(gc(x))), fg)[1]
-    #         @test size(g.nf) == size(X)
+            g = Zygote.gradient(x -> sum(node_feature(gc(x))), fg)[1]
+            @test size(g.nf) == size(X)
 
-    #         g = Zygote.gradient(model -> sum(node_feature(model(fg))), gc)[1]
-    #         @test size(g.weight1) == size(gc.weight1)
-    #         @test size(g.weight2) == size(gc.weight2)
-    #         @test size(g.bias) == size(gc.bias)
-    #     end
+            g = Zygote.gradient(model -> sum(node_feature(model(fg))), gc)[1]
+            @test size(g.weight1) == size(gc.weight1)
+            @test size(g.weight2) == size(gc.weight2)
+            @test size(g.bias) == size(gc.bias)
+        end
 
 
-    #     @testset "bias=false" begin
-    #         @test length(Flux.params(GraphConv(2=>3))) == 3
-    #         @test length(Flux.params(GraphConv(2=>3, bias=false))) == 2
-    #     end
-    # end
+        @testset "bias=false" begin
+            @test length(Flux.params(GraphConv(2=>3))) == 3
+            @test length(Flux.params(GraphConv(2=>3, bias=false))) == 2
+        end
+    end
 
     @testset "GATConv" begin
         adj1 = [1 1 0 1;
