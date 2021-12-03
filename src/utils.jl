@@ -67,19 +67,33 @@ Zygote.@nograd edge_index_table
 ### TODO move these to GraphSignals ######
 import GraphSignals: FeaturedGraph
 
-function FeaturedGraph(fg::FeaturedGraph;
-                        nf=node_feature(fg),
-                        ef=edge_feature(fg),
-                        gf=global_feature(fg))
+# function FeaturedGraph(fg::FeaturedGraph;
+#                         nf=node_feature(fg),
+#                         ef=edge_feature(fg),
+#                         gf=global_feature(fg))
 
-    return FeaturedGraph(graph(fg); nf, ef, gf)
+#     return FeaturedGraph(graph(fg); nf, ef, gf)
+# end
+
+
+function edges(fg::FeaturedGraph)
+    edges = []
+    for (src, vec) in enumerate(adjacency_list(GraphSignals.adjacency_matrix(fg)))
+        for v in vec
+            push!(edges, Edge(src, v))
+        end
+    end
+    edges
 end
 
+function has_edge(fg::FeaturedGraph, u::Int, v::Int)
+    GraphSignals.adjacency_matrix(fg)[u,v] != 0 ? true : false
+end
 
-outneighbors(fg::FeaturedGraph, v::Int) = findnz(adjacency_matrix(fg)[v,:])[1]
+outneighbors(fg::FeaturedGraph, v::Int) = GraphSignals.adjacency_matrix(fg)[v,:] |> SparseVector |> findnz |> x->x[1]
 
 function weighted_outneighbors(fg::FeaturedGraph, v::Int)
-    neighbors, weights = findnz(adjacency_matrix(fg)[v,:]
+    neighbors, weights = GraphSignals.adjacency_matrix(fg)[v,:] |> SparseVector |> findnz
 end
 
 function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)

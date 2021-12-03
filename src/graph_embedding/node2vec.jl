@@ -1,10 +1,12 @@
 const Alias = Tuple{SparseVector{Int}, SparseVector{Float64}}
 
 """
-    node2vec(g; walks_per_node, len, p, q)
+    node2vec(g; walks_per_node, len, p, q, dims)
 
 Computes node embeddings on graph `g`, as per [1]. Performs biased random walks on the graph,
 then computes word embeddings by treating those random walks like sentences.
+
+Returns an nv(g) x dims matrix of embeddings
 
 # Arguments
 
@@ -14,13 +16,21 @@ total number of walks is `nv(g) * walks_per_node`
 - `len::Int`: Length of random walks
 - `p::Real`: Return parameter from [1]
 - `q::Real`: In-out parameter from [1]
+- `dims::Int`: Number of vector dimensions
+
 
 [1] https://cs.stanford.edu/~jure/pubs/node2vec-kdd16.pdf
 """
-function node2vec(g::FeaturedGraph; walks_per_node::Int=100, len::Int=5, p::Real=0.5, q::Real=0.5)
+function node2vec(g::FeaturedGraph; walks_per_node::Int=100, len::Int=5, p::Real=0.5, q::Real=0.5, dims::Int=128)
     walks = simulate_walks(g; walks_per_node=walks_per_node, len=len, p=p, q=q)
-    model = walks2vec(walks)
-    return copy(model.vectors)
+    model = walks2vec(walks,dims=dims)
+    vecs = []
+    println(typeof(model))
+    for i in 1:nv(g)
+        push!(vecs, get_vector(model, string(i)))
+    end
+    matrix = cat(vecs..., dims=2)
+    return matrix
 end
 
 """
@@ -34,7 +44,7 @@ embeddings using node ID as words.
 [2] https://github.com/JuliaText/Word2Vec.jl
 [3] https://code.google.com/archive/p/word2vec/
 """
-function walks2vec(walks::Vector{Vector{Int}};size::Int=100)
+function walks2vec(walks::Vector{Vector{Int}};dims::Int=100)
 
     str_walks=map(x -> string.(x),walks)
 
@@ -46,8 +56,9 @@ function walks2vec(walks::Vector{Vector{Int}};size::Int=100)
     the_walks = joinpath(rpath,"str_walk.txt")
     the_vecs = joinpath(rpath,"str_walk-vec.txt")
 
+    symbols = Iterators.flatten(walks) |> Set
     writedlm(the_walks,str_walks)
-    word2vec(the_walks,the_vecs,verbose=true,size=size)
+    word2vec(the_walks,the_vecs,verbose=true,size=dims)
     model=wordvectors(the_vecs)
     rm(the_walks)
     rm(the_vecs)
@@ -85,7 +96,8 @@ end
 "Returns J and q for a given edge"
 function get_alias_edge(g::FeaturedGraph, src::Int, dst::Int, p::Float64, q::Float64)::Alias
     unnormalized_probs = spzeros(length(outneighbors(g, dst)))
-    for (i, (dst_nbr, weight)) in enumerate(weighted_outneighbors(g, dst))
+    neighbor_weight_pairs = zip(weighted_outneighbors(g, dst)...)
+    for (i, (dst_nbr, weight)) in enumerate(neighbor_weight_pairs)
         if dst_nbr == src
             unnormalized_probs[i] = weight/p
         elseif has_edge(g, dst_nbr, src)
@@ -110,7 +122,7 @@ function preprocess_modified_weights(g::FeaturedGraph, p::Float64, q::Float64)
     alias_nodes::Dict{Int, Alias} = Dict()
     alias_edges::Dict{Tuple{Int, Int}, Alias} = Dict()
 
-    for node in vertices(g)
+    for node in 1:nv(g)
         probs = [1 / length(outneighbors(g, node)) for _ in outneighbors(g, node)]
         alias_nodes[node] =  alias_setup(probs)
     end
@@ -129,7 +141,7 @@ function simulate_walks(g::FeaturedGraph; walks_per_node::Int, len::Int, p::Floa
     alias_nodes, alias_edges = preprocess_modified_weights(g, p, q)
     walks::Vector{Vector{Int}} = []
     for _ in 1:walks_per_node
-        for node in shuffle(vertices(g))
+        for node in shuffle(1:nv(g))
             walk::Vector{Int} = node2vec_walk(g, alias_nodes, alias_edges; start_node=node, walk_length=len)
             push!(walks, walk)
         end
