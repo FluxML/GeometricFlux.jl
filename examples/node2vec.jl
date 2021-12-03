@@ -1,10 +1,12 @@
 using GeometricFlux
+using GraphSignals
 using Graphs
 using SparseArrays
 using Plots
 using GraphPlot
 
 using TSne
+using Clustering
 using Cairo, Compose
 
 
@@ -54,18 +56,29 @@ clusters = Dict(
 23 => 2,
 10 => 2,
 )
-int2col(x::Int) = x==1 ? "blue" : "red"
+int2col_symbol(x::Int) = x==1 ? :blue : :red
+int2col_str(x::Int) = x==1 ? "blue" : "red"
 
 
-g = smallgraph(:karate)
-vectors = node2vec(g; walks_per_node=100, len=5, p=0.5, q=0.5)
-points = tsne(vectors', 2, 75, 1000, 5.0)
-point_tuples = [tuple(row...) for row in eachrow(points)]
+function n2v()
+    g = smallgraph(:karate)
+    fg = FeaturedGraph(g)
+    vectors = node2vec(fg; walks_per_node=10, len=80, p=1.0, q=1.0)
+    println(typeof(vectors))
+    points = tsne(vectors')
+    point_tuples = [tuple(row...) for row in eachrow(points)]
+    R = kmeans(vectors, 2)
+    display(scatter(point_tuples, markercolor=[int2col_symbol(assignments(R)[i]) for i in 1:34] ))
 
-draw(
-    PDF("karateclub.pdf", 16cm, 16cm),
-    gplot(g, nodefillc=[int2col(clusters[i]) for i in 1:34])
-)
+    draw(
+        PDF("karateclub.pdf", 16cm, 16cm),
+        gplot(g,
+            nodelabel=map(string, 1:34),
+            nodefillc=[int2col_str(assignments(R)[i]) for i in 1:34]
+
+        )
+    )
+end
 
 
 
