@@ -86,14 +86,11 @@ function edges(fg::FeaturedGraph)
     edges
 end
 
-function has_edge(fg::FeaturedGraph, u::Int, v::Int)
-    GraphSignals.adjacency_matrix(fg)[u,v] != 0 ? true : false
-end
+Graphs.has_edge(fg::FeaturedGraph, u::Int, v::Int) = has_edge(graph(fg), u, v)
 
-outneighbors(fg::FeaturedGraph, v::Int) = GraphSignals.adjacency_matrix(fg)[v,:] |> SparseVector |> findnz |> x->x[1]
-
+# Returns adjacncy matri
 function weighted_outneighbors(fg::FeaturedGraph, v::Int)
-    neighbors, weights = GraphSignals.adjacency_matrix(fg)[v,:] |> SparseVector |> findnz
+    graph(fg).S[v,:] |> findnz
 end
 
 function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
