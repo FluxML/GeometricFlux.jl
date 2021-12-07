@@ -1,5 +1,6 @@
 using GeometricFlux
 using GeometricFlux.Datasets
+using Clustering
 using CUDA
 using Flux
 using Flux: @functor
@@ -12,21 +13,20 @@ using SparseArrays: SparseMatrixCSC
 using Statistics: mean
 using Zygote
 using Test
-using Clustering
 
 cuda_tests = [
     "cuda/conv",
-    "cuda/msgpass",
+    # "cuda/msgpass",
 ]
 
 tests = [
-    "layers/gn",
-    "layers/msgpass",
+    # "layers/gn",
+    # "layers/msgpass",
     "layers/conv",
     "layers/pool",
     "layers/misc",
-    "graph_embedding/alias_sampling",
-    "graph_embedding/node2vec",
+    "sampling",
+    "embedding/node2vec",
     "models",
 ]
 
