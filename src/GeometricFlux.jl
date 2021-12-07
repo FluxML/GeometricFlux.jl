@@ -17,7 +17,7 @@ using Zygote
 using SparseArrays
 using DelimitedFiles
 
-import Graphs: neighbors, is_directed
+import Graphs: neighbors, is_directed, has_edge
 import Word2Vec: word2vec, wordvectors, get_vector
 
 export
