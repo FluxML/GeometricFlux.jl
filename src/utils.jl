@@ -88,9 +88,10 @@ end
 
 Graphs.has_edge(fg::FeaturedGraph, u::Int, v::Int) = has_edge(graph(fg), u, v)
 
-# Returns adjacncy matri
+# Returns (neighbors::Vector{Int}, weights::Vector{Float64})
 function weighted_outneighbors(fg::FeaturedGraph, v::Int)
-    graph(fg).S[v,:] |> findnz
+    nbrs = neighbors(fg,v; dir=:out)
+    nbrs, graph(fg).S[v, nbrs]
 end
 
 function check_num_nodes(fg::FeaturedGraph, x::AbstractArray)
