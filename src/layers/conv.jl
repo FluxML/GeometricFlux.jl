@@ -104,7 +104,7 @@ function (c::ChebConv)(fg::FeaturedGraph, X::AbstractMatrix{T}) where T
     Y = view(c.weight,:,:,1) * Z_prev
     Y += view(c.weight,:,:,2) * Z
     for k = 3:c.k
-        Z, Z_prev = 2*Z*L̃ - Z_prev, Z
+        Z, Z_prev = 2 .* Z * L̃ - Z_prev, Z
         Y += view(c.weight,:,:,k) * Z
     end
     return Y .+ c.bias
