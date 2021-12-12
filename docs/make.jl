@@ -1,7 +1,11 @@
 using Documenter
+using DocumenterCitations
 using GeometricFlux
 
+bib = CitationBibliography(joinpath(@__DIR__, "bibliography.bib"), sorting=:nyt)
+
 makedocs(
+    bib,
     sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
       assets = ["assets/flux.css"],
@@ -24,7 +28,8 @@ makedocs(
                ["Convolutional Layers" => "manual/conv.md",
                 "Pooling Layers" => "manual/pool.md",
                 "Models" => "manual/models.md",
-                "Linear Algebra" => "manual/linalg.md"]
+                "Linear Algebra" => "manual/linalg.md"],
+             "References" => "references.md",
     ]
 )
 

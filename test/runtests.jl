@@ -1,5 +1,6 @@
 using GeometricFlux
 using GeometricFlux.Datasets
+using Clustering
 using CUDA
 using Flux
 using Flux: @functor
@@ -24,6 +25,8 @@ tests = [
     "layers/conv",
     "layers/pool",
     "layers/misc",
+    "sampling",
+    "embedding/node2vec",
     "models",
 ]
 

@@ -1,7 +1,10 @@
 module GeometricFlux
 
+using DelimitedFiles
+using SparseArrays
 using Statistics: mean
 using LinearAlgebra: Adjoint, norm, Transpose
+using Random
 using Reexport
 
 using CUDA
@@ -9,10 +12,12 @@ using ChainRulesCore: @non_differentiable
 using FillArrays: Fill
 using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
-using NNlib, NNlibCUDA
-using GraphSignals
+@reexport using GraphSignals
 using Graphs
+using NNlib, NNlibCUDA
 using Zygote
+
+import Word2Vec: word2vec, wordvectors, get_vector
 
 export
     # layers/graphlayers
@@ -52,7 +57,10 @@ export
     bypass_graph,
 
     # utils
-    generate_cluster
+    generate_cluster,
+
+    #node2vec
+    node2vec
 
 include("datasets.jl")
 
@@ -66,6 +74,9 @@ include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
 include("layers/misc.jl")
+
+include("sampling.jl")
+include("embedding/node2vec.jl")
 
 include("cuda/conv.jl")
 
