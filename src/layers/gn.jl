@@ -16,14 +16,22 @@ abstract type GraphNet <: AbstractGraphLayer end
 @inline update_vertex(gn::GraphNet, ē, vi, u) = vi
 @inline update_global(gn::GraphNet, ē, v̄, u) = u
 
-@inline update_batch_edge(gn::GraphNet, sg::SparseGraph, E, V, u) =
-    mapreduce(i -> apply_batch_message(gn, sg, i, neighbors(sg, i), E, V, u), hcat, vertices(sg))
+@inline function update_batch_edge(gn::GraphNet, sg::SparseGraph, E, V, u)
+    ys = map(i -> apply_batch_message(gn, sg, i, GraphSignals.cpu_neighbors(sg, i), E, V, u), vertices(sg))
+    return hcat(ys...)
+end
 
-@inline apply_batch_message(gn::GraphNet, sg::SparseGraph, i, js, E, V, u) =
-    mapreduce(j -> update_edge(gn, _view(E, edge_index(sg, i, j)), _view(V, i), _view(V, j), u), hcat, js)
+@inline function apply_batch_message(gn::GraphNet, sg::SparseGraph, i, js, E, V, u)
+    # js still CuArray
+    es = Zygote.ignore(() -> GraphSignals.cpu_incident_edges(sg, i))
+    ys = map(k -> update_edge(gn, _view(E, es[k]), _view(V, i), _view(V, js[k]), u), 1:length(js))
+    return hcat(ys...)
+end
 
-@inline update_batch_vertex(gn::GraphNet, Ē, V, u) =
-    mapreduce(i -> update_vertex(gn, _view(Ē, i), _view(V, i), u), hcat, 1:size(V,2))
+@inline function update_batch_vertex(gn::GraphNet, Ē, V, u)
+    ys = map(i -> update_vertex(gn, _view(Ē, i), _view(V, i), u), 1:size(V,2))
+    return hcat(ys...)
+end
 
 @inline aggregate_neighbors(gn::GraphNet, sg::SparseGraph, aggr, E) = neighbor_scatter(aggr, E, sg)
 @inline aggregate_neighbors(gn::GraphNet, sg::SparseGraph, aggr::Nothing, @nospecialize E) = nothing

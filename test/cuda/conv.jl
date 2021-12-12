@@ -88,33 +88,33 @@
         @test size(g.a) == size(gat.a)
     end
 
-    # @testset "GatedGraphConv" begin
-    #     num_layers = 3
-    #     ggc = GatedGraphConv(fg, out_channel, num_layers) |> gpu
-    #     @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+    @testset "GatedGraphConv" begin
+        num_layers = 3
+        ggc = GatedGraphConv(fg, out_channel, num_layers) |> gpu
+        @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = ggc(X)
-    #     @test size(Y) == (out_channel, N)
+        X = rand(in_channel, N) |> gpu
+        Y = ggc(X)
+        @test size(Y) == (out_channel, N)
 
-    #     g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
-    #     @test size(g) == size(X)
+        g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
+        @test size(g) == size(X)
 
-    #     g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
-    #     @test size(g.weight) == size(ggc.weight)
-    # end
+        g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
+        @test size(g.weight) == size(ggc.weight)
+    end
 
-    # @testset "EdgeConv" begin
-    #     ec = EdgeConv(fg, Dense(2*in_channel, out_channel)) |> gpu
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = ec(X)
-    #     @test size(Y) == (out_channel, N)
+    @testset "EdgeConv" begin
+        ec = EdgeConv(fg, Dense(2*in_channel, out_channel)) |> gpu
+        X = rand(in_channel, N) |> gpu
+        Y = ec(X)
+        @test size(Y) == (out_channel, N)
 
-    #     g = Zygote.gradient(x -> sum(ec(x)), X)[1]
-    #     @test size(g) == size(X)
+        g = Zygote.gradient(x -> sum(ec(x)), X)[1]
+        @test size(g) == size(X)
 
-    #     g = Zygote.gradient(model -> sum(model(X)), ec)[1]
-    #     @test size(g.nn.weight) == size(ec.nn.weight)
-    #     @test size(g.nn.bias) == size(ec.nn.bias)
-    # end
+        g = Zygote.gradient(model -> sum(model(X)), ec)[1]
+        @test size(g.nn.weight) == size(ec.nn.weight)
+        @test size(g.nn.bias) == size(ec.nn.bias)
+    end
 end
