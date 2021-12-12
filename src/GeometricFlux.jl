@@ -7,7 +7,7 @@ using LinearAlgebra: Adjoint, norm, Transpose
 using Random
 using Reexport
 
-using CUDA
+using CUDA, CUDA.CUSPARSE
 using ChainRulesCore: @non_differentiable
 using FillArrays: Fill
 using Flux
@@ -77,8 +77,6 @@ include("layers/misc.jl")
 
 include("sampling.jl")
 include("embedding/node2vec.jl")
-
-include("cuda/conv.jl")
 
 using .Datasets
 
