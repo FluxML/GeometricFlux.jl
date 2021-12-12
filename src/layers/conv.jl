@@ -259,7 +259,7 @@ end
 
 function check_self_loops(sg::SparseGraph)
     for i in 1:nv(sg)
-        if !(i in GraphSignals.rowvalview(sg.S, i))
+        if !(i in collect(GraphSignals.rowvalview(sg.S, i)))
             return false
         end
     end

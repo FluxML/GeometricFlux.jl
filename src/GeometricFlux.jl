@@ -7,7 +7,7 @@ using LinearAlgebra: Adjoint, norm, Transpose
 using Random
 using Reexport
 
-using CUDA
+using CUDA, CUDA.CUSPARSE
 using ChainRulesCore: @non_differentiable
 using FillArrays: Fill
 using Flux
