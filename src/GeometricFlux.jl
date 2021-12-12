@@ -78,8 +78,6 @@ include("layers/misc.jl")
 include("sampling.jl")
 include("embedding/node2vec.jl")
 
-include("cuda/conv.jl")
-
 using .Datasets
 
 

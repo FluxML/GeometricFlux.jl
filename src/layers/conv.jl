@@ -253,8 +253,9 @@ function apply_batch_message(gat::GATConv, i, js, X::AbstractMatrix)
 end
 
 function update_batch_edge(gat::GATConv, sg::SparseGraph, E::AbstractMatrix, X::AbstractMatrix, u)
-    @assert check_self_loops(sg) "a vertex must have self loop (receive a message from itself)."
-    mapreduce(i -> apply_batch_message(gat, i, neighbors(sg, i), X), hcat, 1:nv(sg))
+    @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    ys = map(i -> apply_batch_message(gat, i, GraphSignals.cpu_neighbors(sg, i), X), 1:nv(sg))
+    return hcat(ys...)
 end
 
 function check_self_loops(sg::SparseGraph)
