@@ -71,6 +71,13 @@
     end
 
     @testset "GATConv" begin
+        adj = T[1 1 0 1;
+                1 1 1 0;
+                0 1 1 1;
+                1 0 1 1]
+        
+        fg = FeaturedGraph(adj)
+
         gat = GATConv(fg, in_channel=>out_channel) |> gpu
         @test size(gat.weight) == (out_channel, in_channel)
         @test size(gat.bias) == (out_channel,)
