@@ -28,12 +28,8 @@
             Y = gc(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(gc(x)), X)[1]
-            @test size(g) == size(X)
-
-            g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-            @test size(g.weight) == size(gc.weight)
-            @test size(g.bias) == size(gc.bias)
+            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            @test length(g.grads) == 2
         end
 
         @testset "layer without graph" begin
@@ -45,19 +41,15 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError gc(X)
+            @test_throws ArgumentError gc(X)
             
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(gc(x))), fg)[1]
-            @test size(g.nf) == size(X)
-
-            g = Zygote.gradient(model -> sum(node_feature(model(fg))), gc)[1]
-            @test size(g.weight) == size(gc.weight)
-            @test size(g.bias) == size(gc.bias)
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            @test length(g.grads) == 4
         end
 
         @testset "bias=false" begin
@@ -85,12 +77,8 @@
             Y = cc(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(cc(x)), X)[1]
-            @test size(g) == size(X)
-
-            g = Zygote.gradient(model -> sum(model(X)), cc)[1]
-            @test size(g.weight) == size(cc.weight)
-            @test size(g.bias) == size(cc.bias)
+            g = Zygote.gradient(() -> sum(cc(X)), Flux.params(cc))
+            @test length(g.grads) == 2
         end
 
         @testset "layer without graph" begin
@@ -103,19 +91,15 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError cc(X)
+            @test_throws ArgumentError cc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = cc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(cc(x))), fg)[1]
-            @test size(g.nf) == size(X)
-
-            g = Zygote.gradient(model -> sum(node_feature(model(fg))), cc)[1]
-            @test size(g.weight) == size(cc.weight)
-            @test size(g.bias) == size(cc.bias)
+            g = Zygote.gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
+            @test length(g.grads) == 4
         end
 
         @testset "bias=false" begin
@@ -141,13 +125,8 @@
             Y = gc(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(gc(x)), X)[1]
-            @test size(g) == size(X)
-
-            g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-            @test size(g.weight1) == size(gc.weight1)
-            @test size(g.weight2) == size(gc.weight2)
-            @test size(g.bias) == size(gc.bias)
+            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            @test length(g.grads) == 3
         end
 
         @testset "layer without graph" begin
@@ -159,20 +138,15 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError gc(X)
+            @test_throws ArgumentError gc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(gc(x))), fg)[1]
-            @test size(g.nf) == size(X)
-
-            g = Zygote.gradient(model -> sum(node_feature(model(fg))), gc)[1]
-            @test size(g.weight1) == size(gc.weight1)
-            @test size(g.weight2) == size(gc.weight2)
-            @test size(g.bias) == size(gc.bias)
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            @test length(g.grads) == 5
         end
 
 
@@ -215,13 +189,8 @@
                 Y = gat(Xt)
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
 
-                g = Zygote.gradient(x -> sum(gat(x)), X)[1]
-                @test size(g) == size(X)
-
-                g = Zygote.gradient(model -> sum(model(X)), gat)[1]
-                @test size(g.weight) == size(gat.weight)
-                @test size(g.bias) == size(gat.bias)
-                @test size(g.a) == size(gat.a)
+                g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
+                @test length(g.grads) == 3
             end
         end
 
@@ -236,20 +205,15 @@
                 fg_ = gat(fg_gat)
                 Y = node_feature(fg_)
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
-                @test_throws MethodError gat(X)
+                @test_throws ArgumentError gat(X)
 
                 # Test with transposed features
                 fgt = FeaturedGraph(adj_gat, nf=Xt)
                 fgt_ = gat(fgt)
                 @test size(node_feature(fgt_)) == (concat ? (out_channel*heads, N) : (out_channel, N))
 
-                g = Zygote.gradient(x -> sum(node_feature(gat(x))), fg_gat)[1]
-                @test size(g.nf) == size(X)
-
-                g = Zygote.gradient(model -> sum(node_feature(model(fg_gat))), gat)[1]
-                @test size(g.weight) == size(gat.weight)
-                @test size(g.bias) == size(gat.bias)
-                @test size(g.a) == size(gat.a)
+                g = Zygote.gradient(() -> sum(node_feature(gat(fg_gat))), Flux.params(gat))
+                @test length(g.grads) == 5
             end
         end
 
@@ -276,11 +240,8 @@
             Y = ggc(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
-            @test size(g) == size(X)
-
-            g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
-            @test size(g.weight) == size(ggc.weight)
+            g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
+            @test length(g.grads) == 6
         end
 
         @testset "layer without graph" begin
@@ -290,18 +251,15 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError ggc(X)
+            @test_throws ArgumentError ggc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = ggc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(ggc(x))), fg)[1]
-            @test size(g.nf) == size(X)
-
-            g = Zygote.gradient(model -> sum(node_feature(model(fg))), ggc)[1]
-            @test size(g.weight) == size(ggc.weight)
+            g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
+            @test length(g.grads) == 8
         end
     end
 
@@ -319,12 +277,8 @@
             Y = ec(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(ec(x)), X)[1]
-            @test size(g) == size(X)
-
-            g = Zygote.gradient(model -> sum(model(X)), ec)[1]
-            @test size(g.nn.weight) == size(ec.nn.weight)
-            @test size(g.nn.bias) == size(ec.nn.bias)
+            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            @test length(g.grads) == 2
         end
 
         @testset "layer without graph" begin
@@ -333,19 +287,15 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError ec(X)
+            @test_throws ArgumentError ec(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = ec(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(ec(x))), fg)[1]
-            @test size(g.nf) == size(X)
-
-            g = Zygote.gradient(model -> sum(node_feature(model(fg))), ec)[1]
-            @test size(g.nn.weight) == size(ec.nn.weight)
-            @test size(g.nn.bias) == size(ec.nn.bias)
+            g = Zygote.gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
+            @test length(g.grads) == 4
         end
     end
 
@@ -361,22 +311,16 @@
             @test size(gc.nn.layers[1].bias) == (out_channel, )
             @test GraphSignals.adjacency_matrix(gc.fg) == adj
 
-            Y = gc(FeaturedGraph(adj, nf=X))
+            fg = FeaturedGraph(adj, nf=X)
+            Y = gc(fg)
             @test size(node_feature(Y)) == (out_channel, N)
 
             # Test with transposed features
             Y = gc(FeaturedGraph(adj, nf=Xt))
             @test size(node_feature(Y)) == (out_channel, N)
 
-            g = Zygote.gradient(x -> sum(node_feature(gc(x))), 
-                                FeaturedGraph(adj, nf=X))[1]
-            @test size(g.nf) == size(X)
-
-            g = Zygote.gradient(model -> sum(node_feature(model(FeaturedGraph(adj, nf=X)))), 
-                                gc)[1]
-            @test size(g.nn.layers[1].weight) == size(gc.nn.layers[1].weight)
-            @test size(g.nn.layers[1].bias) == size(gc.nn.layers[1].bias)
-            @test !in(:eps, Flux.trainable(gc))
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            @test length(g.grads) == 8
         end
     end
 

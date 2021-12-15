@@ -1,22 +1,31 @@
-"""
-    accumulated_edges(adj)
+function hcat_by_sum(xs::AbstractVector)
+    T = eltype(xs[1])
+    dim = size(xs[1], 1)
+    N = length(xs)
 
-Return a vector which acts as a mapping table. The index is the vertex index,
-value is accumulated numbers of edge (current vertex not included).
-"""
-accumulated_edges(adj::AbstractVector{<:AbstractVector{<:Integer}}) = [0, cumsum(map(length, adj))...]
+    ns = map(x->size(x,2), xs)
+    pushfirst!(ns, 1)
+    cumsum!(ns, ns)
 
-function generate_cluster(M::AbstractArray{T,N}, accu_edge) where {T,N}
-    num_V = length(accu_edge) - 1
-    num_E = accu_edge[end]
-    cluster = similar(M, Int, num_E)
-    @inbounds for i = 1:num_V
-        j = accu_edge[i]
-        k = accu_edge[i+1]
-        cluster[j+1:k] .= i
+    A = similar(xs[1], T, dim, ns[end]-1)
+    for i in 1:N
+        A[:, ns[i]:(ns[i+1]-1)] .= xs[i]
     end
-    cluster
+    return A
 end
 
-@non_differentiable accumulated_edges(x...)
-@non_differentiable generate_cluster(x...)
+function ChainRulesCore.rrule(::typeof(hcat_by_sum), xs::AbstractVector)
+    N = length(xs)
+
+    ns = map(x->size(x,2), xs)
+    pushfirst!(ns, 1)
+    cumsum!(ns, ns)
+
+    hcat_by_sum_pullback(Δ) = (NoTangent(), ntuple(i->view(Δ,:,ns[i]:(ns[i+1]-1)), N))
+    hcat_by_sum(xs), hcat_by_sum_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(parent), A::Base.SubArray)
+    parent_pullback(Δ) = (NoTangent(), view(Δ, A.indices...))
+    parent(A), parent_pullback
+end

@@ -18,7 +18,7 @@
     NewLayer(m, n) = NewLayer(randn(T, m,n))
 
     function (l::NewLayer)(fg::FeaturedGraph, X::AbstractMatrix)
-        _, x, _ = GeometricFlux.propagate(l, graph(fg), edge_feature(fg), X, global_feature(fg), +)
+        _, x, _ = GeometricFlux.propagate(l, fg, edge_feature(fg), X, global_feature(fg), +)
         x
     end
 
