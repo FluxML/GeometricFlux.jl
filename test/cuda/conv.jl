@@ -20,12 +20,8 @@
         Y = gc(X)
         @test size(Y) == (out_channel, N)
 
-        g = Zygote.gradient(x -> sum(gc(x)), X)[1]
-        @test size(g) == size(X)
-
-        g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-        @test size(g.weight) == size(gc.weight)
-        @test size(g.bias) == size(gc.bias)
+        g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+        @test length(g.grads) == 2
     end
 
 
@@ -43,12 +39,8 @@
         Y = cc(X)
         @test size(Y) == (out_channel, N)
 
-        g = Zygote.gradient(x -> sum(cc(x)), X)[1]
-        @test size(g) == size(X)
-
-        g = Zygote.gradient(model -> sum(model(X)), cc)[1]
-        @test size(g.weight) == size(cc.weight)
-        @test size(g.bias) == size(cc.bias)
+        g = Zygote.gradient(() -> sum(cc(X)), Flux.params(cc))
+        @test length(g.grads) == 2
     end
 
     @testset "GraphConv" begin
@@ -61,13 +53,8 @@
         Y = gc(X)
         @test size(Y) == (out_channel, N)
 
-        g = Zygote.gradient(x -> sum(gc(x)), X)[1]
-        @test size(g) == size(X)
-
-        g = Zygote.gradient(model -> sum(model(X)), gc)[1]
-        @test size(g.weight1) == size(gc.weight1)
-        @test size(g.weight2) == size(gc.weight2)
-        @test size(g.bias) == size(gc.bias)
+        g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+        @test length(g.grads) == 3
     end
 
     @testset "GATConv" begin
@@ -86,13 +73,8 @@
         Y = gat(X)
         @test size(Y) == (out_channel, N)
 
-        g = Zygote.gradient(x -> sum(gat(x)), X)[1]
-        @test size(g) == size(X)
-
-        g = Zygote.gradient(model -> sum(model(X)), gat)[1]
-        @test size(g.weight) == size(gat.weight)
-        @test size(g.bias) == size(gat.bias)
-        @test size(g.a) == size(gat.a)
+        g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
+        @test length(g.grads) == 3
     end
 
     @testset "GatedGraphConv" begin
@@ -104,11 +86,8 @@
         Y = ggc(X)
         @test size(Y) == (out_channel, N)
 
-        g = Zygote.gradient(x -> sum(ggc(x)), X)[1]
-        @test size(g) == size(X)
-
-        g = Zygote.gradient(model -> sum(model(X)), ggc)[1]
-        @test size(g.weight) == size(ggc.weight)
+        g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
+        @test length(g.grads) == 6
     end
 
     @testset "EdgeConv" begin
@@ -117,11 +96,7 @@
         Y = ec(X)
         @test size(Y) == (out_channel, N)
 
-        g = Zygote.gradient(x -> sum(ec(x)), X)[1]
-        @test size(g) == size(X)
-
-        g = Zygote.gradient(model -> sum(model(X)), ec)[1]
-        @test size(g.nn.weight) == size(ec.nn.weight)
-        @test size(g.nn.bias) == size(ec.nn.bias)
+        g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+        @test length(g.grads) == 2
     end
 end

@@ -8,6 +8,7 @@ using Random
 using Reexport
 
 using CUDA, CUDA.CUSPARSE
+using ChainRulesCore
 using ChainRulesCore: @non_differentiable
 using FillArrays: Fill
 using Flux
@@ -18,6 +19,8 @@ using NNlib, NNlibCUDA
 using Zygote
 
 import Word2Vec: word2vec, wordvectors, get_vector
+
+const ConcreteFeaturedGraph = Union{FeaturedGraph,FeaturedSubgraph}
 
 export
     # layers/graphlayers
@@ -50,8 +53,6 @@ export
     VGAE,
     InnerProductDecoder,
     VariationalEncoder,
-    summarize,
-    sample,
 
     # layer/selector
     bypass_graph,
