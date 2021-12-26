@@ -22,7 +22,7 @@
 
     @testset "without aggregation" begin
         function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, graph(fg), edge_feature(fg), node_feature(fg), global_feature(fg))
+            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg))
         end
 
         fg = FeaturedGraph(adj, nf=nf)
@@ -35,7 +35,7 @@
 
     @testset "with neighbor aggregation" begin
         function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, graph(fg), edge_feature(fg), node_feature(fg), global_feature(fg), +)
+            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg), +)
         end
 
         fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=zeros(0))
@@ -50,7 +50,7 @@
     GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = rand(T, out_channel)
     @testset "update edge with neighbor aggregation" begin
         function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, graph(fg), edge_feature(fg), node_feature(fg), global_feature(fg), +)
+            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg), +)
         end
 
         fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=zeros(0))
@@ -65,7 +65,7 @@
     GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = rand(T, out_channel)
     @testset "update edge/vertex with all aggregation" begin
         function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, graph(fg), edge_feature(fg), node_feature(fg), global_feature(fg), +, +, +)
+            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg), +, +, +)
         end
 
         fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=gf)
