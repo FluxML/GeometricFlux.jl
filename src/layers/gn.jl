@@ -1,22 +1,6 @@
 _view(::Nothing, idx) = nothing
 _view(A::Fill{T,2,Axes}, idx) where {T,Axes} = fill(A.value, A.axes[1], length(idx))
-
-function _view(A::SubArray{T,2,S}, idx) where {T,S<:Fill}
-    p = parent(A)
-    return Fill(p.value, p.axes[1].stop, length(idx))
-end
-
 _view(A::AbstractMatrix, idx) = view(A, :, idx)
-
-function _view(A::SubArray{T,2,S}, idxs) where {T,S<:AbstractMatrix}
-    view_idx = A.indices[2]
-    if view_idx == idxs
-        return A
-    else
-        idxs = findall(x -> x in idxs, view_idx)
-        return view(A, :, idxs)
-    end
-end
 
 aggregate(aggr::typeof(+), X) = vec(sum(X, dims=2))
 aggregate(aggr::typeof(-), X) = -vec(sum(X, dims=2))
@@ -32,10 +16,16 @@ abstract type GraphNet <: AbstractGraphLayer end
 @inline update_vertex(gn::GraphNet, ē, vi, u) = vi
 @inline update_global(gn::GraphNet, ē, v̄, u) = u
 
+function _get_indices(fg::AbstractFeaturedGraph)
+    es = cpu(GraphSignals.incident_edges(fg))
+    xs = cpu(GraphSignals.repeat_nodes(fg))
+    nbrs = cpu(GraphSignals.neighbors(fg))
+    sorted_idx = sort!(collect(zip(es, xs, nbrs)), by=x->x[1])
+    return collect.(collect(zip(sorted_idx...)))
+end
+
 @inline function update_batch_edge(gn::GraphNet, fg::AbstractFeaturedGraph, E, V, u)
-    es = Zygote.ignore(()->cpu(GraphSignals.incident_edges(fg)))
-    xs = Zygote.ignore(()->cpu(GraphSignals.repeat_nodes(fg)))
-    nbrs = Zygote.ignore(()->cpu(GraphSignals.neighbors(fg)))
+    es, xs, nbrs = Zygote.ignore(()->_get_indices(fg))
     ms = map((e,i,j)->update_edge(gn, _view(E, e), _view(V, i), _view(V, j), u), es, xs, nbrs)
     M = hcat_by_sum(ms)
     return M
@@ -50,7 +40,7 @@ end
 
 @inline function aggregate_neighbors(gn::GraphNet, fg::AbstractFeaturedGraph, aggr, E)
     N = nv(parent(fg))
-    xs = Zygote.ignore(()->cpu(GraphSignals.repeat_nodes(fg)))
+    es, xs, nbrs = Zygote.ignore(()->_get_indices(fg))
     Ē = NNlib.scatter(aggr, E, xs; dstsize=(size(E, 1), N))
     return Ē
 end
@@ -67,6 +57,14 @@ function propagate(gn::GraphNet, fg::AbstractFeaturedGraph, naggr=nothing, eaggr
     FeaturedGraph(fg, nf=V, ef=E, gf=u)
 end
 
+"""
+- `update_batch_edge`: (E_in_dim, E) -> (E_out_dim, E)
+- `aggregate_neighbors`: (E_out_dim, E) -> (E_out_dim, V)
+- `update_batch_vertex`: (V_in_dim, V) -> (V_out_dim, V)
+- `aggregate_edges`: (E_out_dim, E) -> (E_out_dim,)
+- `aggregate_vertices`: (V_out_dim, V) -> (V_out_dim,)
+- `update_global`: (dim,) -> (dim,)
+"""
 function propagate(gn::GraphNet, fg::AbstractFeaturedGraph, E::AbstractArray, V::AbstractArray, u::AbstractArray,
                    naggr=nothing, eaggr=nothing, vaggr=nothing)
     E = update_batch_edge(gn, fg, E, V, u)
@@ -75,5 +73,5 @@ function propagate(gn::GraphNet, fg::AbstractFeaturedGraph, E::AbstractArray, V:
     ē = aggregate_edges(gn, eaggr, E)
     v̄ = aggregate_vertices(gn, vaggr, V)
     u = update_global(gn, ē, v̄, u)
-    return parent(E), parent(V), u
+    return E, V, u
 end

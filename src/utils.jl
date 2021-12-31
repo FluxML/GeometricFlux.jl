@@ -24,8 +24,3 @@ function ChainRulesCore.rrule(::typeof(hcat_by_sum), xs::AbstractVector)
     hcat_by_sum_pullback(Δ) = (NoTangent(), ntuple(i->view(Δ,:,ns[i]:(ns[i+1]-1)), N))
     hcat_by_sum(xs), hcat_by_sum_pullback
 end
-
-function ChainRulesCore.rrule(::typeof(parent), A::Base.SubArray)
-    parent_pullback(Δ) = (NoTangent(), view(Δ, A.indices...))
-    parent(A), parent_pullback
-end
