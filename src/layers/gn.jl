@@ -49,7 +49,7 @@ end
 end
 
 @inline function aggregate_neighbors(gn::GraphNet, fg::AbstractFeaturedGraph, aggr, E)
-    N = nv(parent(fg))
+    N = nv(parent(graph(fg).S))
     xs = Zygote.ignore(()->cpu(GraphSignals.repeat_nodes(fg)))
     Ē = NNlib.scatter(aggr, E, xs; dstsize=(size(E, 1), N))
     return Ē

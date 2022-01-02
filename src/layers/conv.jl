@@ -255,7 +255,7 @@ end
 
 function update_batch_edge(gat::GATConv, fg::AbstractFeaturedGraph, E::AbstractMatrix, X::AbstractMatrix, u)
     @assert Zygote.ignore(() -> check_self_loops(graph(fg))) "a vertex must have self loop (receive a message from itself)."
-    nodes = Zygote.ignore(()->vertices(fg))
+    nodes = Zygote.ignore(()->vertices(graph(fg)))
     nbr = i->cpu(GraphSignals.neighbors(graph(fg), i))
     ms = map(i -> graph_attention(gat, i, Zygote.ignore(()->nbr(i)), X), nodes)
     M = hcat_by_sum(ms)
@@ -296,6 +296,102 @@ function Base.show(io::IO, l::GATConv)
     print(io, ", LeakyReLU(λ=", l.negative_slope)
     print(io, "))")
 end
+
+
+"""
+    GATv2Conv([fg,] in => out;
+            heads=1,
+            concat=true,
+            init=glorot_uniform    
+            negative_slope=0.2)
+
+GATv2 Layer as introduced in https://arxiv.org/abs/2105.14491
+
+# Arguments
+
+- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `heads`: Number attention heads 
+- `concat`: Concatenate layer output or not. If not, layer output is averaged.
+- `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
+"""
+struct GATv2Conv{V<:AbstractFeaturedGraph, T, A<:AbstractMatrix{T}, B} <: MessagePassing
+    fg::V
+    wi::A
+    wj::A
+    biasi::B
+    biasj::B
+    a::A
+    negative_slope::T
+    channel::Pair{Int, Int}
+    heads::Int
+    concat::Bool
+end
+
+function GATv2Conv(
+    fg::AbstractFeaturedGraph,
+    ch::Pair{Int,Int};
+    heads::Int=1,
+    concat::Bool=true,
+    negative_slope=0.2f0,
+    bias::Bool=true,
+    init=glorot_uniform,
+)
+    in, out = ch
+    wi = init(out*heads, in)
+    wj = init(out*heads, in)
+    bi = Flux.create_bias(wi, bias, out*heads)
+    bj = Flux.create_bias(wj, bias, out*heads)
+    a = init(out, heads)
+    GATv2Conv(fg, wi, wj, bi, bj, a, negative_slope, ch, heads, concat)
+end
+
+GATv2Conv(ch::Pair{Int,Int}; kwargs...) = GATv2Conv(NullGraph(), ch; kwargs...)
+
+@functor GATv2Conv
+
+Flux.trainable(l::GATv2Conv) = (l.wi, l.wj, l.biasi, l.biasj, l.a)
+
+function message(gat::GATv2Conv, x_i::AbstractVector, x_j::AbstractVector)
+    xi = reshape(gat.wi * x_i + gat.biasi, :, gat.heads)
+    xj = reshape(gat.wj * x_j + gat.biasj, :, gat.heads)
+    eij = gat.a' * leakyrelu.(xi + xj, gat.negative_slope)
+    vcat(eij, xj)
+end
+
+function graph_attention(gat::GATv2Conv, i, js, X::AbstractMatrix)
+    e_ij = mapreduce(j -> GeometricFlux.message(gat, _view(X, i), _view(X, j)), hcat, js)
+    n = size(e_ij, 1)
+    αs = Flux.softmax(reshape(view(e_ij, 1, :), gat.heads, :), dims=2)
+    msgs = view(e_ij, 2:n, :) .* reshape(αs, 1, :)
+    reshape(msgs, (n-1)*gat.heads, :)
+end
+
+function update_batch_edge(gat::GATv2Conv, fg::AbstractFeaturedGraph, E::AbstractMatrix, X::AbstractMatrix, u)
+    @assert Zygote.ignore(() -> check_self_loops(graph(fg))) "a vertex must have self loop (receive a message from itself)."
+    nodes = Zygote.ignore(()->vertices(graph(fg)))
+    nbr = i->cpu(GraphSignals.neighbors(graph(fg), i))
+    ms = map(i -> graph_attention(gat, i, Zygote.ignore(()->nbr(i)), X), nodes)
+    M = hcat_by_sum(ms)
+    return M
+end
+
+function update_batch_vertex(gat::GATv2Conv, ::AbstractFeaturedGraph, M::AbstractMatrix, X::AbstractMatrix, u)
+    if !gat.concat
+        N = size(M, 2)
+        M = reshape(mean(reshape(M, :, gat.heads, N), dims=2), :, N)
+    end
+    return M
+end
+
+function (gat::GATv2Conv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix)
+    GraphSignals.check_num_nodes(fg, X)
+    _, X, _ = propagate(gat, fg, edge_feature(fg), X, global_feature(fg), +)
+    return X
+end
+
+(l::GATv2Conv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 
 
 """
