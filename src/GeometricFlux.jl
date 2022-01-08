@@ -54,11 +54,8 @@ export
     InnerProductDecoder,
     VariationalEncoder,
 
-    # layer/selector
-    bypass_graph,
-
-    # utils
-    generate_cluster,
+    # layer/misc
+    Bypass,
 
     #node2vec
     node2vec
