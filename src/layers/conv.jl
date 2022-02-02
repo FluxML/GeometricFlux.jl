@@ -253,16 +253,16 @@ Graph attentional layer.
 
 ```jldoctest
 julia> GATConv(1024=>256, relu)
-GATConv(1024=>256, heads=1, concat=true, LeakyReLU(λ=0.2))
+GATConv(1024=>256, relu, heads=1, concat=true, LeakyReLU(λ=0.2))
 
 julia> GATConv(1024=>256, relu, heads=4)
-GATConv(1024=>1024, heads=4, concat=true, LeakyReLU(λ=0.2))
+GATConv(1024=>1024, relu, heads=4, concat=true, LeakyReLU(λ=0.2))
 
 julia> GATConv(1024=>256, relu, heads=4, concat=false)
-GATConv(1024=>1024, heads=4, concat=false, LeakyReLU(λ=0.2))
+GATConv(1024=>1024, relu, heads=4, concat=false, LeakyReLU(λ=0.2))
 
 julia> GATConv(1024=>256, relu, negative_slope=0.1f0)
-GATConv(1024=>256, heads=1, concat=true, LeakyReLU(λ=0.1))
+GATConv(1024=>256, relu, heads=1, concat=true, LeakyReLU(λ=0.1))
 ```
 
 See also [`WithGraph`](@ref) for training layer with static graph.
@@ -282,7 +282,7 @@ function GATConv(ch::Pair{Int,Int}, σ=identity; heads::Int=1, concat::Bool=true
                  negative_slope=0.2f0, init=glorot_uniform, bias::Bool=true)
     in, out = ch             
     W = init(out*heads, in)
-    b = Flux.create_bias(W, bias, out, 1, heads)
+    b = Flux.create_bias(W, bias, out*heads)
     a = init(2*out, heads)
     GATConv(W, b, a, σ, negative_slope, ch, heads, concat)
 end
@@ -297,22 +297,20 @@ Flux.trainable(l::GATConv) = (l.weight, l.bias, l.a)
 function message(gat::GATConv, Xi::AbstractMatrix, Xj::AbstractMatrix, e_ij)
     Xi = reshape(Xi, size(Xi)..., 1)
     Xj = reshape(Xj, size(Xj)..., 1)
-    A = message(gat, Xi, Xj, nothing)
-    return reshape(A, size(A)[1:3]...)
+    m = message(gat, Xi, Xj, nothing)
+    return reshape(m, :)
 end
 
 function message(gat::GATConv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
     _, nb, bch_sz = size(Xj)
     heads = gat.heads
-    Q = reshape(NNlib.batched_mul(gat.weight, Xi), :, nb, heads*bch_sz)  # dims: (out, nb, heads*bch_sz)
-    K = reshape(NNlib.batched_mul(gat.weight, Xj), :, nb, heads*bch_sz)
-    V = reshape(NNlib.batched_mul(gat.weight, Xj), :, nb, heads*bch_sz)
-    QK = reshape(vcat(Q, K), :, nb, heads, bch_sz)  # dims: (2out, nb, heads, bch_sz)
-    QK = permutedims(QK, (1, 3, 2, 4))  # dims: (2out, heads, nb, bch_sz)
+    Q = reshape(NNlib.batched_mul(gat.weight, Xi), :, heads, nb, bch_sz)  # dims: (out, heads, nb, bch_sz)
+    K = reshape(NNlib.batched_mul(gat.weight, Xj), :, heads, nb, bch_sz)
+    V = reshape(NNlib.batched_mul(gat.weight, Xj), :, heads, nb, bch_sz)
+    QK = vcat(Q, K)  # dims: (2out, heads, nb, bch_sz)
     A = leakyrelu.(sum(QK .* gat.a, dims=1), gat.negative_slope)  # dims: (1, heads, nb, bch_sz)
-    QK = permutedims(QK, (1, 3, 2, 4))  # dims: (1, nb, heads, bch_sz)
-    α = Flux.softmax(reshape(A, nb, 1, :), dims=1)  # dims: (nb, 1, heads*bch_sz)
-    return reshape(NNlib.batched_mul(V, α), :, 1, heads, bch_sz)  # dims: (out, 1, heads, bch_sz)
+    α = Flux.softmax(A, dims=3)  # dims: (1, heads, nb, bch_sz)
+    return reshape(sum(V .* α, dims=3), :, 1, bch_sz)  # dims: (out*heads, 1, bch_sz)
 end
 
 # graph attention
@@ -325,7 +323,7 @@ function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
         return message(gat, Xi, Xj, nothing)
     end
     hs = [_message(gat, el, i, X) for i in 1:el.N]
-    return hcat(hs...)  # dims: (out, N, heads, [bch_sz])
+    return hcat(hs...)  # dims: (out*heads, N, [bch_sz])
 end
 
 function check_self_loops(sg::SparseGraph)
@@ -337,19 +335,18 @@ function check_self_loops(sg::SparseGraph)
     return true
 end
 
-function update(gat::GATConv, M::AbstractArray, X::AbstractArray)
+function update(gat::GATConv, M::AbstractArray, X)
     M = M .+ gat.bias
-    if gat.concat
-        M = gat.σ.(M)  # dims: (out, N, heads, [bch_sz])
+    if gat.concat || gat.heads == 1
+        M = gat.σ.(M)  # dims: (out*heads, N, [bch_sz])
     else
-        M = gat.σ.(mean(M, dims=3))
-        M = _reshape(M)  # dims: (out, N, [bch_sz])
+        dims = size(M)[2:end]
+        M = reshape(M, :, gat.heads, dims...)
+        M = gat.σ.(mean(M, dims=2))
+        M = reshape(M, :, dims...)  # dims: (out, N, [bch_sz])
     end
     return M
 end
-
-_reshape(M::AbstractArray{<:Real,3}) = reshape(M, size(M)[[1,2]]...)
-_reshape(M::AbstractArray{<:Real,4}) = reshape(M, size(M)[[1,2,4]]...)
 
 # For variable graph
 function (l::GATConv)(fg::AbstractFeaturedGraph)
@@ -365,7 +362,7 @@ end
 
 # For static graph
 function (l::GATConv)(el::NamedTuple, X::AbstractArray)
-    GraphSignals.check_num_nodes(el.N, size(X, 2))
+    GraphSignals.check_num_nodes(el.N, X)
     # TODO: should have self loops check for el
     Ē = update_batch_edge(l, el, nothing, X, nothing)
     V = update_batch_vertex(l, el, Ē, X, nothing)
@@ -376,6 +373,7 @@ function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
     out_channel = size(l.weight, ndims(l.weight)-1)
     print(io, "GATConv(", in_channel, "=>", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
     print(io, ", heads=", l.heads)
     print(io, ", concat=", l.concat)
     print(io, ", LeakyReLU(λ=", l.negative_slope)
@@ -384,99 +382,142 @@ end
 
 
 """
-    GATv2Conv([fg,] in => out;
-            heads=1,
-            concat=true,
-            init=glorot_uniform    
-            negative_slope=0.2)
+    GATv2Conv(in => out, σ=identity; heads=1, concat=true,
+              init=glorot_uniform, negative_slope=0.2)
 
-GATv2 Layer as introduced in https://arxiv.org/abs/2105.14491
+Graph attentional layer v2.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
+- `σ`: Activation function.
 - `heads`: Number attention heads 
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
+
+# Examples
+
+```jldoctest
+julia> GATv2Conv(1024=>256, relu)
+GATv2Conv(1024=>256, relu, heads=1, concat=true, LeakyReLU(λ=0.2))
+
+julia> GATv2Conv(1024=>256, relu, heads=4)
+GATv2Conv(1024=>1024, relu, heads=4, concat=true, LeakyReLU(λ=0.2))
+
+julia> GATv2Conv(1024=>256, relu, heads=4, concat=false)
+GATv2Conv(1024=>1024, relu, heads=4, concat=false, LeakyReLU(λ=0.2))
+
+julia> GATv2Conv(1024=>256, relu, negative_slope=0.1f0)
+GATv2Conv(1024=>256, relu, heads=1, concat=true, LeakyReLU(λ=0.1))
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
-struct GATv2Conv{V<:AbstractFeaturedGraph, T, A<:AbstractMatrix{T}, B} <: MessagePassing
-    fg::V
+struct GATv2Conv{T, A<:AbstractMatrix{T}, B, F} <: MessagePassing
     wi::A
     wj::A
     biasi::B
     biasj::B
     a::A
+    σ::F
     negative_slope::T
     channel::Pair{Int, Int}
     heads::Int
     concat::Bool
 end
 
-function GATv2Conv(
-    fg::AbstractFeaturedGraph,
-    ch::Pair{Int,Int};
-    heads::Int=1,
-    concat::Bool=true,
-    negative_slope=0.2f0,
-    bias::Bool=true,
-    init=glorot_uniform,
-)
+function GATv2Conv(ch::Pair{Int,Int}, σ=identity; heads::Int=1, concat::Bool=true,
+                   negative_slope=0.2f0, bias::Bool=true, init=glorot_uniform)
     in, out = ch
     wi = init(out*heads, in)
     wj = init(out*heads, in)
     bi = Flux.create_bias(wi, bias, out*heads)
     bj = Flux.create_bias(wj, bias, out*heads)
     a = init(out, heads)
-    GATv2Conv(fg, wi, wj, bi, bj, a, negative_slope, ch, heads, concat)
+    GATv2Conv(wi, wj, bi, bj, a, σ, negative_slope, ch, heads, concat)
 end
-
-GATv2Conv(ch::Pair{Int,Int}; kwargs...) = GATv2Conv(NullGraph(), ch; kwargs...)
 
 @functor GATv2Conv
 
 Flux.trainable(l::GATv2Conv) = (l.wi, l.wj, l.biasi, l.biasj, l.a)
 
-function message(gat::GATv2Conv, x_i::AbstractVector, x_j::AbstractVector)
-    xi = reshape(gat.wi * x_i + gat.biasi, :, gat.heads)
-    xj = reshape(gat.wj * x_j + gat.biasj, :, gat.heads)
-    eij = gat.a' * leakyrelu.(xi + xj, gat.negative_slope)
-    vcat(eij, xj)
+function message(gat::GATv2Conv, Xi::AbstractMatrix, Xj::AbstractMatrix, e_ij)
+    Xi = reshape(Xi, size(Xi)..., 1)
+    Xj = reshape(Xj, size(Xj)..., 1)
+    m = message(gat, Xi, Xj, nothing)
+    return reshape(m, :)
 end
 
-function graph_attention(gat::GATv2Conv, i, js, X::AbstractMatrix)
-    e_ij = mapreduce(j -> GeometricFlux.message(gat, _view(X, i), _view(X, j)), hcat, js)
-    n = size(e_ij, 1)
-    αs = Flux.softmax(reshape(view(e_ij, 1, :), gat.heads, :), dims=2)
-    msgs = view(e_ij, 2:n, :) .* reshape(αs, 1, :)
-    reshape(msgs, (n-1)*gat.heads, :)
+function message(gat::GATv2Conv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
+    _, nb, bch_sz = size(Xj)
+    heads = gat.heads
+    Q = reshape(NNlib.batched_mul(gat.wi, Xi) .+ gat.biasi, :, heads, nb, bch_sz)  # dims: (out, heads, nb, bch_sz)
+    K = reshape(NNlib.batched_mul(gat.wj, Xj) .+ gat.biasj, :, heads, nb, bch_sz)
+    V = reshape(NNlib.batched_mul(gat.wj, Xj) .+ gat.biasj, :, heads, nb, bch_sz)
+    QK = Q + K  # dims: (out, heads, nb, bch_sz)
+    A = leakyrelu.(sum(QK .* gat.a, dims=1), gat.negative_slope)  # dims: (1, heads, nb, bch_sz)
+    α = Flux.softmax(A, dims=3)  # dims: (1, heads, nb, bch_sz)
+    return reshape(sum(V .* α, dims=3), :, 1, bch_sz)  # dims: (out*heads, 1, bch_sz)
 end
 
-function update_batch_edge(gat::GATv2Conv, fg::AbstractFeaturedGraph, E::AbstractMatrix, X::AbstractMatrix, u)
-    @assert Zygote.ignore(() -> check_self_loops(graph(fg))) "a vertex must have self loop (receive a message from itself)."
-    nodes = Zygote.ignore(()->vertices(graph(fg)))
-    nbr = i->cpu(GraphSignals.neighbors(graph(fg), i))
-    ms = map(i -> graph_attention(gat, i, Zygote.ignore(()->nbr(i)), X), nodes)
-    M = hcat_by_sum(ms)
-    return M
+function update_batch_edge(gat::GATv2Conv, el::NamedTuple, E, X::AbstractArray, u)
+    function _message(gat, el, i, X)
+        xs = el.xs[el.xs .== i]
+        nbrs = el.nbrs[el.xs .== i]
+        Xi = _gather(X, xs)
+        Xj = _gather(X, nbrs)
+        return message(gat, Xi, Xj, nothing)
+    end
+    hs = [_message(gat, el, i, X) for i in 1:el.N]
+    return hcat(hs...)  # dims: (out*heads, N, [bch_sz])
 end
 
-function update_batch_vertex(gat::GATv2Conv, ::AbstractFeaturedGraph, M::AbstractMatrix, X::AbstractMatrix, u)
-    if !gat.concat
-        N = size(M, 2)
-        M = reshape(mean(reshape(M, :, gat.heads, N), dims=2), :, N)
+function update(gat::GATv2Conv, M::AbstractArray, X)
+    if gat.concat || gat.heads == 1
+        M = gat.σ.(M)  # dims: (out*heads, N, [bch_sz])
+    else
+        dims = size(M)[2:end]
+        M = reshape(M, :, gat.heads, dims...)
+        M = gat.σ.(mean(M, dims=2))
+        M = reshape(M, :, dims...)  # dims: (out, N, [bch_sz])
     end
     return M
 end
 
-function (gat::GATv2Conv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix)
+# For variable graph
+function (gat::GATv2Conv)(fg::AbstractFeaturedGraph)
+    X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
-    _, X, _ = propagate(gat, fg, edge_feature(fg), X, global_feature(fg), +)
-    return X
+    sg = graph(fg)
+    @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
+    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    Ē = update_batch_edge(gat, el, nothing, X, nothing)
+    V = update_batch_vertex(gat, el, Ē, X, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::GATv2Conv)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+# For static graph
+function (l::GATv2Conv)(el::NamedTuple, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, X)
+    # TODO: should have self loops check for el
+    Ē = update_batch_edge(l, el, nothing, X, nothing)
+    V = update_batch_vertex(l, el, Ē, X, nothing)
+    return V
+end
+
+function Base.show(io::IO, l::GATv2Conv)
+    in_channel = size(l.wi, ndims(l.wi))
+    out_channel = size(l.wi, ndims(l.wi)-1)
+    print(io, "GATv2Conv(", in_channel, "=>", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ", heads=", l.heads)
+    print(io, ", concat=", l.concat)
+    print(io, ", LeakyReLU(λ=", l.negative_slope)
+    print(io, "))")
+end
+
 
 
 """
@@ -569,7 +610,7 @@ Edge convolutional layer.
 
 # Arguments
 
-- `nn`: A neural network (e.g. a Dense layer or a MLP). 
+- `nn`: A neural network (e.g. a Dense layer or a MLP).
 - `aggr`: An aggregate function applied to the result of message function.
 `+`, `max` and `mean` are available.
 

@@ -104,13 +104,13 @@
         @testset "layer without graph" begin
             gat = GATConv(in_channel=>out_channel, heads=2) |> gpu
             @test size(gat.weight) == (out_channel * heads, in_channel)
-            @test size(gat.bias) == (out_channel, 1, heads)
+            @test size(gat.bias) == (out_channel * heads,)
             @test size(gat.a) == (2*out_channel, heads)
             
             X = rand(T, in_channel, N)
             fg = FeaturedGraph(adj, nf=X) |> gpu
             fg_ = gat(fg)
-            @test size(node_feature(fg_)) == (out_channel, N, heads)
+            @test size(node_feature(fg_)) == (out_channel * heads, N)
     
             g = Zygote.gradient(() -> sum(node_feature(gat(fg))), Flux.params(gat))
             @test length(g.grads) == 5
@@ -120,7 +120,7 @@
             X = rand(T, in_channel, N, batch_size)
             gat = WithGraph(fg, GATConv(in_channel=>out_channel, heads=2)) |> gpu
             Y = gat(X |> gpu)
-            @test size(Y) == (out_channel, N, heads, batch_size)
+            @test size(Y) == (out_channel * heads, N, batch_size)
     
             g = Zygote.gradient(() -> sum(gat(X |> gpu)), Flux.params(gat))
             @test length(g.grads) == 4

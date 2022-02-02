@@ -75,6 +75,16 @@ Reference: [Graph Attention Networks](https://arxiv.org/abs/1710.10903)
 
 ---
 
+## Graph Attentional Layer v2
+
+
+```@docs
+GATv2Conv
+```
+
+Reference: [How Attentive are Graph Attention Networks?](https://arxiv.org/abs/2105.14491)
+---
+
 ## Gated Graph Convolution Layer
 
 ```math
