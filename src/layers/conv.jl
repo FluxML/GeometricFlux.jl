@@ -275,7 +275,7 @@ function update_batch_vertex(gat::GATConv, ::AbstractFeaturedGraph, M::AbstractM
     M = M .+ gat.bias
     if !gat.concat
         N = size(M, 2)
-        M = reshape(mean(reshape(M, :, gat.heads, N), dims=2), :, N)
+        M = reshape(mean(reshape(M, gat.heads, :, N), dims=1), :, N)
     end
     return M
 end
@@ -380,7 +380,7 @@ end
 function update_batch_vertex(gat::GATv2Conv, ::AbstractFeaturedGraph, M::AbstractMatrix, X::AbstractMatrix, u)
     if !gat.concat
         N = size(M, 2)
-        M = reshape(mean(reshape(M, :, gat.heads, N), dims=2), :, N)
+        M = reshape(mean(reshape(M, gat.heads, :, N), dims=1), :, N)
     end
     return M
 end
