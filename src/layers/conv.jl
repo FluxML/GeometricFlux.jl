@@ -1,51 +1,61 @@
 """
-    GCNConv([fg,] in => out, σ=identity; bias=true, init=glorot_uniform)
+    GCNConv(in => out, σ=identity; bias=true, init=glorot_uniform)
 
-Graph convolutional layer.
+Graph convolutional layer. The input to the layer is a node feature array `X`
+of size `(num_features, num_nodes)`.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 
+# Example
 
-The input to the layer is a node feature array `X` 
-of size `(num_features, num_nodes)`.
+```jldoctest
+julia> gc = GCNConv(1024=>256, relu)
+GCNConv(1024 => 256, relu)
+```
+
+See also [`WithGraph`](@ref) for training layer with fixed graph or subgraph.
 """
-struct GCNConv{A<:AbstractMatrix, B, F, S<:AbstractFeaturedGraph} <: AbstractGraphLayer
+struct GCNConv{A<:AbstractMatrix,B,F}
     weight::A
     bias::B
     σ::F
-    fg::S
 end
 
-function GCNConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, σ=identity;
+function GCNConv(ch::Pair{Int,Int}, σ=identity;
                  init=glorot_uniform, bias::Bool=true)
     in, out = ch
     W = init(out, in)
     b = Flux.create_bias(W, bias, out)
-    GCNConv(W, b, σ, fg)
+    GCNConv(W, b, σ)
 end
-
-GCNConv(ch::Pair{Int,Int}, σ = identity; kwargs...) =
-    GCNConv(NullGraph(), ch, σ; kwargs...)
 
 @functor GCNConv
 
-Flux.trainable(l::GCNConv) = (l.weight, l.bias)
+(l::GCNConv)(Ã::AbstractArray, x::AbstractArray) = l.σ.(l.weight * x * Ã .+ l.bias)
 
-function (l::GCNConv)(fg::ConcreteFeaturedGraph, x::AbstractMatrix)
+function (l::GCNConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
     Ã = Zygote.ignore() do
-        GraphSignals.normalized_adjacency_matrix(fg, eltype(x); selfloop=true)
+        GraphSignals.normalized_adjacency_matrix(fg, eltype(nf); selfloop=true)
     end
-    l.σ.(l.weight * x * Ã .+ l.bias)
+    return FeaturedGraph(fg, nf = l(Ã, nf))
 end
 
-(l::GCNConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+function (wg::WithGraph{<:GCNConv})(X::AbstractArray)
+    N = size(X, 2)
+    wg.subgraph != (:) && N != length(wg.subgraph) &&
+        throw(ArgumentError("Layer with subgraph expecting subset of features, got #V=$N but #V for subgraph $(length(wg.subgraph))."))
+    Ã = Zygote.ignore() do
+        GraphSignals.normalized_adjacency_matrix(wg.fg, eltype(X); selfloop=true)
+    end
+    return wg.layer(Ã[wg.subgraph, wg.subgraph], X)
+end
 
 function Base.show(io::IO, l::GCNConv)
     out, in = size(l.weight)

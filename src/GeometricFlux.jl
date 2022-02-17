@@ -54,8 +54,9 @@ export
     InnerProductDecoder,
     VariationalEncoder,
 
-    # layer/misc
-    Bypass,
+    # layer/utils
+    WithGraph,
+    GraphParallel,
 
     #node2vec
     node2vec
@@ -68,10 +69,10 @@ include("layers/graphlayers.jl")
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
+include("layers/utils.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
-include("layers/misc.jl")
 
 include("sampling.jl")
 include("embedding/node2vec.jl")

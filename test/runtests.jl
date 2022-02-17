@@ -24,10 +24,10 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
-    "layers/misc",
+    "layers/utils",
     "sampling",
     "embedding/node2vec",
-    "models",
+    # "models",
 ]
 
 if CUDA.functional()
