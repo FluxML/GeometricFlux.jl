@@ -54,7 +54,7 @@ end
 
 function propagate(gn::GraphNet, fg::AbstractFeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing)
     E, V, u = propagate(gn, fg, edge_feature(fg), node_feature(fg), global_feature(fg), naggr, eaggr, vaggr)
-    FeaturedGraph(fg, nf=V, ef=E, gf=u)
+    return FeaturedGraph(fg, nf=V, ef=E, gf=u)
 end
 
 """

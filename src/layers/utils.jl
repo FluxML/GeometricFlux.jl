@@ -1,5 +1,5 @@
 """
-    WithGraph(layer, fg, [subgraph=:])
+    WithGraph(layer, fg)
 
 Train GNN layers with fixed graph.
 
@@ -7,7 +7,6 @@ Train GNN layers with fixed graph.
 
 - `layer`: A GNN layer.
 - `fg`: A fixed `FeaturedGraph` to train with.
-- `subgraph`: Node indeices to get a subgraph from `fg`.
 
 # Example
 
@@ -21,30 +20,21 @@ julia> fg = FeaturedGraph(adj);
 
 julia> gc = WithGraph(GCNConv(1024=>256), fg)
 WithGraph(GCNConv(1024 => 256), FeaturedGraph(#V=4, #E=4))
-
-julia> subgraph = [1, 2, 4]  # specify subgraph nodes
-
-julia> gc = WithGraph(GCNConv(1024=>256), fg, subgraph)
-WithGraph(GCNConv(1024 => 256), FeaturedGraph(#V=4, #E=4), subgraph=[1, 2, 4])
 ```
 """
-struct WithGraph{L,G<:AbstractFeaturedGraph,S}
+struct WithGraph{L,G<:AbstractFeaturedGraph}
     layer::L
     fg::G
-    subgraph::S
 end
 
 @functor WithGraph
 
 Flux.trainable(l::WithGraph) = (l.layer, )
 
-WithGraph(layer, fg::AbstractFeaturedGraph) = WithGraph(layer, fg, :)
-
 function Base.show(io::IO, l::WithGraph)
     print(io, "WithGraph(")
     print(io, l.layer, ", ")
     print(io, "FeaturedGraph(#V=", nv(l.fg), ", #E=", ne(l.fg), ")")
-    l.subgraph == (:) || print(io, ", subgraph=", l.subgraph)
     print(io, ")")
 end
 
@@ -80,11 +70,11 @@ end
 GraphParallel(; node_layer=identity, edge_layer=identity, global_layer=identity) =
     GraphParallel(node_layer, edge_layer, global_layer)
 
-function (l::GraphParallel)(fg::FeaturedGraph)
+function (l::GraphParallel)(fg::AbstractFeaturedGraph)
     nf = l.node_layer(node_feature(fg))
     ef = l.edge_layer(edge_feature(fg))
     gf = l.global_layer(global_feature(fg))
-    return FeaturedGraph(fg, nf=nf, ef=ef, gf=gf)
+    return ConcreteFeaturedGraph(fg, nf=nf, ef=ef, gf=gf)
 end
 
 function Base.show(io::IO, l::GraphParallel)
