@@ -20,8 +20,6 @@ using Zygote
 
 import Word2Vec: word2vec, wordvectors, get_vector
 
-const ConcreteFeaturedGraph = Union{FeaturedGraph,FeaturedSubgraph}
-
 export
     # layers/graphlayers
     AbstractGraphLayer,

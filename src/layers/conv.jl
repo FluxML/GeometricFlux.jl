@@ -19,7 +19,7 @@ julia> gc = GCNConv(1024=>256, relu)
 GCNConv(1024 => 256, relu)
 ```
 
-See also [`WithGraph`](@ref) for training layer with fixed graph or subgraph.
+See also [`WithGraph`](@ref) for training layer with fixed graph.
 """
 struct GCNConv{A<:AbstractMatrix,B,F}
     weight::A
@@ -37,24 +37,21 @@ end
 
 @functor GCNConv
 
-(l::GCNConv)(Ã::AbstractArray, x::AbstractArray) = l.σ.(l.weight * x * Ã .+ l.bias)
+(l::GCNConv)(Ã::AbstractMatrix, x::AbstractMatrix) = l.σ.(l.weight * x * Ã .+ l.bias)
 
 function (l::GCNConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
     Ã = Zygote.ignore() do
         GraphSignals.normalized_adjacency_matrix(fg, eltype(nf); selfloop=true)
     end
-    return FeaturedGraph(fg, nf = l(Ã, nf))
+    return ConcreteFeaturedGraph(fg, nf = l(Ã, nf))
 end
 
 function (wg::WithGraph{<:GCNConv})(X::AbstractArray)
-    N = size(X, 2)
-    wg.subgraph != (:) && N != length(wg.subgraph) &&
-        throw(ArgumentError("Layer with subgraph expecting subset of features, got #V=$N but #V for subgraph $(length(wg.subgraph))."))
     Ã = Zygote.ignore() do
         GraphSignals.normalized_adjacency_matrix(wg.fg, eltype(X); selfloop=true)
     end
-    return wg.layer(Ã[wg.subgraph, wg.subgraph], X)
+    return wg.layer(Ã, X)
 end
 
 function Base.show(io::IO, l::GCNConv)
@@ -101,7 +98,7 @@ ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
 
 Flux.trainable(l::ChebConv) = (l.weight, l.bias)
 
-function (c::ChebConv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix{T}) where T
+function (c::ChebConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix{T}) where T
     GraphSignals.check_num_nodes(fg, X)
     @assert size(X, 1) == size(c.weight, 2) "Input feature size must match input channel size."
     
@@ -175,7 +172,7 @@ message(gc::GraphConv, x_i, x_j::AbstractVector, e_ij) = gc.weight2 * x_j
 
 update(gc::GraphConv, m::AbstractVector, x::AbstractVector) = gc.σ.(gc.weight1*x .+ m .+ gc.bias)
 
-function (gc::GraphConv)(fg::ConcreteFeaturedGraph, x::AbstractMatrix)
+function (gc::GraphConv)(fg::AbstractFeaturedGraph, x::AbstractMatrix)
     # GraphSignals.check_num_nodes(fg, x)
     _, x, _ = propagate(gc, fg, edge_feature(fg), x, global_feature(fg), +)
     x
@@ -290,7 +287,7 @@ function update_batch_vertex(gat::GATConv, ::AbstractFeaturedGraph, M::AbstractM
     return M
 end
 
-function (gat::GATConv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix)
+function (gat::GATConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
     GraphSignals.check_num_nodes(fg, X)
     _, X, _ = propagate(gat, fg, edge_feature(fg), X, global_feature(fg), +)
     return X
@@ -349,7 +346,7 @@ message(ggc::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
 update(ggc::GatedGraphConv, m::AbstractVector, x) = m
 
 
-function (ggc::GatedGraphConv)(fg::ConcreteFeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
+function (ggc::GatedGraphConv)(fg::AbstractFeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
     GraphSignals.check_num_nodes(fg, H)
     m, n = size(H)
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
@@ -406,7 +403,7 @@ Flux.trainable(l::EdgeConv) = (l.nn,)
 message(ec::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
 update(ec::EdgeConv, m::AbstractVector, x) = m
 
-function (ec::EdgeConv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix)
+function (ec::EdgeConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
     GraphSignals.check_num_nodes(fg, X)
     _, X, _ = propagate(ec, fg, edge_feature(fg), X, global_feature(fg), ec.aggr)
     X
@@ -457,7 +454,7 @@ Flux.trainable(g::GINConv) = (fg=g.fg, nn=g.nn)
 message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
 update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
 
-function (g::GINConv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix)
+function (g::GINConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
     gf = graph(fg)
     GraphSignals.check_num_nodes(gf, X)
     _, X, _ = propagate(g, fg, edge_feature(fg), X, global_feature(fg), +)
@@ -526,7 +523,7 @@ message(c::CGConv,
 end
 update(c::CGConv, m::AbstractVector, x) = x + m
 
-function (c::CGConv)(fg::ConcreteFeaturedGraph, X::AbstractMatrix, E::AbstractMatrix)
+function (c::CGConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix, E::AbstractMatrix)
     GraphSignals.check_num_nodes(fg, X)
     GraphSignals.check_num_edges(fg, E)
     _, Y, _ = propagate(c, fg, E, X, global_feature(fg), +)

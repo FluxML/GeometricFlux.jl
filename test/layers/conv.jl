@@ -50,8 +50,8 @@
 
         @testset "layer with subgraph" begin
             X = rand(T, in_channel, 3)
-            subgraph = [1,2,4]
-            gc = WithGraph(GCNConv(in_channel=>out_channel), fg, subgraph)
+            nodes = [1,2,4]
+            gc = WithGraph(GCNConv(in_channel=>out_channel), subgraph(fg, nodes))
             Y = gc(X)
             @test size(Y) == (out_channel, 3)
         end
@@ -95,7 +95,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError cc(X)
+            @test_throws MethodError cc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -142,7 +142,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError gc(X)
+            @test_throws MethodError gc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -209,7 +209,7 @@
                 fg_ = gat(fg_gat)
                 Y = node_feature(fg_)
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
-                @test_throws ArgumentError gat(X)
+                @test_throws MethodError gat(X)
 
                 # Test with transposed features
                 fgt = FeaturedGraph(adj_gat, nf=Xt)
@@ -255,7 +255,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError ggc(X)
+            @test_throws MethodError ggc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -291,7 +291,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError ec(X)
+            @test_throws MethodError ec(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
