@@ -39,6 +39,12 @@ end
 
 (l::GCNConv)(Ã::AbstractMatrix, x::AbstractMatrix) = l.σ.(l.weight * x * Ã .+ l.bias)
 
+function (l::GCNConv)(Ã::AbstractMatrix, X::AbstractArray)
+    z = NNlib.batched_mul(l.weight, NNlib.batched_mul(X, Ã))
+    return l.σ.(z .+ l.bias)
+end
+
+# For variable graph
 function (l::GCNConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
     Ã = Zygote.ignore() do
@@ -47,9 +53,13 @@ function (l::GCNConv)(fg::AbstractFeaturedGraph)
     return ConcreteFeaturedGraph(fg, nf = l(Ã, nf))
 end
 
+# For fixed graph
+WithGraph(fg::AbstractFeaturedGraph, l::GCNConv) =
+    WithGraph(l, GraphSignals.normalized_adjacency_matrix!(fg, eltype(l.weight); selfloop=true))
+
 function (wg::WithGraph{<:GCNConv})(X::AbstractArray)
     Ã = Zygote.ignore() do
-        GraphSignals.normalized_adjacency_matrix(wg.fg, eltype(X); selfloop=true)
+        GraphSignals.normalized_adjacency_matrix(wg.fg)
     end
     return wg.layer(Ã, X)
 end

@@ -12,25 +12,31 @@ using ProgressMeter: Progress, next!
 using Statistics
 using Random
 
-CUDA.allowscalar(false)
-
 function load_data(dataset, batch_size)
-    # (train_X, train_y) dim: (num_features, target_dim) × 140
-    train_X, train_y = map(x->Matrix(x), traindata(Planetoid(), dataset))
+    # (train_X, train_y) dim: (num_features, target_dim) × 1708
+    train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset))
     # (test_X, test_y) dim: (num_features, target_dim) × 1000
-    test_X, test_y = map(x->Matrix(x), testdata(Planetoid(), dataset))
+    test_X, test_y = map(x -> Matrix(x), testdata(Planetoid(), dataset))
     g = graphdata(Planetoid(), dataset)
-    train_idx = train_indices(Planetoid(), dataset)
+    train_idx = 1:size(train_X, 2)
     test_idx = test_indices(Planetoid(), dataset)
 
-    train_data = [(subgraph(FeaturedGraph(g, nf=train_X), train_idx), train_y) for _ in 1:100];
-    test_data = [(subgraph(FeaturedGraph(g, nf=test_X), test_idx), test_y) for _ in 1:100];
-    train_batch = Flux.batch(train_data)
-    test_batch = Flux.batch(test_data)
+    # padding zeros
+    tr_X = zeros(Float32, size(train_X, 1), size(train_X, 2) + size(test_X, 2))
+    te_X = zeros(Float32, size(test_X, 1), size(train_X, 2) + size(test_X, 2))
+    tr_y = zeros(Float32, size(train_y, 1), size(train_y, 2) + size(test_y, 2))
+    te_y = zeros(Float32, size(test_y, 1), size(train_y, 2) + size(test_y, 2))
+    tr_X[:, train_idx] .= train_X
+    te_X[:, test_idx] .= test_X
+    tr_y[:, train_idx] .= train_y
+    te_y[:, test_idx] .= test_y
 
-    train_loader = DataLoader(train_batch, batchsize=batch_size, shuffle=true)
-    test_loader = DataLoader(test_batch, batchsize=batch_size, shuffle=true)
-    return train_loader, test_loader
+    fg = FeaturedGraph(g)
+    train_data = (repeat(tr_X, outer=(1,1,256)), repeat(tr_y, outer=(1,1,256)))
+    test_data = (repeat(te_X, outer=(1,1,32)), repeat(te_y, outer=(1,1,32)))
+    train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
+    test_loader = DataLoader(test_data, batchsize=batch_size, shuffle=true)
+    return train_loader, test_loader, fg, train_idx, test_idx
 end
 
 @with_kw mutable struct Args
@@ -48,20 +54,17 @@ end
 
 ## Loss: cross entropy with first layer L2 regularization 
 l2norm(x) = sum(abs2, x)
-function model_loss(model, λ, batch)
-    loss = 0.f0
-    for (x, y) in batch
-        loss += logitcrossentropy(model(x), y)
-        loss += λ*sum(l2norm, Flux.params(model[1]))
-    end
+function model_loss(model, λ, X, y, idx)
+    loss = logitcrossentropy(model(X)[:,idx,:], y[:,idx,:])
+    loss += λ*sum(l2norm, Flux.params(model[1]))
     return loss
 end
 
-function accuracy(model, batch::AbstractVector)
-    return mean(mean(onecold(softmax(cpu(model(x)))) .== onecold(cpu(y))) for (x, y) in batch)
+function accuracy(model, X::AbstractArray, y::AbstractArray, idx)
+    return mean(onecold(softmax(cpu(model(X))[:,idx,:])) .== onecold(cpu(y)[:,idx,:]))
 end
 
-accuracy(model, loader::DataLoader, device) = mean(accuracy(model, batch |> device) for batch in loader)
+accuracy(model, loader::DataLoader, device, idx) = mean(accuracy(model, X |> device, y |> device, idx) for (X, y) in loader)
 
 function train(; kws...)
     # load hyperparamters
@@ -78,14 +81,13 @@ function train(; kws...)
     end
 
     # load Cora from Planetoid dataset
-    train_loader, test_loader = load_data(:cora, args.batch_size)
+    train_loader, test_loader, fg, train_idx, test_idx = load_data(:cora, args.batch_size)
     
     # build model
     model = Chain(
-        GCNConv(args.input_dim=>args.hidden_dim, relu),
-        GraphParallel(node_layer=Dropout(0.5)),
-        GCNConv(args.hidden_dim=>args.target_dim),
-        node_feature,
+        WithGraph(fg, GCNConv(args.input_dim=>args.hidden_dim, relu)),
+        Dropout(0.5),
+        WithGraph(fg, GCNConv(args.hidden_dim=>args.target_dim)),
     ) |> device
 
     # ADAM optimizer
@@ -101,12 +103,12 @@ function train(; kws...)
         @info "Epoch $(epoch)"
         progress = Progress(length(train_loader))
 
-        for batch in train_loader
+        for (X, y) in train_loader
             loss, back = Flux.pullback(ps) do
-                model_loss(model, args.λ, batch |> device)
+                model_loss(model, args.λ, X |> device, y |> device, train_idx |> device)
             end
-            train_acc = accuracy(model, train_loader, device)
-            test_acc = accuracy(model, test_loader, device)
+            train_acc = accuracy(model, train_loader, device, train_idx)
+            test_acc = accuracy(model, test_loader, device, test_idx)
             grad = back(1f0)
             Flux.Optimise.update!(opt, ps, grad)
 
