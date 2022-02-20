@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0]
+
+- add semisupervised gcn and gcn with fixed graph example
+- implement new GCNConv
+- add node2vec
+- bug fix
+
 ## [0.8.0]
 
 - correct GCNConv with normalized_adjacency_matrix
