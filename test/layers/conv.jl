@@ -15,33 +15,16 @@
     @testset "GCNConv" begin
         X = rand(T, in_channel, N)
         Xt = transpose(rand(T, N, in_channel))
-        @testset "layer with graph" begin
-            gc = GCNConv(fg, in_channel=>out_channel)
-            @test size(gc.weight) == (out_channel, in_channel)
-            @test size(gc.bias) == (out_channel,)
-            @test GraphSignals.adjacency_matrix(gc.fg) == adj
-
-            Y = gc(X)
-            @test size(Y) == (out_channel, N)
-
-            # Test with transposed features
-            Y = gc(Xt)
-            @test size(Y) == (out_channel, N)
-
-            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
-            @test length(g.grads) == 2
-        end
 
         @testset "layer without graph" begin
             gc = GCNConv(in_channel=>out_channel)
             @test size(gc.weight) == (out_channel, in_channel)
             @test size(gc.bias) == (out_channel,)
-            @test !has_graph(gc.fg)
 
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError gc(X)
+            @test_throws MethodError gc(X)
             
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -50,6 +33,27 @@
 
             g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
             @test length(g.grads) == 4
+        end
+
+        @testset "layer with fixed graph" begin
+            gc = WithGraph(GCNConv(in_channel=>out_channel), fg)
+            Y = gc(X)
+            @test size(Y) == (out_channel, N)
+
+            # Test with transposed features
+            Y = gc(Xt)
+            @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            @test length(g.grads) == 3
+        end
+
+        @testset "layer with subgraph" begin
+            X = rand(T, in_channel, 3)
+            nodes = [1,2,4]
+            gc = WithGraph(GCNConv(in_channel=>out_channel), subgraph(fg, nodes))
+            Y = gc(X)
+            @test size(Y) == (out_channel, 3)
         end
 
         @testset "bias=false" begin
@@ -91,7 +95,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError cc(X)
+            @test_throws MethodError cc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -138,7 +142,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError gc(X)
+            @test_throws MethodError gc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -205,7 +209,7 @@
                 fg_ = gat(fg_gat)
                 Y = node_feature(fg_)
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
-                @test_throws ArgumentError gat(X)
+                @test_throws MethodError gat(X)
 
                 # Test with transposed features
                 fgt = FeaturedGraph(adj_gat, nf=Xt)
@@ -251,7 +255,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError ggc(X)
+            @test_throws MethodError ggc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -287,7 +291,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws ArgumentError ec(X)
+            @test_throws MethodError ec(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
