@@ -24,6 +24,7 @@ makedocs(
              "Tutorials" =>
                 [
                   "Semi-supervised learning with GCN" => "tutorials/semisupervised_gcn.md",
+                  "GCN with Fixed Graph" => "tutorials/gcn_fixed_graph.md",
                 ],
              "Abstractions" =>
                ["Message passing scheme" => "abstractions/msgpass.md",

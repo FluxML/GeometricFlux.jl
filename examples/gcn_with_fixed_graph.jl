@@ -12,28 +12,18 @@ using ProgressMeter: Progress, next!
 using Statistics
 using Random
 
-function load_data(dataset, batch_size)
-    # (train_X, train_y) dim: (num_features, target_dim) × 1708
-    train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset))
-    # (test_X, test_y) dim: (num_features, target_dim) × 1000
-    test_X, test_y = map(x -> Matrix(x), testdata(Planetoid(), dataset))
+function load_data(dataset, batch_size, train_repeats=512, test_repeats=32)
+    # (train_X, train_y) dim: (num_features, target_dim) × 2708
+    train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset, padding=true))
+    # (test_X, test_y) dim: (num_features, target_dim) × 2708
+    test_X, test_y = map(x -> Matrix(x), testdata(Planetoid(), dataset, padding=true))
     g = graphdata(Planetoid(), dataset)
     train_idx = 1:size(train_X, 2)
     test_idx = test_indices(Planetoid(), dataset)
 
-    # padding zeros
-    tr_X = zeros(Float32, size(train_X, 1), size(train_X, 2) + size(test_X, 2))
-    te_X = zeros(Float32, size(test_X, 1), size(train_X, 2) + size(test_X, 2))
-    tr_y = zeros(Float32, size(train_y, 1), size(train_y, 2) + size(test_y, 2))
-    te_y = zeros(Float32, size(test_y, 1), size(train_y, 2) + size(test_y, 2))
-    tr_X[:, train_idx] .= train_X
-    te_X[:, test_idx] .= test_X
-    tr_y[:, train_idx] .= train_y
-    te_y[:, test_idx] .= test_y
-
     fg = FeaturedGraph(g)
-    train_data = (repeat(tr_X, outer=(1,1,256)), repeat(tr_y, outer=(1,1,256)))
-    test_data = (repeat(te_X, outer=(1,1,32)), repeat(te_y, outer=(1,1,32)))
+    train_data = (repeat(train_X, outer=(1,1,train_repeats)), repeat(train_y, outer=(1,1,train_repeats)))
+    test_data = (repeat(test_X, outer=(1,1,test_repeats)), repeat(test_y, outer=(1,1,test_repeats)))
     train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
     test_loader = DataLoader(test_data, batchsize=batch_size, shuffle=true)
     return train_loader, test_loader, fg, train_idx, test_idx
@@ -42,8 +32,7 @@ end
 @with_kw mutable struct Args
     η = 0.01                # learning rate
     λ = 5f-4                # regularization paramater
-    batch_size = 32         # batch size
-    num_nodes = 2708        # number of nodes for graph
+    batch_size = 64         # batch size
     epochs = 200            # number of epochs
     seed = 0                # random seed
     cuda = true             # use GPU
