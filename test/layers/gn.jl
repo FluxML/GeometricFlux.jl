@@ -5,8 +5,8 @@
     V = 6
     E = 7
 
-    nf = rand(T, in_channel, V)
-    ef = rand(T, in_channel, E)
+    nf = hcat([repeat(T[i], in_channel) for i in 1:V]...)
+    ef = hcat([repeat(T[i], in_channel) for i in 1:E]...)
     gf = rand(T, in_channel)
 
     adj = T[0. 1. 0. 0. 0. 0.;
@@ -17,8 +17,6 @@
             0. 1. 1. 0. 1. 0.]
 
     struct NewGNLayer <: GraphNet end
-    
-    l = NewGNLayer()
 
     @testset "without aggregation" begin
         function (l::NewGNLayer)(fg::FeaturedGraph)
@@ -26,9 +24,10 @@
         end
 
         fg = FeaturedGraph(adj, nf=nf)
+        l = NewGNLayer()
         ef_, nf_, gf_ = l(fg)
 
-        @test size(nf_) == (in_channel, V)
+        @test nf_ == nf
         @test size(ef_) == (0, 2E)
         @test size(gf_) == (0,)
     end

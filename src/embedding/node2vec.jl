@@ -89,7 +89,7 @@ end
 """
 Returns J and q for a given edge
 """
-function get_alias_edge(g::FeaturedGraph, src::Int, dst::Int, p::Float64, q::Float64)::Alias
+function get_alias_edge(g::FeaturedGraph, src::Integer, dst::Integer, p::Real, q::Real)::Alias
     unnormalized_probs = spzeros(length(neighbors(g, dst; dir=:out)))
     neighbor_weight_pairs = zip(weighted_outneighbors(g, dst)...)
     for (i, (dst_nbr, weight)) in enumerate(neighbor_weight_pairs)
@@ -106,7 +106,7 @@ function get_alias_edge(g::FeaturedGraph, src::Int, dst::Int, p::Float64, q::Flo
 end
 
 # Returns (neighbors::Vector{Int}, weights::Vector{Float64})
-function weighted_outneighbors(fg::FeaturedGraph, i::Int)
+function weighted_outneighbors(fg::FeaturedGraph, i::Integer)
     nbrs = neighbors(fg, i; dir=:out)
     nbrs, sparse(graph(fg))[i, nbrs]
 end

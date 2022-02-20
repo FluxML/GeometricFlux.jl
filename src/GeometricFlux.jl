@@ -20,8 +20,6 @@ using Zygote
 
 import Word2Vec: word2vec, wordvectors, get_vector
 
-const ConcreteFeaturedGraph = Union{FeaturedGraph,FeaturedSubgraph}
-
 export
     # layers/graphlayers
     AbstractGraphLayer,
@@ -55,11 +53,9 @@ export
     InnerProductDecoder,
     VariationalEncoder,
 
-    # layer/selector
-    bypass_graph,
-
-    # utils
-    generate_cluster,
+    # layer/utils
+    WithGraph,
+    GraphParallel,
 
     #node2vec
     node2vec
@@ -72,10 +68,10 @@ include("layers/graphlayers.jl")
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
+include("layers/utils.jl")
 include("layers/conv.jl")
 include("layers/pool.jl")
 include("models.jl")
-include("layers/misc.jl")
 
 include("sampling.jl")
 include("embedding/node2vec.jl")
