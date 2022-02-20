@@ -35,7 +35,6 @@ end
     η = 0.01                # learning rate
     λ = 5f-4                # regularization paramater
     batch_size = 32         # batch size
-    num_nodes = 2708        # number of nodes for graph
     epochs = 200            # number of epochs
     seed = 0                # random seed
     cuda = true             # use GPU
