@@ -1,54 +1,124 @@
-using GeometricFlux, GraphSignals, Flux, JLD2, SparseArrays, DiffEqFlux, DifferentialEquations
-using Flux: onehotbatch, onecold, logitcrossentropy, throttle
-using Flux: @epochs
-using Statistics: mean
+using CUDA
+using GeometricFlux, GraphSignals, Flux, DiffEqFlux, DifferentialEquations
+using Statistics, Random
+using Flux: onecold, logitcrossentropy
+using Flux.Data: DataLoader
+using GeometricFlux.Datasets
+using Parameters: @with_kw
+using ProgressMeter: Progress, next!
 
-# Load the dataset
-@load "data/cora_features.jld2" features
-@load "data/cora_labels.jld2" labels
-@load "data/cora_graph.jld2" g
+function load_data(dataset, batch_size, train_repeats=512, test_repeats=32)
+    # (train_X, train_y) dim: (num_features, target_dim) × 2708
+    train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset, padding=true))
+    # (test_X, test_y) dim: (num_features, target_dim) × 2708
+    test_X, test_y = map(x -> Matrix(x), testdata(Planetoid(), dataset, padding=true))
+    g = graphdata(Planetoid(), dataset)
+    train_idx = 1:size(train_X, 2)
+    test_idx = test_indices(Planetoid(), dataset)
 
-# Model and Data Configuration
-num_nodes = 2708
-num_features = 1433
-hidden = 16
-target_catg = 7
-epochs = 40
+    fg = FeaturedGraph(g)
+    train_data = (repeat(train_X, outer=(1,1,train_repeats)), repeat(train_y, outer=(1,1,train_repeats)))
+    test_data = (repeat(test_X, outer=(1,1,test_repeats)), repeat(test_y, outer=(1,1,test_repeats)))
+    train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
+    test_loader = DataLoader(test_data, batchsize=batch_size, shuffle=true)
+    return train_loader, test_loader, fg, train_idx, test_idx
+end
 
-# Preprocess the data and compute adjacency matrix
-train_X = Matrix{Float32}(features)  # dim: num_features * num_nodes
-train_y = Float32.(labels)  # dim: target_catg * num_nodes
-fg = FeaturedGraph(g)
+@with_kw mutable struct Args
+    η = 0.01                # learning rate
+    λ = 5f-4                # regularization paramater
+    batch_size = 64         # batch size
+    epochs = 200            # number of epochs
+    seed = 0                # random seed
+    cuda = true             # use GPU
+    input_dim = 1433        # input dimension
+    hidden_dim = 16         # hidden dimension
+    target_dim = 7          # target dimension
+end
 
-# Define the Neural GDE
-diffeqarray_to_array(x) = reshape(cpu(x), size(x)[1:2])
+## Loss: cross entropy with first layer L2 regularization 
+l2norm(x) = sum(abs2, x)
 
-node = NeuralODE(
-    GCNConv(fg, hidden=>hidden),
-    (0.f0, 1.f0), Tsit5(), save_everystep = false,
-    reltol = 1e-3, abstol = 1e-3, save_start = false
-)
+function model_loss(model, λ, X, y, idx)
+    loss = logitcrossentropy(model(X)[:,idx,:], y[:,idx,:])
+    loss += λ*sum(l2norm, Flux.params(model[1]))
+    return loss
+end
 
-model = Chain(GCNConv(fg, num_features=>hidden, relu),
-              Dropout(0.5),
-              node,
-              diffeqarray_to_array,
-              GCNConv(fg, hidden=>target_catg),
-              softmax)
+function accuracy(model, X::AbstractArray, y::AbstractArray, idx)
+    return mean(onecold(softmax(cpu(model(X))[:,idx,:])) .== onecold(cpu(y)[:,idx,:]))
+end
 
-# Loss
-loss(x, y) = logitcrossentropy(model(x), y)
-accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
+accuracy(model, loader::DataLoader, device, idx) = mean(accuracy(model, X |> device, y |> device, idx) for (X, y) in loader)
 
-# Training
-## Model Parameters
-ps = Flux.params(model, node.p);
-## Training Data
-train_data = [(train_X, train_y)]
-## Optimizer
-opt = ADAM(0.05)
-## Callback Function for printing accuracies
-evalcb() = @show(accuracy(train_X, train_y))
+function train(; kws...)
+    # load hyperparamters
+    args = Args(; kws...)
+    args.seed > 0 && Random.seed!(args.seed)
 
-## Training Loop
-@epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
+    # GPU config
+    if args.cuda && CUDA.has_cuda()
+        device = gpu
+        @info "Training on GPU"
+    else
+        device = cpu
+        @info "Training on CPU"
+    end
+
+    # load Cora from Planetoid dataset
+    train_loader, test_loader, fg, train_idx, test_idx = load_data(:cora, args.batch_size)
+    
+    # build the Neural GDE
+    diffeqarray_to_array(x) = reshape(x |> device, size(x)[1:2]..., :)
+
+    node = NeuralODE(
+        WithGraph(fg, GCNConv(args.hidden_dim=>args.hidden_dim)) |> device,
+        (0.f0, 1.f0), Tsit5(), save_everystep = false,
+        reltol = 1e-3, abstol = 1e-3, save_start = false
+    )
+
+    model = Chain(
+        WithGraph(fg, GCNConv(args.input_dim=>args.hidden_dim, relu)),
+        Dropout(0.5),
+        node,
+        diffeqarray_to_array,
+        WithGraph(fg, GCNConv(args.hidden_dim=>args.target_dim)),
+    ) |> device
+
+    # ADAM optimizer
+    opt = ADAM(args.η)
+    
+    # parameters
+    ps = Flux.params(model, node.p)
+
+    # training
+    train_steps = 0
+    @info "Start Training, total $(args.epochs) epochs"
+    for epoch = 1:args.epochs
+        @info "Epoch $(epoch)"
+        progress = Progress(length(train_loader))
+
+        for (X, y) in train_loader
+            loss, back = Flux.pullback(ps) do
+                model_loss(model, args.λ, X |> device, y |> device, train_idx |> device)
+            end
+            train_acc = accuracy(model, train_loader, device, train_idx)
+            test_acc = accuracy(model, test_loader, device, test_idx)
+            grad = back(1f0)
+            Flux.Optimise.update!(opt, ps, grad)
+
+            # progress meter
+            next!(progress; showvalues=[
+                (:loss, loss),
+                (:train_accuracy, train_acc),
+                (:test_accuracy, test_acc)
+            ])
+
+            train_steps += 1
+        end
+    end
+
+    return model, args
+end
+
+model, args = train()

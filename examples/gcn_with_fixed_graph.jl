@@ -1,12 +1,11 @@
 using CUDA
 using Flux
-using Flux: onehotbatch, onecold
+using Flux: onecold
 using Flux.Losses: logitcrossentropy
 using Flux.Data: DataLoader
 using GeometricFlux
 using GeometricFlux.Datasets
 using GraphSignals
-using Logging: with_logger
 using Parameters: @with_kw
 using ProgressMeter: Progress, next!
 using Statistics
