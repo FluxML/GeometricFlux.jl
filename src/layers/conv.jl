@@ -23,7 +23,7 @@ GCNConv(1024 => 256, relu)
 
 See also [`WithGraph`](@ref) for training layer with static graph.
 """
-struct GCNConv{A<:AbstractMatrix,B,F}
+struct GCNConv{A<:AbstractMatrix,B,F} <: AbstractGraphLayer
     weight::A
     bias::B
     σ::F
@@ -57,12 +57,10 @@ end
 
 # For static graph
 WithGraph(fg::AbstractFeaturedGraph, l::GCNConv) =
-    WithGraph(l, GraphSignals.normalized_adjacency_matrix!(fg, eltype(l.weight); selfloop=true))
+    WithGraph(GraphSignals.normalized_adjacency_matrix(fg, eltype(l.weight); selfloop=true), l)
 
 function (wg::WithGraph{<:GCNConv})(X::AbstractArray)
-    Ã = Zygote.ignore() do
-        GraphSignals.normalized_adjacency_matrix(wg.fg)
-    end
+    Ã = wg.graph
     return wg.layer(Ã, X)
 end
 
@@ -75,66 +73,96 @@ end
 
 
 """
-    ChebConv([fg,] in=>out, k; bias=true, init=glorot_uniform)
+    ChebConv(in=>out, k; bias=true, init=glorot_uniform)
 
 Chebyshev spectral graph convolutional layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `k`: The order of Chebyshev polynomial.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
+
+# Example
+
+```jldoctest
+julia> cc = ChebConv(1024=>256, 5, relu)
+ChebConv(1024 => 256, k=5, relu)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
-struct ChebConv{A<:AbstractArray{<:Number,3}, B, S<:AbstractFeaturedGraph} <: AbstractGraphLayer
+struct ChebConv{A<:AbstractArray{<:Number,3},B,F} <: AbstractGraphLayer
     weight::A
     bias::B
-    fg::S
     k::Int
+    σ::F
 end
 
-function ChebConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, k::Int;
+function ChebConv(ch::Pair{Int,Int}, k::Int, σ=identity;
                   init=glorot_uniform, bias::Bool=true)
     in, out = ch
     W = init(out, in, k)
     b = Flux.create_bias(W, bias, out)
-    ChebConv(W, b, fg, k)
+    ChebConv(W, b, k, σ)
 end
-
-ChebConv(ch::Pair{Int,Int}, k::Int; kwargs...) =
-    ChebConv(NullGraph(), ch, k; kwargs...)
 
 @functor ChebConv
 
 Flux.trainable(l::ChebConv) = (l.weight, l.bias)
 
-function (c::ChebConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix{T}) where T
-    GraphSignals.check_num_nodes(fg, X)
-    @assert size(X, 1) == size(c.weight, 2) "Input feature size must match input channel size."
-    
-    L̃ = Zygote.ignore() do
-        GraphSignals.scaled_laplacian(fg, eltype(X))
-    end
-
+function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractMatrix)
     Z_prev = X
     Z = X * L̃
-    Y = view(c.weight,:,:,1) * Z_prev
-    Y += view(c.weight,:,:,2) * Z
-    for k = 3:c.k
+    Y = view(l.weight,:,:,1) * Z_prev
+    Y += view(l.weight,:,:,2) * Z
+    for k = 3:l.k
         Z, Z_prev = 2 .* Z * L̃ - Z_prev, Z
-        Y += view(c.weight,:,:,k) * Z
+        Y += view(l.weight,:,:,k) * Z
     end
-    return Y .+ c.bias
+    return l.σ.(Y .+ l.bias)
 end
 
-(l::ChebConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
+function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractArray)
+    Z_prev = X
+    Z = NNlib.batched_mul(X, L̃)
+    Y = NNlib.batched_mul(view(l.weight,:,:,1), Z_prev)
+    Y += NNlib.batched_mul(view(l.weight,:,:,2), Z)
+    for k = 3:l.k
+        Z, Z_prev = 2 .* NNlib.batched_mul(Z, L̃) .- Z_prev, Z
+        Y += NNlib.batched_mul(view(l.weight,:,:,k), Z)
+    end
+    return l.σ.(Y .+ l.bias)
+end
+
+# For variable graph
+function (l::ChebConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    @assert size(nf, 1) == size(l.weight, 2) "Input feature size must match input channel size."
+    
+    L̃ = Zygote.ignore() do
+        GraphSignals.scaled_laplacian(fg, eltype(nf))
+    end
+    return ConcreteFeaturedGraph(fg, nf = l(L̃, nf))
+end
+
+# For static graph
+WithGraph(fg::AbstractFeaturedGraph, l::ChebConv) =
+    WithGraph(GraphSignals.scaled_laplacian(fg, eltype(l.weight)), l)
+
+function (wg::WithGraph{<:ChebConv})(X::AbstractArray)
+    L̃ = wg.graph
+    return wg.layer(L̃, X)
+end
 
 function Base.show(io::IO, l::ChebConv)
     out, in, k = size(l.weight)
     print(io, "ChebConv(", in, " => ", out)
     print(io, ", k=", k)
+    l.σ == identity || print(io, ", ", l.σ)
     print(io, ")")
 end
 
@@ -192,6 +220,8 @@ end
 
 (l::GraphConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 # (l::GraphConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
+(l::GraphConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::GraphConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -307,6 +337,8 @@ end
 
 (l::GATConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 # (l::GATConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
+(l::GATConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::GATConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
@@ -358,13 +390,13 @@ message(ggc::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
 update(ggc::GatedGraphConv, m::AbstractVector, x) = m
 
 
-function (ggc::GatedGraphConv)(fg::AbstractFeaturedGraph, H::AbstractMatrix{S}) where {T<:AbstractVector,S<:Real}
+function (ggc::GatedGraphConv)(fg::AbstractFeaturedGraph, H::AbstractMatrix{T}) where {T<:Real}
     GraphSignals.check_num_nodes(fg, H)
     m, n = size(H)
     @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
     if m < ggc.out_ch
         Hpad = Zygote.ignore() do
-            fill!(similar(H, S, ggc.out_ch - m, n), 0)
+            fill!(similar(H, T, ggc.out_ch - m, n), 0)
         end
         H = vcat(H, Hpad)
     end
@@ -378,6 +410,8 @@ end
 
 (l::GatedGraphConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 # (l::GatedGraphConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
+(l::GatedGraphConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::GatedGraphConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
 
 
 function Base.show(io::IO, l::GatedGraphConv)
@@ -423,6 +457,8 @@ end
 
 (l::EdgeConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 # (l::EdgeConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, l.aggr)  # edge number check break this
+(l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::EdgeConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
 
 function Base.show(io::IO, l::EdgeConv)
     print(io, "EdgeConv(", l.nn)
@@ -475,6 +511,8 @@ end
 
 (l::GINConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 # (l::GINConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
+(l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
+(l::GINConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
 
 
 """

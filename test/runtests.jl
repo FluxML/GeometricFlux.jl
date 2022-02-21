@@ -24,7 +24,7 @@ tests = [
     "layers/msgpass",
     "layers/conv",
     "layers/pool",
-    "layers/utils",
+    "layers/graphlayers",
     "sampling",
     "embedding/node2vec",
     "models",

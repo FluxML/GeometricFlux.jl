@@ -27,8 +27,8 @@
             @test length(g.grads) == 4
         end
 
-        @testset "layer with fixed graph" begin
-            gc = WithGraph(GCNConv(in_channel=>out_channel), fg) |> gpu
+        @testset "layer with static graph" begin
+            gc = WithGraph(fg, GCNConv(in_channel=>out_channel)) |> gpu
             Y = gc(X |> gpu)
             @test size(Y) == (out_channel, N)
 
@@ -40,20 +40,30 @@
 
     @testset "ChebConv" begin
         k = 6
-        cc = ChebConv(fg, in_channel=>out_channel, k) |> gpu
-        @test size(cc.weight) == (out_channel, in_channel, k)
-        @test size(cc.bias) == (out_channel,)
-        @test collect(GraphSignals.adjacency_matrix(cc.fg)) == adj
-        @test cc.k == k
-        @test size(cc.weight, 2) == in_channel
-        @test size(cc.weight, 1) == out_channel
+        X = rand(T, in_channel, N)
 
-        X = rand(in_channel, N) |> gpu
-        Y = cc(X)
-        @test size(Y) == (out_channel, N)
+        @testset "layer without graph" begin
+            cc = ChebConv(in_channel=>out_channel, k) |> gpu
+            @test size(cc.weight) == (out_channel, in_channel, k)
+            @test size(cc.bias) == (out_channel,)
+            @test cc.k == k
+            
+            fg = FeaturedGraph(adj, nf=X) |> gpu
+            fg_ = cc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
 
-        g = Zygote.gradient(() -> sum(cc(X)), Flux.params(cc))
-        @test length(g.grads) == 2
+            g = Zygote.gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
+            @test length(g.grads) == 4
+        end
+
+        @testset "layer with static graph" begin
+            cc = WithGraph(fg, ChebConv(in_channel=>out_channel, k)) |> gpu
+            Y = cc(X |> gpu)
+            @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(cc(X |> gpu)), Flux.params(cc))
+            @test length(g.grads) == 3
+        end
     end
 
     # @testset "GraphConv" begin

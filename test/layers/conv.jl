@@ -35,8 +35,8 @@
             @test length(g.grads) == 4
         end
 
-        @testset "layer with fixed graph" begin
-            gc = WithGraph(GCNConv(in_channel=>out_channel), fg)
+        @testset "layer with static graph" begin
+            gc = WithGraph(fg, GCNConv(in_channel=>out_channel))
             Y = gc(X)
             @test size(Y) == (out_channel, N)
 
@@ -51,7 +51,7 @@
         @testset "layer with subgraph" begin
             X = rand(T, in_channel, 3)
             nodes = [1,2,4]
-            gc = WithGraph(GCNConv(in_channel=>out_channel), subgraph(fg, nodes))
+            gc = WithGraph(subgraph(fg, nodes), GCNConv(in_channel=>out_channel))
             Y = gc(X)
             @test size(Y) == (out_channel, 3)
         end
@@ -67,29 +67,11 @@
         k = 6
         X = rand(T, in_channel, N)
         Xt = transpose(rand(T, N, in_channel))
-        @testset "layer with graph" begin
-            cc = ChebConv(fg, in_channel=>out_channel, k)
-            @test size(cc.weight) == (out_channel, in_channel, k)
-            @test size(cc.bias) == (out_channel,)
-            @test GraphSignals.adjacency_matrix(cc.fg) == adj
-            @test cc.k == k
-            
-            Y = cc(X)
-            @test size(Y) == (out_channel, N)
-
-            # Test with transposed features
-            Y = cc(Xt)
-            @test size(Y) == (out_channel, N)
-
-            g = Zygote.gradient(() -> sum(cc(X)), Flux.params(cc))
-            @test length(g.grads) == 2
-        end
 
         @testset "layer without graph" begin
             cc = ChebConv(in_channel=>out_channel, k)
             @test size(cc.weight) == (out_channel, in_channel, k)
             @test size(cc.bias) == (out_channel,)
-            @test !has_graph(cc.fg)
             @test cc.k == k
             
             fg = FeaturedGraph(adj, nf=X)
@@ -104,6 +86,19 @@
 
             g = Zygote.gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
             @test length(g.grads) == 4
+        end
+
+        @testset "layer with static graph" begin
+            cc = WithGraph(fg, ChebConv(in_channel=>out_channel, k))            
+            Y = cc(X)
+            @test size(Y) == (out_channel, N)
+
+            # Test with transposed features
+            Y = cc(Xt)
+            @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(cc(X)), Flux.params(cc))
+            @test length(g.grads) == 2
         end
 
         @testset "bias=false" begin
@@ -142,7 +137,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError gc(X)
+            @test_throws ArgumentError gc(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
@@ -209,7 +204,7 @@
                 fg_ = gat(fg_gat)
                 Y = node_feature(fg_)
                 @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
-                @test_throws MethodError gat(X)
+                @test_throws ArgumentError gat(X)
 
                 # Test with transposed features
                 fgt = FeaturedGraph(adj_gat, nf=Xt)
@@ -291,7 +286,7 @@
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
-            @test_throws MethodError ec(X)
+            @test_throws ArgumentError ec(X)
 
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
