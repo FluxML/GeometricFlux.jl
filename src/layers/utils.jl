@@ -31,6 +31,15 @@ end
 
 Flux.trainable(l::WithGraph) = (l.layer, )
 
+function Flux.destructure(m::WithGraph)
+    p, re = Flux.destructure(m.layer)
+    function  re_withgraph(x)
+        WithGraph(re(x), m.fg)        
+    end
+
+    return p, re_withgraph
+end
+
 function Base.show(io::IO, l::WithGraph)
     print(io, "WithGraph(")
     print(io, l.layer, ", ")
