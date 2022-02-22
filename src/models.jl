@@ -25,6 +25,7 @@ GAE(enc, σ::Function=identity) = GAE(enc, InnerProductDecoder(σ))
 WithGraph(fg::AbstractFeaturedGraph, l::GAE) = GAE(WithGraph(fg, l.encoder), l.decoder)
 
 (l::GAE)(X::AbstractMatrix) = X |> l.encoder |> l.decoder
+(l::GAE)(X::AbstractArray) = X |> l.encoder |> l.decoder
 
 
 """
@@ -72,6 +73,8 @@ end
 @functor InnerProductDecoder
 
 (i::InnerProductDecoder)(Z::AbstractMatrix)::AbstractMatrix = i.σ.(Z'*Z)
+(i::InnerProductDecoder)(Z::AbstractArray)::AbstractArray =
+    i.σ.(NNlib.batched_mul(NNlib.batched_transpose(Z), Z))
 
 function (i::InnerProductDecoder)(fg::FeaturedGraph)
     Z = node_feature(fg)

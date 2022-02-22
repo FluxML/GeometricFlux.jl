@@ -2,6 +2,7 @@
     in_channel = 3
     out_channel = 5
     N = 4
+    batch = 4
     T = Float32
     adj = T[0. 1. 0. 1.;
             1. 0. 1. 0.;
@@ -21,9 +22,9 @@
     @testset "VGAE" begin
         @testset "InnerProductDecoder" begin
            ipd = InnerProductDecoder(identity)
-           X = rand(T, 1, N)
+           X = rand(T, 1, N, batch)
            Y = ipd(X)
-           @test size(Y) == (N, N)
+           @test size(Y) == (N, N, batch)
 
            X = rand(T, 1, N)
            fg = FeaturedGraph(adj, nf=X)

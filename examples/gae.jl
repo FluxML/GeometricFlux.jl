@@ -11,50 +11,43 @@ using ProgressMeter: Progress, next!
 using Statistics
 using Random
 
-function load_data(dataset, batch_size, train_repeats=512, test_repeats=32)
-    # (train_X, train_y) dim: (num_features, target_dim) × 2708
-    train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset, padding=true))
-    # (test_X, test_y) dim: (num_features, target_dim) × 2708
-    test_X, test_y = map(x -> Matrix(x), testdata(Planetoid(), dataset, padding=true))
+function load_data(dataset, batch_size, train_repeats=128)
+    # (train_X, train_y) dim: (num_features, target_dim) × 1708
+    train_X, _ = map(x -> Matrix(x), alldata(Planetoid(), dataset))
+    # (test_X, test_y) dim: (num_features, target_dim) × 1000
+    test_X, _ = map(x -> Matrix(x), testdata(Planetoid(), dataset))
     g = graphdata(Planetoid(), dataset)
-    train_idx = 1:size(train_X, 2)
-    test_idx = test_indices(Planetoid(), dataset)
 
+    X = hcat(train_X, test_X)
     fg = FeaturedGraph(g)
-    train_data = (repeat(train_X, outer=(1,1,train_repeats)), repeat(train_y, outer=(1,1,train_repeats)))
-    test_data = (repeat(test_X, outer=(1,1,test_repeats)), repeat(test_y, outer=(1,1,test_repeats)))
-    train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
-    test_loader = DataLoader(test_data, batchsize=batch_size, shuffle=true)
-    return train_loader, test_loader, fg, train_idx, test_idx
+    A = GraphSignals.adjacency_matrix(fg)
+    data = (repeat(X, outer=(1,1,train_repeats)), repeat(A, outer=(1,1,train_repeats)))
+    loader = DataLoader(data, batchsize=batch_size, shuffle=true)
+    return loader, fg
 end
 
 @with_kw mutable struct Args
     η = 0.01                # learning rate
-    λ = 5f-4                # regularization paramater
-    batch_size = 64         # batch size
+    batch_size = 16         # batch size
     epochs = 200            # number of epochs
     seed = 0                # random seed
     cuda = true             # use GPU
     input_dim = 1433        # input dimension
-    hidden_dim = 32         # hidden dimension
-    target_dim = 7          # target dimension
+    hidden1_dim = 32        # hidden1 dimension
+    hidden2_dim = 16        # hidden1 dimension
 end
 
-## Loss: cross entropy with first layer L2 regularization 
-l2norm(x) = sum(abs2, x)
-function model_loss(model, λ, X, y, idx)
-    loss = logitbinarycrossentropy(model(X)[:,idx,:], y[:,idx,:])
-    loss += λ*sum(l2norm, Flux.params(model[1]))
-    return loss
-end
+## Loss: binary cross entropy
+model_loss(model, X, A) = logitbinarycrossentropy(model(X), A)
 
-function precision(model, X::AbstractArray, y::AbstractArray, idx)
-    ŷ = onecold(softmax(cpu(model(X))[:,idx,:]))
-    y = onecold(cpu(y)[:,idx,:])
+function precision(model, X::AbstractArray, A::AbstractArray)
+    ŷ = onecold(softmax(cpu(model(X))))
+    y = onecold(cpu(A))
     return mean(y[ŷ .== true])
 end
 
-precision(model, loader::DataLoader, device, idx) = mean(precision(model, X |> device, y |> device, idx) for (X, y) in loader)
+precision(model, loader::DataLoader, device) =
+    mean(precision(model, X |> device, A |> device) for (X, A) in loader)
 
 function train(; kws...)
     # load hyperparamters
@@ -71,14 +64,16 @@ function train(; kws...)
     end
 
     # load Cora from Planetoid dataset
-    train_loader, test_loader, fg, train_idx, test_idx = load_data(:cora, args.batch_size)
+    loader, fg = load_data(:cora, args.batch_size)
     
     # build model
-    model = Chain(
-        WithGraph(fg, GCNConv(args.input_dim=>args.hidden_dim, relu)),
+    encoder = Chain(
+        WithGraph(fg, GCNConv(args.input_dim=>args.hidden1_dim, relu)),
         Dropout(0.5),
-        WithGraph(fg, GCNConv(args.hidden_dim=>args.target_dim)),
-    ) |> device
+        WithGraph(fg, GCNConv(args.hidden1_dim=>args.hidden2_dim)),
+    )
+
+    model = GAE(encoder, σ) |> device
 
     # ADAM optimizer
     opt = ADAM(args.η)
@@ -91,22 +86,20 @@ function train(; kws...)
     @info "Start Training, total $(args.epochs) epochs"
     for epoch = 1:args.epochs
         @info "Epoch $(epoch)"
-        progress = Progress(length(train_loader))
+        progress = Progress(length(loader))
 
-        for (X, y) in train_loader
+        for (X, A) in loader
             loss, back = Flux.pullback(ps) do
-                model_loss(model, args.λ, X |> device, y |> device, train_idx |> device)
+                model_loss(model, X |> device, A |> device)
             end
-            train_acc = precision(model, train_loader, device, train_idx)
-            test_acc = precision(model, test_loader, device, test_idx)
+            prec = precision(model, loader, device)
             grad = back(1f0)
             Flux.Optimise.update!(opt, ps, grad)
 
             # progress meter
             next!(progress; showvalues=[
                 (:loss, loss),
-                (:train_accuracy, train_acc),
-                (:test_accuracy, test_acc)
+                (:precision, prec),
             ])
 
             train_steps += 1
@@ -117,9 +110,3 @@ function train(; kws...)
 end
 
 model, args = train()
-
-## Model
-encoder = Chain(GCNConv(fg, num_features=>hidden1, relu),
-                GCNConv(fg, hidden1=>hidden2))
-model = Chain(GAE(encoder, σ)) |> gpu;
-# do not show model architecture, showing CuSparseMatrix will trigger errors
