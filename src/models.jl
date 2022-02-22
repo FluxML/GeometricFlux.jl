@@ -117,14 +117,26 @@ function (ve::VariationalGraphEncoder)(fg::FeaturedGraph)::FeaturedGraph
     FeaturedGraph(fg, nf=Z)
 end
 
+function (ve::VariationalGraphEncoder)(X::AbstractArray)::AbstractArray
+    μ, logσ = summarize(ve, X)
+    return sample(μ, logσ)
+end
+
 function summarize(ve::VariationalGraphEncoder, fg::FeaturedGraph)
     fg_ = ve.nn(fg)
     fg_μ, fg_logσ = ve.μ(fg_), ve.logσ(fg_)
     node_feature(fg_μ), node_feature(fg_logσ)
 end
 
-sample(μ::AbstractArray{T}, logσ::AbstractArray{T}) where {T<:Real} =
-    μ + exp.(logσ) .* randn(T, size(logσ))
+function summarize(ve::VariationalGraphEncoder, X::AbstractArray)
+    H = ve.nn(X)
+    return ve.μ(H), ve.logσ(H)
+end
+
+function sample(μ::AbstractArray{T}, logσ::AbstractArray{T}) where {T<:Real}
+    R = Zygote.ignore(() -> randn!(similar(logσ)))
+    return μ + exp.(logσ) .* R
+end
 
 # For static graph
 WithGraph(fg::AbstractFeaturedGraph, l::VariationalGraphEncoder) =
@@ -134,5 +146,3 @@ WithGraph(fg::AbstractFeaturedGraph, l::VariationalGraphEncoder) =
         WithGraph(fg, l.logσ),
         l.z_dim
     )
-
-# (l::VariationalGraphEncoder)(X::AbstractArray) = X |> l.encoder |> l.decoder

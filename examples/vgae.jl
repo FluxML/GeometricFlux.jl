@@ -1,56 +1,131 @@
-using GeometricFlux
-using GraphSignals
+using CUDA
 using Flux
-using Flux: throttle
+using Flux: onecold
 using Flux.Losses: logitbinarycrossentropy
-using Flux: @epochs
-using JLD2
+using Flux.Data: DataLoader
+using GeometricFlux
+using GeometricFlux.Datasets
+using GraphSignals
+using Parameters: @with_kw
+using ProgressMeter: Progress, next!
 using Statistics
-using SparseArrays
-using Graphs.SimpleGraphs
-using Graphs: adjacency_matrix
+using Random
 
-@load "data/cora_features.jld2" features
-@load "data/cora_graph.jld2" g
+function load_data(dataset, batch_size, train_repeats=4)
+    # (train_X, train_y) dim: (num_features, target_dim) × 1708
+    train_X, _ = map(x -> Matrix(x), alldata(Planetoid(), dataset))
+    # (test_X, test_y) dim: (num_features, target_dim) × 1000
+    test_X, _ = map(x -> Matrix(x), testdata(Planetoid(), dataset))
+    g = graphdata(Planetoid(), dataset)
 
-num_nodes = 2708
-num_features = 1433
-h_dim = 32
-z_dim = 16
-target_catg = 7
-epochs = 200
-
-## Preprocessing data
-masks = [rand(Float32, num_nodes, num_nodes).>0.1 for i in 1:10]
-adj_mat = Matrix{Float32}(adjacency_matrix(g))
-train_data = [(FeaturedGraph(adj_mat.*M, nf=Matrix{Float32}(features)), adj_mat) for M in masks]
-
-## Model
-model = VGAE(GCNConv(num_features=>h_dim, relu;), h_dim, z_dim, σ)
-encoder = model.encoder
-decoder = model.decoder
-ps = Flux.params(model)
-
-l2_norm(p) = sum(abs2, p)
-
-function loss(fg, Y, X=node_feature(fg), T=eltype(X), β=one(T), λ=T(0.01); debug=false)
-    μ̂, logσ̂ = GeometricFlux.summarize(encoder, fg)
-    Z = node_feature(encoder(fg))
-    kl_q_p = -T(0.5) * sum(one(T) .+ T(2).*logσ̂ .- μ̂.^2 .- exp.(T(2).*logσ̂))
-    logp_y_z = -sum(logitbinarycrossentropy(decoder(Z), Y, agg=identity)) / size(Y,2)
-    l2reg = sum(l2_norm, ps)
-    debug && begin
-        @show kl_q_p
-        @show logp_y_z
-        @show l2reg
-    end
-    -logp_y_z + β*kl_q_p + λ*l2reg
+    X = hcat(train_X, test_X)
+    fg = FeaturedGraph(g)
+    A = GraphSignals.adjacency_matrix(fg)
+    data = (repeat(X, outer=(1,1,train_repeats)), repeat(A, outer=(1,1,train_repeats)))
+    loader = DataLoader(data, batchsize=batch_size, shuffle=true)
+    return loader, fg
 end
 
-average_loss(data) = mean(map(x -> loss(x...), data))
+@with_kw mutable struct Args
+    η = 0.01                # learning rate
+    β = 1.0                 # information bottleneck paramater
+    batch_size = 1          # batch size
+    epochs = 200            # number of epochs
+    seed = 0                # random seed
+    cuda = true             # use GPU
+    input_dim = 1433        # input dimension
+    h_dim = 32              # hidden dimension
+    z_dim = 16              # latent dimension
+end
 
-## Training
-opt = ADAM(0.01)
-evalcb() = @show(average_loss(train_data))
+## Loss
 
-@epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
+function kldivergence(model, X::AbstractArray{T}) where {T}
+    μ̂, logσ̂ = GeometricFlux.summarize(model.encoder, X)
+    return -T(0.5) * sum(one(T) .+ T(2).*logσ̂ .- μ̂.^2 .- exp.(T(2).*logσ̂))
+end
+
+function logp(model, X, Y)
+    Z = model.encoder(X)
+    return -logitbinarycrossentropy(model.decoder(Z), Y)
+end
+
+function model_loss(model, X, Y, β)
+    kl_q_p = kldivergence(model, X)
+    logp_y_z = logp(model, X, Y)
+    return -logp_y_z + β*kl_q_p
+end
+
+function precision(model, X::AbstractArray, A::AbstractArray)
+    ŷ = cpu(Flux.flatten(model(X))) .≥ 0.5
+    y = cpu(Flux.flatten(A))
+    return sum(y .* ŷ) / sum(ŷ)
+end
+
+precision(model, loader::DataLoader, device) =
+    mean(precision(model, X |> device, A |> device) for (X, A) in loader)
+
+function train(; kws...)
+    # load hyperparamters
+    args = Args(; kws...)
+    args.seed > 0 && Random.seed!(args.seed)
+
+    # GPU config
+    if args.cuda && CUDA.has_cuda()
+        device = gpu
+        @info "Training on GPU"
+    else
+        device = cpu
+        @info "Training on CPU"
+    end
+
+    # load Cora from Planetoid dataset
+    loader, fg = load_data(:cora, args.batch_size)
+    
+    # build model
+    encoder = VariationalGraphEncoder(
+        WithGraph(fg, GCNConv(args.input_dim=>args.h_dim, relu)),
+        WithGraph(fg, GCNConv(args.h_dim=>args.z_dim)),
+        WithGraph(fg, GCNConv(args.h_dim=>args.z_dim)),
+        args.z_dim
+    )
+
+    decoder = InnerProductDecoder(σ)
+    
+    model = VGAE(encoder, decoder) |> device
+
+    # ADAM optimizer
+    opt = ADAM(args.η)
+    
+    # parameters
+    ps = Flux.params(model)
+
+    # training
+    train_steps = 0
+    @info "Start Training, total $(args.epochs) epochs"
+    for epoch = 1:args.epochs
+        @info "Epoch $(epoch)"
+        progress = Progress(length(loader))
+
+        for (X, A) in loader
+            loss, back = Flux.pullback(ps) do
+                model_loss(model, X |> device, A |> device, args.β)
+            end
+            prec = precision(model, loader, device)
+            grad = back(1f0)
+            Flux.Optimise.update!(opt, ps, grad)
+
+            # progress meter
+            next!(progress; showvalues=[
+                (:loss, loss),
+                (:precision, prec),
+            ])
+
+            train_steps += 1
+        end
+    end
+
+    return model, args
+end
+
+model, args = train()
