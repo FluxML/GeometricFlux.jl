@@ -27,7 +27,7 @@ tests = [
     "layers/utils",
     "sampling",
     "embedding/node2vec",
-    # "models",
+    "models",
 ]
 
 if CUDA.functional()

@@ -1,45 +1,112 @@
-using GeometricFlux
-using GraphSignals
-using Flux
-using Flux: throttle
-using Flux.Losses: logitbinarycrossentropy
-using Flux: @epochs
-using JLD2
-using Statistics: mean
-using SparseArrays
-using Graphs.SimpleGraphs
 using CUDA
+using Flux
+using Flux: onecold
+using Flux.Losses: logitbinarycrossentropy
+using Flux.Data: DataLoader
+using GeometricFlux
+using GeometricFlux.Datasets
+using GraphSignals
+using Parameters: @with_kw
+using ProgressMeter: Progress, next!
+using Statistics
+using Random
 
-CUDA.allowscalar(false)
+function load_data(dataset, batch_size, train_repeats=128)
+    # (train_X, train_y) dim: (num_features, target_dim) × 1708
+    train_X, _ = map(x -> Matrix(x), alldata(Planetoid(), dataset))
+    # (test_X, test_y) dim: (num_features, target_dim) × 1000
+    test_X, _ = map(x -> Matrix(x), testdata(Planetoid(), dataset))
+    g = graphdata(Planetoid(), dataset)
 
-@load "data/cora_features.jld2" features
-@load "data/cora_graph.jld2" g
+    X = hcat(train_X, test_X)
+    fg = FeaturedGraph(g)
+    A = GraphSignals.adjacency_matrix(fg)
+    data = (repeat(X, outer=(1,1,train_repeats)), repeat(A, outer=(1,1,train_repeats)))
+    loader = DataLoader(data, batchsize=batch_size, shuffle=true)
+    return loader, fg
+end
 
-num_nodes = 2708
-num_features = 1433
-hidden1 = 32
-hidden2 = 16
-target_catg = 7
-epochs = 200
+@with_kw mutable struct Args
+    η = 0.01                # learning rate
+    batch_size = 16         # batch size
+    epochs = 200            # number of epochs
+    seed = 0                # random seed
+    cuda = true             # use GPU
+    input_dim = 1433        # input dimension
+    hidden1_dim = 32        # hidden1 dimension
+    hidden2_dim = 16        # hidden1 dimension
+end
 
-## Preprocessing data
-fg = FeaturedGraph(g)  # pass to gpu together in model layers
-train_X = Matrix{Float32}(features) |> gpu  # dim: num_features * num_nodes
-train_y = fg |> GraphSignals.adjacency_matrix |> gpu  # dim: num_nodes * num_nodes
+## Loss: binary cross entropy
+model_loss(model, X, A) = logitbinarycrossentropy(model(X), A)
 
-## Model
-encoder = Chain(GCNConv(fg, num_features=>hidden1, relu),
-                GCNConv(fg, hidden1=>hidden2))
-model = Chain(GAE(encoder, σ)) |> gpu;
-# do not show model architecture, showing CuSparseMatrix will trigger errors
+function precision(model, X::AbstractArray, A::AbstractArray)
+    ŷ = onecold(softmax(cpu(model(X))))
+    y = onecold(cpu(A))
+    return mean(y[ŷ .== true])
+end
 
-## Loss
-loss(x, y) = logitbinarycrossentropy(model(x), y)
+precision(model, loader::DataLoader, device) =
+    mean(precision(model, X |> device, A |> device) for (X, A) in loader)
 
-## Training
-ps = Flux.params(model)
-train_data = [(train_X, train_y)]
-opt = ADAM(0.01)
-evalcb() = @show(loss(train_X, train_y))
+function train(; kws...)
+    # load hyperparamters
+    args = Args(; kws...)
+    args.seed > 0 && Random.seed!(args.seed)
 
-@epochs epochs Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
+    # GPU config
+    if args.cuda && CUDA.has_cuda()
+        device = gpu
+        @info "Training on GPU"
+    else
+        device = cpu
+        @info "Training on CPU"
+    end
+
+    # load Cora from Planetoid dataset
+    loader, fg = load_data(:cora, args.batch_size)
+    
+    # build model
+    encoder = Chain(
+        WithGraph(fg, GCNConv(args.input_dim=>args.hidden1_dim, relu)),
+        Dropout(0.5),
+        WithGraph(fg, GCNConv(args.hidden1_dim=>args.hidden2_dim)),
+    )
+
+    model = GAE(encoder, σ) |> device
+
+    # ADAM optimizer
+    opt = ADAM(args.η)
+    
+    # parameters
+    ps = Flux.params(model)
+
+    # training
+    train_steps = 0
+    @info "Start Training, total $(args.epochs) epochs"
+    for epoch = 1:args.epochs
+        @info "Epoch $(epoch)"
+        progress = Progress(length(loader))
+
+        for (X, A) in loader
+            loss, back = Flux.pullback(ps) do
+                model_loss(model, X |> device, A |> device)
+            end
+            prec = precision(model, loader, device)
+            grad = back(1f0)
+            Flux.Optimise.update!(opt, ps, grad)
+
+            # progress meter
+            next!(progress; showvalues=[
+                (:loss, loss),
+                (:precision, prec),
+            ])
+
+            train_steps += 1
+        end
+    end
+
+    return model, args
+end
+
+model, args = train()
