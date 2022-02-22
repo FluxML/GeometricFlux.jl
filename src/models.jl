@@ -1,14 +1,15 @@
 """
-    GAE(enc[, σ])
+    GAE(enc, [σ=identity])
 
 Graph autoencoder.
 
 # Arguments
 - `enc`: encoder. It can be any graph convolutional layer.
+- `σ`: Activation function for decoder.
 
 Encoder is specified by user and decoder will be `InnerProductDecoder` layer.
 """
-struct GAE{T,S}
+struct GAE{T,S} <: AbstractGraphLayer
     encoder::T
     decoder::S
 end
@@ -17,11 +18,13 @@ GAE(enc, σ::Function=identity) = GAE(enc, InnerProductDecoder(σ))
 
 @functor GAE
 
-function (g::GAE)(X::AbstractMatrix)
-    Z = g.encoder(X)
-    A = g.decoder(Z)
-    A
-end
+# For variable graph
+(l::GAE)(fg::AbstractFeaturedGraph) = fg |> l.encoder |> l.decoder
+
+# For static graph
+WithGraph(fg::AbstractFeaturedGraph, l::GAE) = GAE(WithGraph(fg, l.encoder), l.decoder)
+
+(l::GAE)(X::AbstractMatrix) = X |> l.encoder |> l.decoder
 
 
 """
@@ -34,22 +37,24 @@ Variational graph autoencoder.
 
 Encoder is specified by user and decoder will be `InnerProductDecoder` layer.
 """
-struct VGAE{T,S}
+struct VGAE{T,S} <: AbstractGraphLayer
     encoder::T
     decoder::S
 end
 
 function VGAE(enc, h_dim::Integer, z_dim::Integer, σ::Function=identity)
-    VGAE(VariationalEncoder(enc, h_dim, z_dim), InnerProductDecoder(σ))
+    VGAE(VariationalGraphEncoder(enc, h_dim, z_dim), InnerProductDecoder(σ))
 end
 
 @functor VGAE
 
-function (g::VGAE)(fg::FeaturedGraph)
-    fg_ = g.encoder(fg)
-    fg_ = g.decoder(fg_)
-    fg_
-end
+# For variable graph
+(l::VGAE)(fg::AbstractFeaturedGraph) = fg |> l.encoder |> l.decoder
+
+# For static graph
+WithGraph(fg::AbstractFeaturedGraph, l::VGAE) = VGAE(WithGraph(fg, l.encoder), l.decoder)
+
+(l::VGAE)(X::AbstractArray) = X |> l.encoder |> l.decoder
 
 
 """
@@ -60,8 +65,8 @@ Inner-product decoder layer.
 # Arguments
 - `σ`: activation function.
 """
-struct InnerProductDecoder
-    σ
+struct InnerProductDecoder{F}
+    σ::F
 end
 
 @functor InnerProductDecoder
@@ -76,9 +81,9 @@ end
 
 
 """
-    VariationalEncoder(nn, h_dim, z_dim)
+    VariationalGraphEncoder(nn, h_dim, z_dim)
 
-Variational encoder layer.
+Variational graph encoder layer.
 
 # Arguments
 - `nn`: neural network. It can be any graph convolutional layer.
@@ -87,29 +92,29 @@ Variational encoder layer.
 
 Encoder can be any graph convolutional layer.
 """
-struct VariationalEncoder
-    nn
-    μ
-    logσ
-    z_dim::Integer
+struct VariationalGraphEncoder{L,M,S,T<:Integer} <: AbstractGraphLayer
+    nn::L
+    μ::M
+    logσ::S
+    z_dim::T
 end
 
-function VariationalEncoder(nn, h_dim::Integer, z_dim::Integer)
-    VariationalEncoder(nn,
+function VariationalGraphEncoder(nn, h_dim::Integer, z_dim::Integer)
+    VariationalGraphEncoder(nn,
                        GCNConv(h_dim=>z_dim),
                        GCNConv(h_dim=>z_dim),
                        z_dim)
 end
 
-@functor VariationalEncoder
+@functor VariationalGraphEncoder
 
-function (ve::VariationalEncoder)(fg::FeaturedGraph)::FeaturedGraph
+function (ve::VariationalGraphEncoder)(fg::FeaturedGraph)::FeaturedGraph
     μ, logσ = summarize(ve, fg)
     Z = sample(μ, logσ)
     FeaturedGraph(fg, nf=Z)
 end
 
-function summarize(ve::VariationalEncoder, fg::FeaturedGraph)
+function summarize(ve::VariationalGraphEncoder, fg::FeaturedGraph)
     fg_ = ve.nn(fg)
     fg_μ, fg_logσ = ve.μ(fg_), ve.logσ(fg_)
     node_feature(fg_μ), node_feature(fg_logσ)
@@ -117,3 +122,14 @@ end
 
 sample(μ::AbstractArray{T}, logσ::AbstractArray{T}) where {T<:Real} =
     μ + exp.(logσ) .* randn(T, size(logσ))
+
+# For static graph
+WithGraph(fg::AbstractFeaturedGraph, l::VariationalGraphEncoder) =
+    VariationalGraphEncoder(
+        WithGraph(fg, l.nn),
+        WithGraph(fg, l.μ),
+        WithGraph(fg, l.logσ),
+        l.z_dim
+    )
+
+# (l::VariationalGraphEncoder)(X::AbstractArray) = X |> l.encoder |> l.decoder

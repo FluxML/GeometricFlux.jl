@@ -11,7 +11,7 @@
     fg = FeaturedGraph(adj)
 
     @testset "GAE" begin
-        gc = GCNConv(fg, in_channel=>out_channel)
+        gc = WithGraph(fg, GCNConv(in_channel=>out_channel))
         gae = GAE(gc)
         X = rand(T, in_channel, N)
         Y = gae(X)
@@ -38,10 +38,10 @@
            @test size(Y) == (N, N)
         end
 
-        @testset "VariationalEncoder" begin
+        @testset "VariationalGraphEncoder" begin
             z_dim = 2
             gc = GCNConv(in_channel=>out_channel)
-            ve = VariationalEncoder(gc, out_channel, z_dim)
+            ve = VariationalGraphEncoder(gc, out_channel, z_dim)
             X = rand(T, in_channel, N)
             fg = FeaturedGraph(adj, nf=X)
             fg_ = ve(fg)

@@ -50,7 +50,7 @@ export
     GAE,
     VGAE,
     InnerProductDecoder,
-    VariationalEncoder,
+    VariationalGraphEncoder,
 
     # layer/utils
     WithGraph,
