@@ -1,47 +1,32 @@
-_view(::Nothing, idx) = nothing
-_view(A::Fill{T,2,Axes}, idx) where {T,Axes} = fill(A.value, A.axes[1], length(idx))
-_view(A::AbstractMatrix, idx) = view(A, :, idx)
-
-aggregate(aggr::typeof(+), X) = vec(sum(X, dims=2))
-aggregate(aggr::typeof(-), X) = -vec(sum(X, dims=2))
-aggregate(aggr::typeof(*), X) = vec(prod(X, dims=2))
-aggregate(aggr::typeof(/), X) = 1 ./ vec(prod(X, dims=2))
-aggregate(aggr::typeof(max), X) = vec(maximum(X, dims=2))
-aggregate(aggr::typeof(min), X) = vec(minimum(X, dims=2))
-aggregate(aggr::typeof(mean), X) = vec(aggr(X, dims=2))
-
 abstract type GraphNet <: AbstractGraphLayer end
 
 @inline update_edge(gn::GraphNet, e, vi, vj, u) = e
 @inline update_vertex(gn::GraphNet, ē, vi, u) = vi
 @inline update_global(gn::GraphNet, ē, v̄, u) = u
 
-function _get_indices(fg::AbstractFeaturedGraph)
-    es = cpu(GraphSignals.incident_edges(fg))
-    xs = cpu(GraphSignals.repeat_nodes(fg))
-    nbrs = cpu(GraphSignals.neighbors(fg))
-    sorted_idx = sort!(collect(zip(es, xs, nbrs)), by=x->x[1])
-    return collect.(collect(zip(sorted_idx...)))
-end
-
 @inline function update_batch_edge(gn::GraphNet, fg::AbstractFeaturedGraph, E, V, u)
-    es, xs, nbrs = Zygote.ignore(()->_get_indices(fg))
-    ms = map((e,i,j)->update_edge(gn, _view(E, e), _view(V, i), _view(V, j), u), es, xs, nbrs)
-    M = hcat_by_sum(ms)
-    return M
+    es, xs, nbrs = all_edges(fg)
+    return update_edge(
+        gn,
+        batched_gather(E, es),
+        batched_gather(V, xs),
+        batched_gather(V, nbrs),
+        u
+    )
 end
 
 @inline function update_batch_vertex(gn::GraphNet, fg::AbstractFeaturedGraph, Ē, V, u)
-    nodes = Zygote.ignore(()->vertices(fg))
-    vs = map(n->update_vertex(gn, _view(Ē, n), _view(V, n), u), nodes)
-    V_ = hcat_by_sum(vs)
-    return V_
+    # nodes = Zygote.ignore(()->vertices(fg))
+    # return update_vertex(gn, _gather(Ē, nodes), _gather(V, nodes), u)
+    return update_vertex(gn, Ē, V, u)
 end
 
 @inline function aggregate_neighbors(gn::GraphNet, fg::AbstractFeaturedGraph, aggr, E)
     N = nv(parent(fg))
-    es, xs, nbrs = Zygote.ignore(()->_get_indices(fg))
-    Ē = NNlib.scatter(aggr, E, xs; dstsize=(size(E, 1), N))
+    batch_size = size(E)[end]
+    es, xs, nbrs = all_edges(fg)
+    xs = batched_index(xs, batch_size)
+    Ē = NNlib.scatter(aggr, E, xs; dstsize=(size(E, 1), N, batch_size))
     return Ē
 end
 @inline aggregate_neighbors(gn::GraphNet, fg::AbstractFeaturedGraph, aggr::Nothing, @nospecialize E) = nothing

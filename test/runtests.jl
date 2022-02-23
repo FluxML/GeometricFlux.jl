@@ -15,13 +15,13 @@ using Zygote
 using Test
 
 cuda_tests = [
-    "cuda/conv",
-    "cuda/msgpass",
+    # "cuda/conv",
+    # "cuda/msgpass",
 ]
 
 tests = [
-    "layers/gn",
-    "layers/msgpass",
+    # "layers/gn",
+    # "layers/msgpass",
     "layers/conv",
     "layers/pool",
     "layers/graphlayers",

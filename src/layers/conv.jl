@@ -168,13 +168,12 @@ end
 
 
 """
-    GraphConv([fg,] in => out, σ=identity, aggr=+; bias=true, init=glorot_uniform)
+    GraphConv(in => out, σ=identity, aggr=+; bias=true, init=glorot_uniform)
 
 Graph neural network layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
@@ -183,45 +182,45 @@ Graph neural network layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 """
-struct GraphConv{V<:AbstractFeaturedGraph, A<:AbstractMatrix, B} <: MessagePassing
-    fg::V
+struct GraphConv{A<:AbstractMatrix,B,F} <: MessagePassing
     weight1::A
     weight2::A
     bias::B
-    σ
+    σ::F
     aggr
 end
 
-function GraphConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int}, σ=identity, aggr=+;
+function GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+;
                    init=glorot_uniform, bias::Bool=true)
     in, out = ch
     W1 = init(out, in)
     W2 = init(out, in)
     b = Flux.create_bias(W1, bias, out)
-    GraphConv(fg, W1, W2, b, σ, aggr)
+    GraphConv(W1, W2, b, σ, aggr)
 end
-
-GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+; kwargs...) =
-    GraphConv(NullGraph(), ch, σ, aggr; kwargs...)
 
 @functor GraphConv
 
 Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
 
-message(gc::GraphConv, x_i, x_j::AbstractVector, e_ij) = gc.weight2 * x_j
+message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = NNlib.batched_mul(gc.weight2, x_j)
+update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(NNlib.batched_mul(gc.weight1, x) .+ m .+ gc.bias)
 
-update(gc::GraphConv, m::AbstractVector, x::AbstractVector) = gc.σ.(gc.weight1*x .+ m .+ gc.bias)
-
-function (gc::GraphConv)(fg::AbstractFeaturedGraph, x::AbstractMatrix)
-    # GraphSignals.check_num_nodes(fg, x)
+function (gc::GraphConv)(sg::SparseGraph, x::AbstractArray)
+    GraphSignals.check_num_nodes(sg, x)
     _, x, _ = propagate(gc, fg, edge_feature(fg), x, global_feature(fg), +)
     x
 end
 
-(l::GraphConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::GraphConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-(l::GraphConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::GraphConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
+# For variable graph
+function (l::GraphConv)(fg::AbstractFeaturedGraph)
+    return ConcreteFeaturedGraph(fg, nf = l(graph(fg), node_feature(fg)))
+end
+
+# For static graph
+WithGraph(fg::AbstractFeaturedGraph, l::GraphConv) = WithGraph(graph(fg), l)
+
+(wg::WithGraph{<:GraphConv})(X::AbstractArray) = wg.layer(wg.graph, X)
 
 function Base.show(io::IO, l::GraphConv)
     in_channel = size(l.weight1, ndims(l.weight1))
@@ -294,7 +293,7 @@ end
 # After some reshaping due to the multihead, we get the α from each message,
 # then get the softmax over every α, and eventually multiply the message by α
 function graph_attention(gat::GATConv, i, js, X::AbstractMatrix)
-    e_ij = map(j -> GeometricFlux.message(gat, _view(X, i), _view(X, j)), js)
+    e_ij = map(j -> GeometricFlux.message(gat, batched_gather(X, i), batched_gather(X, j)), js)
     E = hcat_by_sum(e_ij)
     n = size(E, 1)
     αs = Flux.softmax(reshape(view(E, 1, :), gat.heads, :), dims=2)
