@@ -11,9 +11,17 @@ update(mp, m, x) = m
 
 `mp` denotes a message passing layer. `message` accepts node state `x_i` for node `i` and its neighbor state `x_j` for node `j`, as well as corresponding edge state `e_ij` for edge `(i,j)`. The default message function gives all the neighbor state `x_j` for neighbor of node `i`. `update` takes aggregated message `m` and current node state `x`, and then outputs `m`.
 
+```@docs
+GeometricFlux.MessagePassing
+```
+
 ## Message function
 
 A message function accepts feature vector representing node state `x_i`, feature vectors for neighbor state `x_j` and corresponding edge state `e_ij`. A vector is expected to output from `message` for message. User can override `message` for customized message passing layer to provide desired behavior.
+
+```@docs
+GeometricFlux.message
+```
 
 ## Aggregate messages
 
@@ -38,3 +46,7 @@ The following `aggr` are available aggregate functions:
 ## Update function
 
 An update function takes aggregated message `m` and current node state `x` as arguments. An output vector is expected to be the new node state for next layer. User can override `update` for customized message passing layer to provide desired behavior.
+
+```@docs
+GeometricFlux.update
+```

@@ -30,15 +30,11 @@ function node2vec(g::FeaturedGraph; walks_per_node::Int=100, len::Int=5, p::Real
 end
 
 """
-Modified version of Node2Vec.learn_embeddings[1]. Uses
-a Julia interface[2] to the original word2vec C code[3].
+Modified version of Node2Vec.learn_embeddings from Node2Vec.jl. Uses
+Word2Vec.jl to the original word2vec C code [google_word2vec](@cite).
 
 Treats each random walk like a sentence, and computed word
 embeddings using node ID as words.
-
-[1] https://github.com/ollin18/Node2Vec.jl
-[2] https://github.com/JuliaText/Word2Vec.jl
-[3] https://code.google.com/archive/p/word2vec/
 """
 function walks2vec(walks::Vector{Vector{Int}}; dims::Int=100)
     str_walks=map(x -> string.(x),walks)

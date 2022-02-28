@@ -28,32 +28,35 @@ Suggestions, issues and pull requsts are welcome.
 * Variable graph inputs are supported. You use it when diverse graph structures are prepared as inputs to the same model.
 * Integrate GNN benchmark datasets (WIP)
 
-## Featured Graphs
+### Featured Graphs
 
 GeometricFlux handles graph data (the topology plus node/vertex/graph features)
-thanks to the type `FeaturedGraph`.
+thanks to `FeaturedGraph` type.
 
-A `FeaturedGraph` can be constructed out of 
+A `FeaturedGraph` can be constructed from various graph structures, including
 adjacency matrices, adjacency lists, Graphs' types...
 
 ```julia
 fg = FeaturedGraph(adj_list)   
 ```
-## Graph convolutional layers
+
+### Graph convolutional layers
 
 Construct a GCN layer:
 
 ```julia
-GCNConv([fg,] input_dim => output_dim, relu)
+GCNConv(input_dim => output_dim, relu)
 ```
 
 ## Use it as you use Flux
 
 ```julia
-model = Chain(GCNConv(fg, 1024 => 512, relu),
-              Dropout(0.5),
-              GCNConv(fg, 512 => 128),
-              Dense(128, 10))
+model = Chain(
+    WithGraph(fg, GCNConv(fg, 1024 => 512, relu)),
+    Dropout(0.5),
+    WithGraph(fg, GCNConv(fg, 512 => 128)),
+    Dense(128, 10)
+)
 ## Loss
 loss(x, y) = logitcrossentropy(model(x), y)
 accuracy(x, y) = mean(onecold(model(x)) .== onecold(y))
