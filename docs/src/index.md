@@ -1,6 +1,6 @@
 # GeometricFlux: The Geometric Deep Learning Library in Julia
 
-GeometricFlux is a framework for geometric deep learning/machine learning.
+Welcome to GeometricFlux package! GeometricFlux is a framework for geometric deep learning/machine learning. It provides classic graph neural network layers and some utility constructs.
 
 * It extends Flux machine learning library for geometric deep learning.
 * It supports of CUDA GPU with CUDA.jl
@@ -19,9 +19,12 @@ GeometricFlux is a framework for geometric deep learning/machine learning.
 The basic graph convolutional network (GCN) is constructed as follow.
 
 ```
-model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
-              GCNConv(adj_mat, hidden=>target_catg),
-              softmax)
+fg = FeaturedGraph(adj_mat)
+model = Chain(
+    WithGraph(fg, GCNConv(num_features=>hidden, relu)),
+    WithGraph(fg, GCNConv(hidden=>target_dim)),
+    softmax
+)
 ```
 
 ### Load dataset
@@ -29,12 +32,13 @@ model = Chain(GCNConv(adj_mat, num_features=>hidden, relu),
 Load cora dataset from GeometricFlux.
 
 ```
-using JLD2
-using SparseArrays
+using GeometricFlux.Datasets
 
-@load joinpath(pkgdir(GeometricFlux), "data/cora_features.jld2") features
-@load joinpath(pkgdir(GeometricFlux), "data/cora_labels.jld2") labels
-@load joinpath(pkgdir(GeometricFlux), "data/cora_graph.jld2") g
+train_X, train_y = traindata(Planetoid(), :cora)
+test_X, test_y = testdata(Planetoid(), :cora)
+g = graphdata(Planetoid(), :cora)
+train_idx = train_indices(Planetoid(), :cora)
+test_idx = test_indices(Planetoid(), :cora)
 ```
 
 ### Training/testing data
@@ -42,9 +46,8 @@ using SparseArrays
 Data is stored in sparse array, thus, we have to convert it into normal array.
 
 ```
-train_X = Matrix{Float32}(features)
-train_y = Matrix{Float32}(labels)
-adj_mat = Matrix{Float32}(adjacency_matrix(g))
+train_X = train_X |> Matrix
+train_y = train_y |> Matrix
 ```
 
 ### Loss function
@@ -110,4 +113,4 @@ accuracy(train_X, train_y) = 0.6019202363367799
 accuracy(train_X, train_y) = 0.6067208271787297
 ```
 
-Check `examples/gcn.jl` for details.
+Check `examples/semisupervised_gcn.jl` for details.

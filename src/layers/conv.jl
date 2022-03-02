@@ -15,11 +15,13 @@ of size `(num_features, num_nodes)`.
 # Example
 
 ```jldoctest
+julia> using GeometricFlux, Flux
+
 julia> gc = GCNConv(1024=>256, relu)
 GCNConv(1024 => 256, relu)
 ```
 
-See also [`WithGraph`](@ref) for training layer with fixed graph.
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct GCNConv{A<:AbstractMatrix,B,F}
     weight::A
@@ -32,7 +34,7 @@ function GCNConv(ch::Pair{Int,Int}, σ=identity;
     in, out = ch
     W = init(out, in)
     b = Flux.create_bias(W, bias, out)
-    GCNConv(W, b, σ)
+    return GCNConv(W, b, σ)
 end
 
 @functor GCNConv
@@ -53,7 +55,7 @@ function (l::GCNConv)(fg::AbstractFeaturedGraph)
     return ConcreteFeaturedGraph(fg, nf = l(Ã, nf))
 end
 
-# For fixed graph
+# For static graph
 WithGraph(fg::AbstractFeaturedGraph, l::GCNConv) =
     WithGraph(l, GraphSignals.normalized_adjacency_matrix!(fg, eltype(l.weight); selfloop=true))
 

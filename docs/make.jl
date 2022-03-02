@@ -13,27 +13,32 @@ makedocs(
       analytics = "G-M61P0B2Y8E",
     ),
     clean = false,
-    modules = [GeometricFlux],
+    modules = [GeometricFlux,GraphSignals],
     pages = ["Home" => "index.md",
-             "Get started" => "start.md",
-             "Basics" =>
-               ["Graph convolutions" => "basics/conv.md",
-                "Building layers" => "basics/layers.md",
-                "Graph passing" => "basics/passgraph.md"],
-             "Cooperate with Flux layers" => "cooperate.md",
-             "Tutorials" =>
-                [
-                  "Semi-supervised learning with GCN" => "tutorials/semisupervised_gcn.md",
+             "Introduction" => "introduction.md",
+             "Basics" => [
+                 "Graph Convolutions" => "basics/conv.md",
+                 "Graph Passing" => "basics/passgraph.md",
+                 "Building Layers" => "basics/layers.md",
+                 "Subgraph" => "basics/subgraph.md",
+                 "Batch Learning" => "basics/batch.md",
+                ],
+             "Cooperate with Flux Layers" => "cooperate.md",
+             "Tutorials" => [
+                  "Semi-Supervised Learning with GCN" => "tutorials/semisupervised_gcn.md",
                   "GCN with Fixed Graph" => "tutorials/gcn_fixed_graph.md",
                 ],
-             "Abstractions" =>
-               ["Message passing scheme" => "abstractions/msgpass.md",
-                "Graph network block" => "abstractions/gn.md"],
-             "Manual" =>
-               ["Convolutional Layers" => "manual/conv.md",
-                "Pooling Layers" => "manual/pool.md",
-                "Models" => "manual/models.md",
-                "Linear Algebra" => "manual/linalg.md"],
+             "Abstractions" => [
+               "Message passing scheme" => "abstractions/msgpass.md",
+               "Graph network block" => "abstractions/gn.md"],
+             "Manual" => [
+               "FeaturedGraph" => "manual/featuredgraph.md",
+               "Convolutional Layers" => "manual/conv.md",
+               "Pooling Layers" => "manual/pool.md",
+               "Embeddings" => "manual/embedding.md",
+               "Models" => "manual/models.md",
+               "Linear Algebra" => "manual/linalg.md"
+               ],
              "References" => "references.md",
     ]
 )

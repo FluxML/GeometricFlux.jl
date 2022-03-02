@@ -11,6 +11,8 @@ Train GNN layers with fixed graph.
 # Example
 
 ```jldoctest
+julia> using GraphSignals, GeometricFlux
+
 julia> adj = [0 1 0 1;
               1 0 1 0;
               0 1 0 1;
@@ -62,10 +64,13 @@ and it can be specified by assigning layers for specific (node, edge and global)
 # Example
 
 ```jldoctest
+julia> using Flux, GeometricFlux
+
 julia> l = GraphParallel(
             node_layer=Dropout(0.5),
             global_layer=Dense(10, 5)
        )
+GraphParallel(node_layer=Dropout(0.5), edge_layer=identity, global_layer=Dense(10, 5))
 ```
 """
 struct GraphParallel{N,E,G}

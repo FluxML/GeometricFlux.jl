@@ -12,7 +12,7 @@ Z = enc(X, A) \\
 where ``A`` denotes the adjacency matrix.
 
 ```@docs
-GAE
+GeometricFlux.GAE
 ```
 
 Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
@@ -30,7 +30,7 @@ Z_{\mu}, Z_{logσ} = GCN_{\mu}(H, A), GCN_{\sigma}(H, A) \\
 where ``A`` denotes the adjacency matrix, ``X`` denotes node features.
 
 ```@docs
-VGAE
+GeometricFlux.VGAE
 ```
 
 Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
@@ -48,14 +48,14 @@ Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
 where ``Z`` denotes the input matrix from encoder.
 
 ```@docs
-InnerProductDecoder
+GeometricFlux.InnerProductDecoder
 ```
 
 Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
 
 ---
 
-### Variational Encoder
+### Variational Graph Encoder
 
 ```math
 H = enc(X, A) \\
@@ -63,7 +63,7 @@ Z_{\mu}, Z_{logσ} = GCN_{\mu}(H, A), GCN_{\sigma}(H, A)
 ```
 
 ```@docs
-VariationalEncoder
+GeometricFlux.VariationalGraphEncoder
 ```
 
 Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
