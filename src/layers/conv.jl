@@ -34,7 +34,7 @@ function GCNConv(ch::Pair{Int,Int}, σ=identity;
     in, out = ch
     W = init(out, in)
     b = Flux.create_bias(W, bias, out)
-    GCNConv(W, b, σ)
+    return GCNConv(W, b, σ)
 end
 
 @functor GCNConv

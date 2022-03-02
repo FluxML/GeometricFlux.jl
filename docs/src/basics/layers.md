@@ -36,6 +36,50 @@ When using GNN layers, the general guidelines are:
 * With static graph strategy: you should pass in a ``d \times n \times batch`` matrix for node features, and the layer maps node features ``\mathbb{R}^d \rightarrow \mathbb{R}^k`` then the output will be in matrix with dimensions ``k \times n \times batch``. The same ostensibly goes for edge features but as of now no layer type supports outputting new edge features.
 * With variable graph strategy: you should pass in a `FeaturedGraph`, the output will be also be a `FeaturedGraph` with modified node (and/or edge) features. Add `node_feature` as the following entry in the Flux chain (or simply call `node_feature()` on the output) if you wish to subsequently convert them to matrix form.
 
-## Create Custom GNN Layers
+## Define Your Own GNN Layer
 
-Customizing your own GNN layers are the same as customizing layers in Flux. You may want to reference [Flux documentation](https://fluxml.ai/Flux.jl/stable/models/basics/#Building-Layers-1).
+Customizing your own GNN layers are the same as defining a layer in Flux. You may want to check [Flux documentation](https://fluxml.ai/Flux.jl/stable/models/basics/#Building-Layers-1) first.
+
+To define a customized GNN layer, for example, we take a simple `GCNConv` layer as example here.
+
+```julia
+struct GCNConv <: AbstractGraphLayer
+    weight
+    bias
+    σ
+end
+
+@functor GCNConv
+```
+
+We first should define a `GCNConv` type and let it be the subtype of `AbstractGraphLayer`. In this type, it holds parameters that a layer operate on. Don't forget to add `@functor` macro to `GCNConv` type.
+
+```julia
+(l::GCNConv)(Ã::AbstractMatrix, x::AbstractMatrix) = l.σ.(l.weight * x * Ã .+ l.bias)
+```
+
+Then, we can define the operation for `GCNConv` layer.
+
+```julia
+function (l::GCNConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    Ã = Zygote.ignore() do
+        GraphSignals.normalized_adjacency_matrix(fg, eltype(nf); selfloop=true)
+    end
+    return ConcreteFeaturedGraph(fg, nf = l(Ã, nf))
+end
+```
+
+Here comes to the GNN-specific behaviors. A GNN layer should accept object of subtype of `AbstractFeaturedGraph` to support variable graph strategy. A variable graph strategy should fetch node/edge/global features from `fg` and transform graph in `fg` into required form for layer operation, e.g. `GCNConv` layer needs a normalized adjacency matrix with self loop. Then, normalized adjacency matrix `Ã` and node features `nf` are pass through `GCNConv` layer `l(Ã, nf)` to give a new node feature. Finally, a `ConcreteFeaturedGraph` wrap graph in `fg` and new node features into a new object of subtype of `AbstractFeaturedGraph`.
+
+```julia
+layer = GCNConv(10=>5, relu)
+new_fg = layer(fg)
+gradient(() -> sum(node_feature(layer(fg))), Flux.params(layer))
+```
+
+Now we complete a simple version of `GCNConv` layer. One can test the forward pass and gradient if they work properly.
+
+```@docs
+GeometricFlux.AbstractGraphLayer
+```
