@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0]
+
+- update docs and add defining GNN layer to doc
+- update GAE example
+- fix neural GDE example
+
 ## [0.9.0]
 
 - add semisupervised gcn and gcn with fixed graph example
