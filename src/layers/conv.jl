@@ -208,17 +208,16 @@ update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(NNlib.batched
 
 function (gc::GraphConv)(sg::SparseGraph, x::AbstractArray)
     GraphSignals.check_num_nodes(sg, x)
-    _, x, _ = propagate(gc, fg, edge_feature(fg), x, global_feature(fg), +)
+    _, x, _ = propagate(gc, sg, nothing, x, nothing, +, nothing, nothing)
     x
 end
 
 # For variable graph
-function (l::GraphConv)(fg::AbstractFeaturedGraph)
-    return ConcreteFeaturedGraph(fg, nf = l(graph(fg), node_feature(fg)))
-end
+(l::GraphConv)(fg::AbstractFeaturedGraph) =
+    ConcreteFeaturedGraph(fg, nf = l(collect(edges(graph(fg))), node_feature(fg)))
 
 # For static graph
-WithGraph(fg::AbstractFeaturedGraph, l::GraphConv) = WithGraph(graph(fg), l)
+WithGraph(fg::AbstractFeaturedGraph, l::GraphConv) = WithGraph(collect(edges(graph(fg))), l)
 
 (wg::WithGraph{<:GraphConv})(X::AbstractArray) = wg.layer(wg.graph, X)
 

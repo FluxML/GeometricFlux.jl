@@ -78,6 +78,10 @@ WithGraph(fg::AbstractFeaturedGraph, model::Chain) = Chain(map(l -> WithGraph(fg
 WithGraph(::AbstractFeaturedGraph, layer::WithGraph) = layer
 WithGraph(::AbstractFeaturedGraph, layer) = layer
 
+update_batch_edge(l::WithGraph, args...) = update_batch_edge(l.layer, l.graph, args...)
+aggregate_neighbors(l::WithGraph, args...) = aggregate_neighbors(l.layer, l.graph, args...)
+update_batch_vertex(l::WithGraph, args...) = update_batch_vertex(l.layer, l.graph, args...)
+
 """
     GraphParallel(; node_layer=identity, edge_layer=identity, global_layer=identity)
 

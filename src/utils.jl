@@ -16,12 +16,4 @@ aggregate(aggr::typeof(max), X) = vec(maximum(X, dims=2))
 aggregate(aggr::typeof(min), X) = vec(minimum(X, dims=2))
 aggregate(aggr::typeof(mean), X) = vec(aggr(X, dims=2))
 
-function all_edges(fg::AbstractFeaturedGraph)
-    es = GraphSignals.incident_edges(fg)
-    xs = GraphSignals.repeat_nodes(fg)
-    nbrs = GraphSignals.neighbors(fg)
-    return es, xs, nbrs
-end
-
 @non_differentiable batched_index(x...)
-@non_differentiable all_edges(x...)
