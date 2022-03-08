@@ -11,7 +11,7 @@ using ProgressMeter: Progress, next!
 using Statistics
 using Random
 
-function load_data(dataset, batch_size, train_repeats=128)
+function load_data(dataset, batch_size, train_repeats=2)
     # (train_X, train_y) dim: (num_features, target_dim) × 1708
     train_X, _ = map(x -> Matrix(x), alldata(Planetoid(), dataset))
     # (test_X, test_y) dim: (num_features, target_dim) × 1000
@@ -28,22 +28,22 @@ end
 
 @with_kw mutable struct Args
     η = 0.01                # learning rate
-    batch_size = 16         # batch size
+    batch_size = 1          # batch size
     epochs = 200            # number of epochs
     seed = 0                # random seed
     cuda = true             # use GPU
     input_dim = 1433        # input dimension
     hidden1_dim = 32        # hidden1 dimension
-    hidden2_dim = 16        # hidden1 dimension
+    hidden2_dim = 16        # hidden2 dimension
 end
 
 ## Loss: binary cross entropy
 model_loss(model, X, A) = logitbinarycrossentropy(model(X), A)
 
 function precision(model, X::AbstractArray, A::AbstractArray)
-    ŷ = onecold(softmax(cpu(model(X))))
-    y = onecold(cpu(A))
-    return mean(y[ŷ .== true])
+    ŷ = cpu(Flux.flatten(model(X))) .≥ 0.5
+    y = cpu(Flux.flatten(A))
+    return sum(y .* ŷ) / sum(ŷ)
 end
 
 precision(model, loader::DataLoader, device) =
@@ -69,7 +69,6 @@ function train(; kws...)
     # build model
     encoder = Chain(
         WithGraph(fg, GCNConv(args.input_dim=>args.hidden1_dim, relu)),
-        Dropout(0.5),
         WithGraph(fg, GCNConv(args.hidden1_dim=>args.hidden2_dim)),
     )
 
@@ -84,26 +83,26 @@ function train(; kws...)
     # training
     train_steps = 0
     @info "Start Training, total $(args.epochs) epochs"
+    progress = Progress(args.epochs)
     for epoch = 1:args.epochs
         @info "Epoch $(epoch)"
-        progress = Progress(length(loader))
 
+        local loss
         for (X, A) in loader
             loss, back = Flux.pullback(ps) do
                 model_loss(model, X |> device, A |> device)
             end
-            prec = precision(model, loader, device)
             grad = back(1f0)
             Flux.Optimise.update!(opt, ps, grad)
-
-            # progress meter
-            next!(progress; showvalues=[
-                (:loss, loss),
-                (:precision, prec),
-            ])
-
             train_steps += 1
         end
+        prec = precision(model, loader, device)
+
+        # progress meter
+        next!(progress; showvalues=[
+            (:loss, loss),
+            (:precision, prec),
+        ])
     end
 
     return model, args
