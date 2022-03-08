@@ -204,20 +204,35 @@ end
 Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
 
 message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = NNlib.batched_mul(gc.weight2, x_j)
+message(gc::GraphConv, x_i, x_j::AbstractMatrix, e_ij) = gc.weight2 * x_j
 update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(NNlib.batched_mul(gc.weight1, x) .+ m .+ gc.bias)
+update(gc::GraphConv, m::AbstractMatrix, x::AbstractMatrix) = gc.σ.(gc.weight1 * x .+ m .+ gc.bias)
 
 function (gc::GraphConv)(sg::SparseGraph, x::AbstractArray)
     GraphSignals.check_num_nodes(sg, x)
     _, x, _ = propagate(gc, sg, nothing, x, nothing, +, nothing, nothing)
-    x
+    return x
+end
+
+function (gc::GraphConv)(el::NamedTuple, x::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, size(x, 2))
+    E = update_batch_edge(gc, el, nothing, x, nothing)
+    Ē = aggregate_neighbors(gc, el, +, E)
+    V = update_batch_vertex(gc, el, Ē, x, nothing)
+    return V
 end
 
 # For variable graph
 (l::GraphConv)(fg::AbstractFeaturedGraph) =
-    ConcreteFeaturedGraph(fg, nf = l(collect(edges(graph(fg))), node_feature(fg)))
+    ConcreteFeaturedGraph(fg, nf = l(graph(fg), node_feature(fg)))
 
 # For static graph
-WithGraph(fg::AbstractFeaturedGraph, l::GraphConv) = WithGraph(collect(edges(graph(fg))), l)
+function WithGraph(fg::AbstractFeaturedGraph, l::GraphConv)
+    sg = graph(fg)
+    es, nbrs, xs = collect(edges(sg))
+    g = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    return WithGraph(g, l)
+end
 
 (wg::WithGraph{<:GraphConv})(X::AbstractArray) = wg.layer(wg.graph, X)
 

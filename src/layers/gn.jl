@@ -1,46 +1,47 @@
 abstract type GraphNet <: AbstractGraphLayer end
 
-@inline update_edge(gn::GraphNet, e, vi, vj, u) = e
-@inline update_vertex(gn::GraphNet, ē, vi, u) = vi
-@inline update_global(gn::GraphNet, ē, v̄, u) = u
+update_edge(gn::GraphNet, e, vi, vj, u) = e
+update_vertex(gn::GraphNet, ē, vi, u) = vi
+update_global(gn::GraphNet, ē, v̄, u) = u
 
-@inline update_batch_edge(gn::GraphNet, sg::SparseGraph, E, V, u) =
+update_batch_edge(gn::GraphNet, sg::SparseGraph, E, V, u) =
     update_edge(gn, collect(edges(sg)), E, V, u)
 
-@inline function update_batch_edge(gn::GraphNet, el::NTuple{3}, E, V, u)
-    es, nbrs, xs = el
-    return update_edge(
+update_batch_edge(gn::GraphNet, el::NamedTuple, E, V, u) =
+    update_edge(
         gn,
-        batched_gather(E, es),
-        batched_gather(V, xs),
-        batched_gather(V, nbrs),
+        batched_gather(E, el.es),
+        batched_gather(V, el.xs),
+        batched_gather(V, el.nbrs),
         u
     )
-end
 
-@inline update_batch_vertex(gn::GraphNet, sg::SparseGraph, Ē, V, u) =
+
+update_batch_vertex(gn::GraphNet, sg::SparseGraph, Ē, V, u) =
     update_vertex(gn, Ē, V, u)
 
-@inline function aggregate_neighbors(gn::GraphNet, sg::SparseGraph, aggr, E)
+update_batch_vertex(gn::GraphNet, el::NamedTuple, Ē, V, u) =
+    update_vertex(gn, Ē, V, u)
+
+function aggregate_neighbors(gn::GraphNet, sg::SparseGraph, aggr, E)
     N = nv(sg)
     batch_size = size(E)[end]
     dstsize = (size(E, 1), N, batch_size)
-    xs = batched_index(GraphSignals.repeat_nodes(sg), batch_size)
+    _, _, xs = collect(edges(sg))
+    xs = batched_index(xs, batch_size)
     return aggregate_neighbors(gn, xs, dstsize, aggr, E)
 end
 
 @inline aggregate_neighbors(gn::GraphNet, sg::SparseGraph, aggr::Nothing, @nospecialize E) = nothing
 
-@inline function aggregate_neighbors(gn::GraphNet, el::NTuple{3}, aggr, E)
-    _, _, xs = el
-    N = length(unique(cpu(xs)))
+function aggregate_neighbors(gn::GraphNet, el::NamedTuple, aggr, E)
     batch_size = size(E)[end]
-    dstsize = (size(E, 1), N, batch_size)
-    xs = batched_index(xs, batch_size)
+    dstsize = (size(E, 1), el.N, batch_size)
+    xs = batched_index(el.xs, batch_size)
     return aggregate_neighbors(gn, xs, dstsize, aggr, E)
 end
 
-@inline function aggregate_neighbors(gn::GraphNet, xs::AbstractArray, dstsize, aggr, E)
+function aggregate_neighbors(gn::GraphNet, xs::AbstractArray, dstsize, aggr, E)
     return NNlib.scatter(aggr, E, xs; dstsize=dstsize)
 end
 

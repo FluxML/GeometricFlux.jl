@@ -108,25 +108,25 @@
     end
 
     @testset "GraphConv" begin
-        batch_size = 10
-        X = rand(T, in_channel, N, batch_size)
+        @testset "layer without graph" begin
+            gc = GraphConv(in_channel=>out_channel)
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
 
-        # @testset "layer without graph" begin
-        #     gc = GraphConv(in_channel=>out_channel)
-        #     @test size(gc.weight1) == (out_channel, in_channel)
-        #     @test size(gc.weight2) == (out_channel, in_channel)
-        #     @test size(gc.bias) == (out_channel,)
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
+            fg_ = gc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws MethodError gc(X)
 
-        #     fg = FeaturedGraph(adj, nf=X)
-        #     fg_ = gc(fg)
-        #     @test size(node_feature(fg_)) == (out_channel, N)
-        #     @test_throws MethodError gc(X)
-
-        #     g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
-        #     @test length(g.grads) == 5
-        # end
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            @test length(g.grads) == 5
+        end
 
         @testset "layer with graph" begin
+            batch_size = 10
+            X = rand(T, in_channel, N, batch_size)
             gc = WithGraph(fg, GraphConv(in_channel=>out_channel))
             Y = gc(X)
             @test size(Y) == (out_channel, N, batch_size)
