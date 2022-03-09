@@ -66,60 +66,74 @@
         end
     end
 
-    # @testset "GraphConv" begin
-    #     gc = GraphConv(fg, in_channel=>out_channel) |> gpu
-    #     @test size(gc.weight1) == (out_channel, in_channel)
-    #     @test size(gc.weight2) == (out_channel, in_channel)
-    #     @test size(gc.bias) == (out_channel,)
+    @testset "GraphConv" begin
+        @testset "layer without graph" begin
+            gc = GraphConv(in_channel=>out_channel) |> gpu
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
+
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X) |> gpu
+            fg_ = gc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            @test length(g.grads) == 5
+        end
+
+        @testset "layer with static graph" begin
+            batch_size = 10
+            X = rand(T, in_channel, N, batch_size)
+            gc = WithGraph(fg, GraphConv(in_channel=>out_channel)) |> gpu
+            Y = gc(X |> gpu)
+            @test size(Y) == (out_channel, N, batch_size)
+
+            g = Zygote.gradient(() -> sum(gc(X |> gpu)), Flux.params(gc))
+            @test length(g.grads) == 4
+        end
+    end
+
+    # @testset "GATConv" begin
+    #     adj = T[1 1 0 1;
+    #             1 1 1 0;
+    #             0 1 1 1;
+    #             1 0 1 1]
+        
+    #     fg = FeaturedGraph(adj)
+
+    #     gat = GATConv(fg, in_channel=>out_channel) |> gpu
+    #     @test size(gat.weight) == (out_channel, in_channel)
+    #     @test size(gat.bias) == (out_channel,)
 
     #     X = rand(in_channel, N) |> gpu
-    #     Y = gc(X)
+    #     Y = gat(X)
     #     @test size(Y) == (out_channel, N)
 
-    #     g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+    #     g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
     #     @test length(g.grads) == 3
     # end
 
-    @testset "GATConv" begin
-        adj = T[1 1 0 1;
-                1 1 1 0;
-                0 1 1 1;
-                1 0 1 1]
-        
-        fg = FeaturedGraph(adj)
+    # @testset "GatedGraphConv" begin
+    #     num_layers = 3
+    #     ggc = GatedGraphConv(fg, out_channel, num_layers) |> gpu
+    #     @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-        gat = GATConv(fg, in_channel=>out_channel) |> gpu
-        @test size(gat.weight) == (out_channel, in_channel)
-        @test size(gat.bias) == (out_channel,)
+    #     X = rand(in_channel, N) |> gpu
+    #     Y = ggc(X)
+    #     @test size(Y) == (out_channel, N)
 
-        X = rand(in_channel, N) |> gpu
-        Y = gat(X)
-        @test size(Y) == (out_channel, N)
+    #     g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
+    #     @test length(g.grads) == 6
+    # end
 
-        g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
-        @test length(g.grads) == 3
-    end
+    # @testset "EdgeConv" begin
+    #     ec = EdgeConv(fg, Dense(2*in_channel, out_channel)) |> gpu
+    #     X = rand(in_channel, N) |> gpu
+    #     Y = ec(X)
+    #     @test size(Y) == (out_channel, N)
 
-    @testset "GatedGraphConv" begin
-        num_layers = 3
-        ggc = GatedGraphConv(fg, out_channel, num_layers) |> gpu
-        @test size(ggc.weight) == (out_channel, out_channel, num_layers)
-
-        X = rand(in_channel, N) |> gpu
-        Y = ggc(X)
-        @test size(Y) == (out_channel, N)
-
-        g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
-        @test length(g.grads) == 6
-    end
-
-    @testset "EdgeConv" begin
-        ec = EdgeConv(fg, Dense(2*in_channel, out_channel)) |> gpu
-        X = rand(in_channel, N) |> gpu
-        Y = ec(X)
-        @test size(Y) == (out_channel, N)
-
-        g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
-        @test length(g.grads) == 2
-    end
+    #     g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+    #     @test length(g.grads) == 2
+    # end
 end

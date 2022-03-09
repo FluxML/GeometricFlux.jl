@@ -124,7 +124,7 @@
             @test length(g.grads) == 5
         end
 
-        @testset "layer with graph" begin
+        @testset "layer with static graph" begin
             batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             gc = WithGraph(fg, GraphConv(in_channel=>out_channel))
