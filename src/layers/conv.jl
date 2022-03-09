@@ -218,15 +218,6 @@ function (l::GraphConv)(fg::AbstractFeaturedGraph)
 end
 
 # For static graph
-function WithGraph(fg::AbstractFeaturedGraph, l::GraphConv)
-    sg = graph(fg)
-    es, nbrs, xs = collect(edges(sg))
-    g = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
-    return WithGraph(g, l)
-end
-
-(wg::WithGraph{<:GraphConv})(X::AbstractArray) = wg.layer(wg.graph, X)
-
 function (gc::GraphConv)(el::NamedTuple, x::AbstractArray)
     GraphSignals.check_num_nodes(el.N, size(x, 2))
     _, x, _ = propagate(gc, el, nothing, x, nothing, +, nothing, nothing)
