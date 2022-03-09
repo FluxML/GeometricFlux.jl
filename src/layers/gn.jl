@@ -1,60 +1,51 @@
-_view(::Nothing, idx) = nothing
-_view(A::Fill{T,2,Axes}, idx) where {T,Axes} = fill(A.value, A.axes[1], length(idx))
-_view(A::AbstractMatrix, idx) = view(A, :, idx)
-
-aggregate(aggr::typeof(+), X) = vec(sum(X, dims=2))
-aggregate(aggr::typeof(-), X) = -vec(sum(X, dims=2))
-aggregate(aggr::typeof(*), X) = vec(prod(X, dims=2))
-aggregate(aggr::typeof(/), X) = 1 ./ vec(prod(X, dims=2))
-aggregate(aggr::typeof(max), X) = vec(maximum(X, dims=2))
-aggregate(aggr::typeof(min), X) = vec(minimum(X, dims=2))
-aggregate(aggr::typeof(mean), X) = vec(aggr(X, dims=2))
-
 abstract type GraphNet <: AbstractGraphLayer end
 
-@inline update_edge(gn::GraphNet, e, vi, vj, u) = e
-@inline update_vertex(gn::GraphNet, ē, vi, u) = vi
-@inline update_global(gn::GraphNet, ē, v̄, u) = u
+update_edge(::GraphNet, e, vi, vj, u) = e
+update_vertex(::GraphNet, ē, vi, u) = vi
+update_global(::GraphNet, ē, v̄, u) = u
 
-function _get_indices(fg::AbstractFeaturedGraph)
-    es = cpu(GraphSignals.incident_edges(fg))
-    xs = cpu(GraphSignals.repeat_nodes(fg))
-    nbrs = cpu(GraphSignals.neighbors(fg))
-    sorted_idx = sort!(collect(zip(es, xs, nbrs)), by=x->x[1])
-    return collect.(collect(zip(sorted_idx...)))
+update_batch_edge(gn::GraphNet, el::NamedTuple, E, V, u) =
+    update_edge(
+        gn,
+        _gather(E, el.es),
+        _gather(V, el.xs),
+        _gather(V, el.nbrs),
+        u
+    )
+
+update_batch_vertex(gn::GraphNet, ::NamedTuple, Ē, V, u) = update_vertex(gn, Ē, V, u)
+
+function aggregate_neighbors(gn::GraphNet, el::NamedTuple, aggr, E)
+    batch_size = size(E)[end]
+    dstsize = (size(E, 1), el.N, batch_size)
+    xs = batched_index(el.xs, batch_size)
+    return aggregate_neighbors(gn, xs, aggr, E, dstsize)
 end
 
-@inline function update_batch_edge(gn::GraphNet, fg::AbstractFeaturedGraph, E, V, u)
-    es, xs, nbrs = Zygote.ignore(()->_get_indices(fg))
-    ms = map((e,i,j)->update_edge(gn, _view(E, e), _view(V, i), _view(V, j), u), es, xs, nbrs)
-    M = hcat_by_sum(ms)
-    return M
+function aggregate_neighbors(gn::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix)
+    return aggregate_neighbors(gn, el.xs, aggr, E)
 end
 
-@inline function update_batch_vertex(gn::GraphNet, fg::AbstractFeaturedGraph, Ē, V, u)
-    nodes = Zygote.ignore(()->vertices(fg))
-    vs = map(n->update_vertex(gn, _view(Ē, n), _view(V, n), u), nodes)
-    V_ = hcat_by_sum(vs)
-    return V_
+@inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, E) = nothing
+
+function aggregate_neighbors(::GraphNet, xs::AbstractArray, aggr, E, dstsize=nothing)
+    if isnothing(dstsize)
+        return NNlib.scatter(aggr, E, xs)
+    else
+        return NNlib.scatter(aggr, E, xs; dstsize=dstsize)
+    end
 end
 
-@inline function aggregate_neighbors(gn::GraphNet, fg::AbstractFeaturedGraph, aggr, E)
-    N = nv(parent(fg))
-    es, xs, nbrs = Zygote.ignore(()->_get_indices(fg))
-    Ē = NNlib.scatter(aggr, E, xs; dstsize=(size(E, 1), N))
-    return Ē
-end
-@inline aggregate_neighbors(gn::GraphNet, fg::AbstractFeaturedGraph, aggr::Nothing, @nospecialize E) = nothing
+aggregate_edges(::GraphNet, aggr, E) = aggregate(aggr, E)
+@inline aggregate_edges(::GraphNet, ::Nothing, E) = nothing
 
-@inline aggregate_edges(gn::GraphNet, aggr, E) = aggregate(aggr, E)
-@inline aggregate_edges(gn::GraphNet, aggr::Nothing, @nospecialize E) = nothing
+aggregate_vertices(::GraphNet, aggr, V) = aggregate(aggr, V)
+@inline aggregate_vertices(::GraphNet, ::Nothing, V) = nothing
 
-@inline aggregate_vertices(gn::GraphNet, aggr, V) = aggregate(aggr, V)
-@inline aggregate_vertices(gn::GraphNet, aggr::Nothing, @nospecialize V) = nothing
-
-function propagate(gn::GraphNet, fg::AbstractFeaturedGraph, naggr=nothing, eaggr=nothing, vaggr=nothing)
-    E, V, u = propagate(gn, fg, edge_feature(fg), node_feature(fg), global_feature(fg), naggr, eaggr, vaggr)
-    return FeaturedGraph(fg, nf=V, ef=E, gf=u)
+function propagate(gn::GraphNet, sg::SparseGraph, E, V, u, naggr, eaggr, vaggr)
+    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
+    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    return propagate(gn, el, E, V, u, naggr, eaggr, vaggr)
 end
 
 """
@@ -65,11 +56,10 @@ end
 - `aggregate_vertices`: (V_out_dim, V) -> (V_out_dim,)
 - `update_global`: (dim,) -> (dim,)
 """
-function propagate(gn::GraphNet, fg::AbstractFeaturedGraph, E::AbstractArray, V::AbstractArray, u::AbstractArray,
-                   naggr=nothing, eaggr=nothing, vaggr=nothing)
-    E = update_batch_edge(gn, fg, E, V, u)
-    Ē = aggregate_neighbors(gn, fg, naggr, E)
-    V = update_batch_vertex(gn, fg, Ē, V, u)
+function propagate(gn::GraphNet, el::NamedTuple, E, V, u, naggr, eaggr, vaggr)
+    E = update_batch_edge(gn, el, E, V, u)
+    Ē = aggregate_neighbors(gn, el, naggr, E)
+    V = update_batch_vertex(gn, el, Ē, V, u)
     ē = aggregate_edges(gn, eaggr, E)
     v̄ = aggregate_vertices(gn, vaggr, V)
     u = update_global(gn, ē, v̄, u)

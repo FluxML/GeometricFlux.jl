@@ -60,8 +60,7 @@ export
     node2vec
 
 include("datasets.jl")
-
-include("utils.jl")
+include("operation.jl")
 
 include("layers/graphlayers.jl")
 include("layers/gn.jl")

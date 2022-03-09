@@ -6,23 +6,25 @@
     num_E = 7
 
     adj = T[0. 1. 0. 0. 0. 0.;
-        1. 0. 0. 1. 1. 1.;
-        0. 0. 0. 0. 0. 1.;
-        0. 1. 0. 0. 1. 0.;
-        0. 1. 0. 1. 0. 1.;
-        0. 1. 1. 0. 1. 0.]
+            1. 0. 0. 1. 1. 1.;
+            0. 0. 0. 0. 0. 1.;
+            0. 1. 0. 0. 1. 0.;
+            0. 1. 0. 1. 0. 1.;
+            0. 1. 1. 0. 1. 0.]
 
-    struct NewLayer <: MessagePassing
-        weight
+    struct NewLayer{T} <: MessagePassing
+        weight::T
     end
-    NewLayer(m, n) = NewLayer(randn(T, m,n))
+    NewLayer(m, n) = NewLayer(randn(T, m, n))
+    @functor NewLayer
 
-    function (l::NewLayer)(fg::FeaturedGraph, X::AbstractMatrix)
-        _, x, _ = GeometricFlux.propagate(l, fg, edge_feature(fg), X, global_feature(fg), +)
-        x
+    # For variable graph
+    function (l::NewLayer)(fg::AbstractFeaturedGraph)
+        nf = node_feature(fg)
+        GraphSignals.check_num_nodes(fg, nf)
+        _, V, _ = GeometricFlux.propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+        return FeaturedGraph(fg, nf=V)
     end
-
-    (l::NewLayer)(fg::FeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
 
     X = Array{T}(reshape(1:num_V*in_channel, in_channel, num_V))
     fg = FeaturedGraph(adj, nf=X, ef=Fill(zero(T), 0, num_E))
@@ -38,7 +40,7 @@
         @test size(global_feature(fg_)) == (0,)
     end
 
-    GeometricFlux.message(l::NewLayer, x_i, x_j, e_ij) = l.weight * x_j
+    GeometricFlux.message(l::NewLayer, x_i, x_j::AbstractMatrix, e_ij) = l.weight * x_j
     @testset "message function" begin
         fg_ = l(fg)
 
@@ -48,7 +50,7 @@
         @test size(global_feature(fg_)) == (0,)
     end
 
-    GeometricFlux.update(l::NewLayer, m, x) = l.weight * x + m
+    GeometricFlux.update(l::NewLayer, m::AbstractMatrix, x) = l.weight * x + m
     @testset "message and update" begin
         fg_ = l(fg)
 
