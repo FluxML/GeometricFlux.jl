@@ -5,8 +5,8 @@
     V = 6
     E = 7
 
-    nf = hcat([repeat(T[i], in_channel) for i in 1:V]...)
-    ef = hcat([repeat(T[i], in_channel) for i in 1:E]...)
+    nf = repeat(T.(collect(1:V)'), outer=(in_channel, 1))
+    ef = repeat(T.(collect(1:E)'), outer=(in_channel, 1))
     gf = rand(T, in_channel)
 
     adj = T[0. 1. 0. 0. 0. 0.;
@@ -19,8 +19,12 @@
     struct NewGNLayer <: GraphNet end
 
     @testset "without aggregation" begin
-        function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg))
+        function (l::NewGNLayer)(fg::AbstractFeaturedGraph)
+            nf = node_feature(fg)
+            ef = edge_feature(fg)
+            GraphSignals.check_num_nodes(fg, nf)
+            GraphSignals.check_num_edges(fg, ef)
+            return GeometricFlux.propagate(l, graph(fg), ef, nf, global_feature(fg), nothing, nothing, nothing)
         end
 
         fg = FeaturedGraph(adj, nf=nf)
@@ -33,8 +37,12 @@
     end
 
     @testset "with neighbor aggregation" begin
-        function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg), +)
+        function (l::NewGNLayer)(fg::AbstractFeaturedGraph)
+            nf = node_feature(fg)
+            ef = edge_feature(fg)
+            GraphSignals.check_num_nodes(fg, nf)
+            GraphSignals.check_num_edges(fg, ef)
+            return GeometricFlux.propagate(l, graph(fg), ef, nf, global_feature(fg), +, nothing, nothing)
         end
 
         fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=zeros(0))
@@ -42,14 +50,18 @@
         ef_, nf_, gf_ = l(fg)
 
         @test size(nf_) == (in_channel, V)
-        @test size(ef_) == (in_channel, 2E)
+        @test size(ef_) == (0, 2E)
         @test size(gf_) == (0,)
     end
 
-    GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = rand(T, out_channel)
+    GeometricFlux.update_edge(l::NewGNLayer, e, vi, vj, u) = similar(e, out_channel, size(e)[2:end]...)
     @testset "update edge with neighbor aggregation" begin
-        function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg), +)
+        function (l::NewGNLayer)(fg::AbstractFeaturedGraph)
+            nf = node_feature(fg)
+            ef = edge_feature(fg)
+            GraphSignals.check_num_nodes(fg, nf)
+            GraphSignals.check_num_edges(fg, ef)
+            return GeometricFlux.propagate(l, graph(fg), ef, nf, global_feature(fg), +, nothing, nothing)
         end
 
         fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=zeros(0))
@@ -61,10 +73,14 @@
         @test size(gf_) == (0,)
     end
 
-    GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = rand(T, out_channel)
+    GeometricFlux.update_vertex(l::NewGNLayer, ē, vi, u) = similar(vi, out_channel, size(vi)[2:end]...)
     @testset "update edge/vertex with all aggregation" begin
-        function (l::NewGNLayer)(fg::FeaturedGraph)
-            GeometricFlux.propagate(l, fg, edge_feature(fg), node_feature(fg), global_feature(fg), +, +, +)
+        function (l::NewGNLayer)(fg::AbstractFeaturedGraph)
+            nf = node_feature(fg)
+            ef = edge_feature(fg)
+            GraphSignals.check_num_nodes(fg, nf)
+            GraphSignals.check_num_edges(fg, ef)
+            return GeometricFlux.propagate(l, graph(fg), ef, nf, global_feature(fg), +, +, +)
         end
 
         fg = FeaturedGraph(adj, nf=nf, ef=ef, gf=gf)
