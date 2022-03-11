@@ -236,80 +236,78 @@ end
 
 
 """
-    GATConv([fg,] in => out;
-            heads=1,
-            concat=true,
-            init=glorot_uniform    
-            bias=true, 
-            negative_slope=0.2)
+    GATConv(in => out, σ=identity; heads=1, concat=true,
+            init=glorot_uniform, bias=true, negative_slope=0.2)
 
 Graph attentional layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
+- `σ`: Activation function.
 - `heads`: Number attention heads 
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{V<:AbstractFeaturedGraph, T, A<:AbstractMatrix{T}, B} <: MessagePassing
-    fg::V
+struct GATConv{T, A<:AbstractMatrix{T}, B, F} <: MessagePassing
     weight::A
     bias::B
     a::A
+    σ::F
     negative_slope::T
     channel::Pair{Int, Int}
     heads::Int
     concat::Bool
 end
 
-function GATConv(fg::AbstractFeaturedGraph, ch::Pair{Int,Int};
-                 heads::Int=1, concat::Bool=true, negative_slope=0.2f0,
-                 init=glorot_uniform, bias::Bool=true)
+function GATConv(ch::Pair{Int,Int}, σ=identity; heads::Int=1, concat::Bool=true,
+                 negative_slope=0.2f0, init=glorot_uniform, bias::Bool=true)
     in, out = ch             
     W = init(out*heads, in)
-    b = Flux.create_bias(W, bias, out*heads)
+    b = Flux.create_bias(W, bias, out, 1, heads)
     a = init(2*out, heads)
-    GATConv(fg, W, b, a, negative_slope, ch, heads, concat)
+    GATConv(W, b, a, σ, negative_slope, ch, heads, concat)
 end
-
-GATConv(ch::Pair{Int,Int}; kwargs...) = GATConv(NullGraph(), ch; kwargs...)
 
 @functor GATConv
 
 Flux.trainable(l::GATConv) = (l.weight, l.bias, l.a)
 
-# Here the α that has not been softmaxed is the first number of the output message
-function message(gat::GATConv, x_i::AbstractVector, x_j::AbstractVector)
-    x_i = reshape(gat.weight*x_i, :, gat.heads)
-    x_j = reshape(gat.weight*x_j, :, gat.heads)
-    x_ij = vcat(x_i, x_j+zero(x_j))
-    e = sum(x_ij .* gat.a, dims=1)  # inner product for each head, output shape: (1, gat.heads)
-    e_ij = leakyrelu.(e, gat.negative_slope)
-    vcat(e_ij, x_j)  # shape: (n+1, gat.heads)
+# neighbor attention
+function message(gat::GATConv, Xi::AbstractMatrix, Xj::AbstractMatrix, e_ij)
+    Xi = reshape(Xi, size(Xi)..., 1)
+    Xj = reshape(Xj, size(Xj)..., 1)
+    A = message(gat, Xi, Xj, nothing)
+    return reshape(A, size(A)[1:3]...)
 end
 
-# After some reshaping due to the multihead, we get the α from each message,
-# then get the softmax over every α, and eventually multiply the message by α
-function graph_attention(gat::GATConv, i, js, X::AbstractMatrix)
-    e_ij = map(j -> GeometricFlux.message(gat, batched_gather(X, i), batched_gather(X, j)), js)
-    E = hcat_by_sum(e_ij)
-    n = size(E, 1)
-    αs = Flux.softmax(reshape(view(E, 1, :), gat.heads, :), dims=2)
-    msgs = view(E, 2:n, :) .* reshape(αs, 1, :)
-    return reshape(msgs, (n-1)*gat.heads, :)
+function message(gat::GATConv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
+    _, nb, bch_sz = size(Xj)
+    heads = gat.heads
+    Q = reshape(NNlib.batched_mul(gat.weight, Xi), :, nb, heads*bch_sz)  # dims: (out, nb, heads*bch_sz)
+    K = reshape(NNlib.batched_mul(gat.weight, Xj), :, nb, heads*bch_sz)
+    V = reshape(NNlib.batched_mul(gat.weight, Xj), :, nb, heads*bch_sz)
+    QK = reshape(vcat(Q, K), :, nb, heads, bch_sz)  # dims: (2out, nb, heads, bch_sz)
+    QK = permutedims(QK, (1, 3, 2, 4))  # dims: (2out, heads, nb, bch_sz)
+    A = leakyrelu.(sum(QK .* gat.a, dims=1), gat.negative_slope)  # dims: (1, heads, nb, bch_sz)
+    QK = permutedims(QK, (1, 3, 2, 4))  # dims: (1, nb, heads, bch_sz)
+    α = Flux.softmax(reshape(A, nb, 1, :), dims=1)  # dims: (nb, 1, heads*bch_sz)
+    return reshape(NNlib.batched_mul(V, α), :, 1, heads, bch_sz)  # dims: (out, 1, heads, bch_sz)
 end
 
-function update_batch_edge(gat::GATConv, fg::AbstractFeaturedGraph, E::AbstractMatrix, X::AbstractMatrix, u)
-    @assert Zygote.ignore(() -> check_self_loops(graph(fg))) "a vertex must have self loop (receive a message from itself)."
-    nodes = Zygote.ignore(()->vertices(fg))
-    nbr = i->cpu(GraphSignals.neighbors(graph(fg), i))
-    ms = map(i -> graph_attention(gat, i, Zygote.ignore(()->nbr(i)), X), nodes)
-    M = hcat_by_sum(ms)
-    return M
+# graph attention
+function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
+    function _message(gat, el, i, X)
+        xs = el.xs[el.xs .== i]
+        nbrs = el.nbrs[el.xs .== i]
+        Xi = _gather(X, xs)
+        Xj = _gather(X, nbrs)
+        return message(gat, Xi, Xj, nothing)
+    end
+    hs = [_message(gat, el, i, X) for i in 1:el.N]
+    return hcat(hs...)  # dims: (out, N, heads, [bch_sz])
 end
 
 function check_self_loops(sg::SparseGraph)
@@ -321,25 +319,41 @@ function check_self_loops(sg::SparseGraph)
     return true
 end
 
-function update_batch_vertex(gat::GATConv, ::AbstractFeaturedGraph, M::AbstractMatrix, X::AbstractMatrix, u)
+function update(gat::GATConv, M::AbstractArray, X::AbstractArray)
     M = M .+ gat.bias
-    if !gat.concat
-        N = size(M, 2)
-        M = reshape(mean(reshape(M, :, gat.heads, N), dims=2), :, N)
+    if gat.concat
+        M = gat.σ.(M)  # dims: (out, N, heads, [bch_sz])
+    else
+        M = gat.σ.(mean(M, dims=3))
+        M = _reshape(M)  # dims: (out, N, [bch_sz])
     end
     return M
 end
 
-function (gat::GATConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
+_reshape(M::AbstractArray{<:Real,3}) = reshape(M, size(M)[[1,2]]...)
+_reshape(M::AbstractArray{<:Real,4}) = reshape(M, size(M)[[1,2,4]]...)
+
+# For variable graph
+function (l::GATConv)(fg::AbstractFeaturedGraph)
+    X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
-    _, X, _ = propagate(gat, fg, edge_feature(fg), X, global_feature(fg), +)
-    return X
+    sg = graph(fg)
+    @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
+    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    Ē = update_batch_edge(l, el, nothing, X, nothing)
+    V = update_batch_vertex(l, el, Ē, X, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::GATConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::GATConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-(l::GATConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::GATConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
+# For static graph
+function (l::GATConv)(el::NamedTuple, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, size(X, 2))
+    # TODO: should have self loops check for el
+    Ē = update_batch_edge(l, el, nothing, X, nothing)
+    V = update_batch_vertex(l, el, Ē, X, nothing)
+    return V
+end
 
 function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))

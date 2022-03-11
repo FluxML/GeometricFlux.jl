@@ -142,72 +142,57 @@
         end
     end
 
-    # @testset "GATConv" begin
-    #     adj1 = [1 1 0 1;
-    #             1 1 1 0;
-    #             0 1 1 1;
-    #             1 0 1 1]
-    #     fg1 = FeaturedGraph(adj1)
+    @testset "GATConv" begin
+        adj1 = [1 1 0 1;
+                1 1 1 0;
+                0 1 1 1;
+                1 0 1 1]
+        fg1 = FeaturedGraph(adj1)
 
-    #     # isolated_vertex
-    #     adj2 = [1 0 0 1;
-    #             0 1 0 0;
-    #             0 0 1 1;
-    #             1 0 1 1]
-    #     fg2 = FeaturedGraph(adj2)
+        # isolated_vertex
+        adj2 = [1 0 0 1;
+                0 1 0 0;
+                0 0 1 1;
+                1 0 1 1]
+        fg2 = FeaturedGraph(adj2)
 
-    #     X = rand(T, in_channel, N)
-    #     Xt = transpose(rand(T, N, in_channel))
+        @testset "layer without graph" begin
+            for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
+                gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
+                @test size(gat.weight) == (out_channel * heads, in_channel)
+                @test size(gat.bias) == (out_channel, 1, heads)
+                @test size(gat.a) == (2*out_channel, heads)
 
-    #     @testset "layer with graph" begin
-    #         for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
-    #             fg_gat = FeaturedGraph(adj_gat)
-    #             gat = GATConv(fg_gat, in_channel=>out_channel, heads=heads, concat=concat)
+                X = rand(T, in_channel, N)
+                fg_gat = FeaturedGraph(adj_gat, nf=X)
+                fg_ = gat(fg_gat)
+                @test size(node_feature(fg_)) == (concat ? (out_channel, N, heads) : (out_channel, N))
+                @test_throws MethodError gat(X)
 
-    #             @test size(gat.weight) == (out_channel * heads, in_channel)
-    #             @test size(gat.bias) == (out_channel * heads,)
-    #             @test size(gat.a) == (2*out_channel, heads)
+                g = Zygote.gradient(() -> sum(node_feature(gat(fg_gat))), Flux.params(gat))
+                @test length(g.grads) == 5
+            end
+        end
 
-    #             Y = gat(X)
-    #             @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
+        @testset "layer with static graph" begin
+            batch_size = 10
+            X = rand(T, in_channel, N, batch_size)
+            for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
+                fg_gat = FeaturedGraph(adj_gat)
+                gat = WithGraph(fg_gat, GATConv(in_channel=>out_channel, heads=heads, concat=concat))
+                Y = gat(X)
+                @test size(Y) == (concat ? (out_channel, N, heads, batch_size) : (out_channel, N, batch_size))
 
-    #             # Test with transposed features
-    #             Y = gat(Xt)
-    #             @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
+                g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
+                @test length(g.grads) == 3
+            end
+        end
 
-    #             g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
-    #             @test length(g.grads) == 3
-    #         end
-    #     end
-
-    #     @testset "layer without graph" begin
-    #         for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
-    #             fg_gat = FeaturedGraph(adj_gat, nf=X)
-    #             gat = GATConv(in_channel=>out_channel, heads=heads, concat=concat)
-    #             @test size(gat.weight) == (out_channel * heads, in_channel)
-    #             @test size(gat.bias) == (out_channel * heads,)
-    #             @test size(gat.a) == (2*out_channel, heads)
-
-    #             fg_ = gat(fg_gat)
-    #             Y = node_feature(fg_)
-    #             @test size(Y) == (concat ? (out_channel*heads, N) : (out_channel, N))
-    #             @test_throws MethodError gat(X)
-
-    #             # Test with transposed features
-    #             fgt = FeaturedGraph(adj_gat, nf=Xt)
-    #             fgt_ = gat(fgt)
-    #             @test size(node_feature(fgt_)) == (concat ? (out_channel*heads, N) : (out_channel, N))
-
-    #             g = Zygote.gradient(() -> sum(node_feature(gat(fg_gat))), Flux.params(gat))
-    #             @test length(g.grads) == 5
-    #         end
-    #     end
-
-    #     @testset "bias=false" begin
-    #         @test length(Flux.params(GATConv(2=>3))) == 3
-    #         @test length(Flux.params(GATConv(2=>3, bias=false))) == 2
-    #     end
-    # end
+        @testset "bias=false" begin
+            @test length(Flux.params(GATConv(2=>3))) == 3
+            @test length(Flux.params(GATConv(2=>3, bias=false))) == 2
+        end
+    end
 
     # @testset "GatedGraphConv" begin
     #     num_layers = 3
