@@ -3,6 +3,9 @@ _gather(A::Fill{T,2,Axes}, idx) where {T,Axes} = fill(A.value, A.axes[1], length
 _gather(A::AbstractMatrix, idx) = NNlib.gather(A, idx)
 _gather(A::AbstractArray, idx) = NNlib.gather(A, batched_index(idx, size(A)[end]))
 
+_scatter(aggr, E, xs::AbstractArray) = NNlib.scatter(aggr, E, xs)
+_scatter(aggr, E, xs::AbstractArray, dstsize) = NNlib.scatter(aggr, E, xs; dstsize=dstsize)
+
 function batched_index(idx::AbstractVector, batch_size::Integer)
     b = copyto!(similar(idx, 1, batch_size), collect(1:batch_size))
     return tuple.(idx, b)

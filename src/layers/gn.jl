@@ -15,26 +15,17 @@ update_batch_edge(gn::GraphNet, el::NamedTuple, E, V, u) =
 
 update_batch_vertex(gn::GraphNet, ::NamedTuple, Ē, V, u) = update_vertex(gn, Ē, V, u)
 
-function aggregate_neighbors(gn::GraphNet, el::NamedTuple, aggr, E)
+function aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E)
     batch_size = size(E)[end]
     dstsize = (size(E, 1), el.N, batch_size)
     xs = batched_index(el.xs, batch_size)
-    return aggregate_neighbors(gn, xs, aggr, E, dstsize)
+    return _scatter(aggr, E, xs, dstsize)
 end
 
-function aggregate_neighbors(gn::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix)
-    return aggregate_neighbors(gn, el.xs, aggr, E)
-end
+aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = _scatter(aggr, E, el.xs)
 
 @inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, E) = nothing
-
-function aggregate_neighbors(::GraphNet, xs::AbstractArray, aggr, E, dstsize=nothing)
-    if isnothing(dstsize)
-        return NNlib.scatter(aggr, E, xs)
-    else
-        return NNlib.scatter(aggr, E, xs; dstsize=dstsize)
-    end
-end
+@inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing
 
 aggregate_edges(::GraphNet, aggr, E) = aggregate(aggr, E)
 @inline aggregate_edges(::GraphNet, ::Nothing, E) = nothing

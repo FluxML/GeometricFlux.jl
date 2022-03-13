@@ -2,6 +2,7 @@
     T = Float32
     in_channel = 3
     out_channel = 5
+    batch_size = 10
     
     N = 4
     adj = T[0 1 0 1;
@@ -83,7 +84,6 @@
         end
 
         @testset "layer with static graph" begin
-            batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             gc = WithGraph(fg, GraphConv(in_channel=>out_channel)) |> gpu
             Y = gc(X |> gpu)
@@ -94,25 +94,38 @@
         end
     end
 
-    # @testset "GATConv" begin
-    #     adj = T[1 1 0 1;
-    #             1 1 1 0;
-    #             0 1 1 1;
-    #             1 0 1 1]
-        
-    #     fg = FeaturedGraph(adj)
+    @testset "GATConv" begin
+        heads = 2
+        adj = T[1 1 0 1;
+                1 1 1 0;
+                0 1 1 1;
+                1 0 1 1]
+        fg = FeaturedGraph(adj)
+        @testset "layer without graph" begin
+            gat = GATConv(in_channel=>out_channel, heads=2) |> gpu
+            @test size(gat.weight) == (out_channel * heads, in_channel)
+            @test size(gat.bias) == (out_channel, 1, heads)
+            @test size(gat.a) == (2*out_channel, heads)
+            
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X) |> gpu
+            fg_ = gat(fg)
+            @test size(node_feature(fg_)) == (out_channel, N, heads)
+    
+            g = Zygote.gradient(() -> sum(node_feature(gat(fg))), Flux.params(gat))
+            @test length(g.grads) == 5
+        end
 
-    #     gat = GATConv(fg, in_channel=>out_channel) |> gpu
-    #     @test size(gat.weight) == (out_channel, in_channel)
-    #     @test size(gat.bias) == (out_channel,)
-
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = gat(X)
-    #     @test size(Y) == (out_channel, N)
-
-    #     g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
-    #     @test length(g.grads) == 3
-    # end
+        @testset "layer with static graph" begin
+            X = rand(T, in_channel, N, batch_size)
+            gat = WithGraph(fg, GATConv(in_channel=>out_channel, heads=2)) |> gpu
+            Y = gat(X |> gpu)
+            @test size(Y) == (out_channel, N, heads, batch_size)
+    
+            g = Zygote.gradient(() -> sum(gat(X |> gpu)), Flux.params(gat))
+            @test length(g.grads) == 4
+        end
+    end
 
     # @testset "GatedGraphConv" begin
     #     num_layers = 3
