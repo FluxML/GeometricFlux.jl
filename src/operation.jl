@@ -6,6 +6,9 @@ _gather(A::AbstractArray, idx) = NNlib.gather(A, batched_index(idx, size(A)[end]
 _scatter(aggr, E, xs::AbstractArray) = NNlib.scatter(aggr, E, xs)
 _scatter(aggr, E, xs::AbstractArray, dstsize) = NNlib.scatter(aggr, E, xs; dstsize=dstsize)
 
+_matmul(A::AbstractMatrix, B::AbstractMatrix) = A * B
+_matmul(A::AbstractArray, B::AbstractArray) = NNlib.batched_mul(A, B)
+
 function batched_index(idx::AbstractVector, batch_size::Integer)
     b = copyto!(similar(idx, 1, batch_size), collect(1:batch_size))
     return tuple.(idx, b)

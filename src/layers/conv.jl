@@ -39,10 +39,8 @@ end
 
 @functor GCNConv
 
-(l::GCNConv)(Ã::AbstractMatrix, x::AbstractMatrix) = l.σ.(l.weight * x * Ã .+ l.bias)
-
 function (l::GCNConv)(Ã::AbstractMatrix, X::AbstractArray)
-    z = NNlib.batched_mul(l.weight, NNlib.batched_mul(X, Ã))
+    z = _matmul(l.weight, _matmul(X, Ã))
     return l.σ.(z .+ l.bias)
 end
 
@@ -113,26 +111,14 @@ end
 
 Flux.trainable(l::ChebConv) = (l.weight, l.bias)
 
-function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractMatrix)
-    Z_prev = X
-    Z = X * L̃
-    Y = view(l.weight,:,:,1) * Z_prev
-    Y += view(l.weight,:,:,2) * Z
-    for k = 3:l.k
-        Z, Z_prev = 2 .* Z * L̃ - Z_prev, Z
-        Y += view(l.weight,:,:,k) * Z
-    end
-    return l.σ.(Y .+ l.bias)
-end
-
 function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractArray)
     Z_prev = X
-    Z = NNlib.batched_mul(X, L̃)
-    Y = NNlib.batched_mul(view(l.weight,:,:,1), Z_prev)
-    Y += NNlib.batched_mul(view(l.weight,:,:,2), Z)
+    Z = _matmul(X, L̃)
+    Y = _matmul(view(l.weight,:,:,1), Z_prev)
+    Y += _matmul(view(l.weight,:,:,2), Z)
     for k = 3:l.k
-        Z, Z_prev = 2 .* NNlib.batched_mul(Z, L̃) .- Z_prev, Z
-        Y += NNlib.batched_mul(view(l.weight,:,:,k), Z)
+        Z, Z_prev = 2 .* _matmul(Z, L̃) .- Z_prev, Z
+        Y += _matmul(view(l.weight,:,:,k), Z)
     end
     return l.σ.(Y .+ l.bias)
 end
@@ -182,12 +168,12 @@ Graph neural network layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 """
-struct GraphConv{A<:AbstractMatrix,B,F} <: MessagePassing
+struct GraphConv{A<:AbstractMatrix,B,F,O} <: MessagePassing
     weight1::A
     weight2::A
     bias::B
     σ::F
-    aggr
+    aggr::O
 end
 
 function GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+;
@@ -203,24 +189,22 @@ end
 
 Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
 
-message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = NNlib.batched_mul(gc.weight2, x_j)
-message(gc::GraphConv, x_i, x_j::AbstractMatrix, e_ij) = gc.weight2 * x_j
+message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = _matmul(gc.weight2, x_j)
 
-update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(NNlib.batched_mul(gc.weight1, x) .+ m .+ gc.bias)
-update(gc::GraphConv, m::AbstractMatrix, x::AbstractMatrix) = gc.σ.(gc.weight1 * x .+ m .+ gc.bias)
+update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(_matmul(gc.weight1, x) .+ m .+ gc.bias)
 
 # For variable graph
 function (l::GraphConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
     GraphSignals.check_num_nodes(fg, nf)
-    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, l.aggr, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
 
 # For static graph
 function (gc::GraphConv)(el::NamedTuple, x::AbstractArray)
-    GraphSignals.check_num_nodes(el.N, size(x, 2))
-    _, x, _ = propagate(gc, el, nothing, x, nothing, +, nothing, nothing)
+    GraphSignals.check_num_nodes(el.N, x)
+    _, x, _ = propagate(gc, el, nothing, x, nothing, gc.aggr, nothing, nothing)
     return x
 end
 
@@ -251,7 +235,7 @@ Graph attentional layer.
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{T, A<:AbstractMatrix{T}, B, F} <: MessagePassing
+struct GATConv{T,A<:AbstractMatrix{T},B,F} <: MessagePassing
     weight::A
     bias::B
     a::A
@@ -339,8 +323,7 @@ function (l::GATConv)(fg::AbstractFeaturedGraph)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
     @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
-    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
-    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    el = to_namedtuple(sg)
     Ē = update_batch_edge(l, el, nothing, X, nothing)
     V = update_batch_vertex(l, el, Ē, X, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
@@ -365,69 +348,65 @@ end
 
 
 """
-    GatedGraphConv([fg,] out, num_layers; aggr=+, init=glorot_uniform)
+    GatedGraphConv(out, num_layers; aggr=+, init=glorot_uniform)
 
 Gated graph convolution layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `out`: The dimension of output features.
 - `num_layers`: The number of gated recurrent unit.
 - `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
 `*`, `/`, `max`, `min` and `mean` are available.
 """
-struct GatedGraphConv{V<:AbstractFeaturedGraph, A<:AbstractArray{<:Number,3}, R} <: MessagePassing
-    fg::V
+struct GatedGraphConv{A<:AbstractArray{<:Number,3},R,O} <: MessagePassing
     weight::A
     gru::R
     out_ch::Int
     num_layers::Int
-    aggr
+    aggr::O
 end
 
-function GatedGraphConv(fg::AbstractFeaturedGraph, out_ch::Int, num_layers::Int;
-                        aggr=+, init=glorot_uniform)
+function GatedGraphConv(out_ch::Int, num_layers::Int; aggr=+, init=glorot_uniform)
     w = init(out_ch, out_ch, num_layers)
     gru = GRUCell(out_ch, out_ch)
-    GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
+    GatedGraphConv(w, gru, out_ch, num_layers, aggr)
 end
-
-GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
-    GatedGraphConv(NullGraph(), out_ch, num_layers; kwargs...)
 
 @functor GatedGraphConv
 
 Flux.trainable(l::GatedGraphConv) = (l.weight, l.gru)
 
-message(ggc::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
+message(ggc::GatedGraphConv, x_i, x_j::AbstractArray, e_ij) = x_j
 
-update(ggc::GatedGraphConv, m::AbstractVector, x) = m
+update(ggc::GatedGraphConv, m::AbstractArray, x) = m
 
+# For variable graph
+function (l::GatedGraphConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    V = l(to_namedtuple(fg), nf)
+    return ConcreteFeaturedGraph(fg, nf=V)
+end
 
-function (ggc::GatedGraphConv)(fg::AbstractFeaturedGraph, H::AbstractMatrix{T}) where {T<:Real}
-    GraphSignals.check_num_nodes(fg, H)
-    m, n = size(H)
-    @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
-    if m < ggc.out_ch
+# For static graph
+function (l::GatedGraphConv)(el::NamedTuple, H::AbstractArray{T}) where {T<:Real}
+    GraphSignals.check_num_nodes(el.N, H)
+    m, n = size(H)[1:2]
+    @assert (m <= l.out_ch) "number of input features must less or equals to output features."
+    if m < l.out_ch
         Hpad = Zygote.ignore() do
-            fill!(similar(H, T, ggc.out_ch - m, n), 0)
+            fill!(similar(H, T, l.out_ch - m, n, size(H)[3:end]...), 0)
         end
         H = vcat(H, Hpad)
     end
-    for i = 1:ggc.num_layers
-        M = view(ggc.weight, :, :, i) * H
-        _, M = propagate(ggc, fg, edge_feature(fg), M, global_feature(fg), +)
-        H, _ = ggc.gru(H, M)
+    for i = 1:l.num_layers
+        M = _matmul(view(l.weight, :, :, i), H)
+        _, M = propagate(l, el, nothing, M, nothing, l.aggr, nothing, nothing)
+        H, _ = l.gru(H, M)
     end
-    H
+    return H
 end
-
-(l::GatedGraphConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::GatedGraphConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-(l::GatedGraphConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::GatedGraphConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
-
 
 function Base.show(io::IO, l::GatedGraphConv)
     print(io, "GatedGraphConv(($(l.out_ch) => $(l.out_ch))^$(l.num_layers)")
@@ -438,123 +417,106 @@ end
 
 
 """
-    EdgeConv([fg,] nn; aggr=max)
+    EdgeConv(nn; aggr=max)
 
 Edge convolutional layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `nn`: A neural network (e.g. a Dense layer or a MLP). 
 - `aggr`: An aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
-struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
-    fg::V
-    nn
-    aggr
+struct EdgeConv{N,O} <: MessagePassing
+    nn::N
+    aggr::O
 end
 
-EdgeConv(fg::AbstractFeaturedGraph, nn; aggr=max) = EdgeConv(fg, nn, aggr)
-EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
+EdgeConv(nn; aggr=max) = EdgeConv(nn, aggr)
 
 @functor EdgeConv
 
 Flux.trainable(l::EdgeConv) = (l.nn,)
 
-message(ec::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
-update(ec::EdgeConv, m::AbstractVector, x) = m
+message(ec::EdgeConv, x_i::AbstractArray, x_j::AbstractArray, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
+update(ec::EdgeConv, m::AbstractArray, x) = m
 
-function (ec::EdgeConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
-    GraphSignals.check_num_nodes(fg, X)
-    _, X, _ = propagate(ec, fg, edge_feature(fg), X, global_feature(fg), ec.aggr)
-    X
+# For variable graph
+function (l::EdgeConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, l.aggr, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::EdgeConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::EdgeConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, l.aggr)  # edge number check break this
-(l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::EdgeConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
+# For static graph
+function (l::EdgeConv)(el::NamedTuple, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, X)
+    _, X, _ = propagate(l, el, nothing, X, nothing, l.aggr, nothing, nothing)
+    return X
+end
 
 function Base.show(io::IO, l::EdgeConv)
-    print(io, "EdgeConv(", l.nn)
-    print(io, ", aggr=", l.aggr)
-    print(io, ")")
+    print(io, "EdgeConv(", l.nn, ", aggr=", l.aggr, ")")
 end
 
 
 """
-    GINConv([fg,] nn, [eps=0])
+    GINConv(nn, [eps=0])
 
     Graph Isomorphism Network.
 
 # Arguments
 
-- `fg`: Optionally pass in a FeaturedGraph as input.
 - `nn`: A neural network/layer.
 - `eps`: Weighting factor.
 
 The definition of this is as defined in the original paper,
 Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
 """
-struct GINConv{G,R} <: MessagePassing
-    fg::G
-    nn
+struct GINConv{N,R<:Real} <: MessagePassing
+    nn::N
     eps::R
-
-    function GINConv(fg::G, nn, eps::R=0f0) where {G<:AbstractFeaturedGraph,R<:Real}
-        new{G,R}(fg, nn, eps)
-    end
 end
 
-function GINConv(nn, eps::Real=0f0)
-    GINConv(NullGraph(), nn, eps)
-end
+GINConv(nn, eps=0f0) = GINConv(nn, eps)
 
 @functor GINConv
 
-Flux.trainable(g::GINConv) = (fg=g.fg, nn=g.nn)
+Flux.trainable(g::GINConv) = (g.nn,)
 
-message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
-update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
+message(g::GINConv, x_i::AbstractArray, x_j::AbstractArray) = x_j 
+update(g::GINConv, m::AbstractArray, x::AbstractArray) = g.nn((1 + g.eps) * x + m)
 
-function (g::GINConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
-    gf = graph(fg)
-    GraphSignals.check_num_nodes(gf, X)
-    _, X, _ = propagate(g, fg, edge_feature(fg), X, global_feature(fg), +)
-    X
+# For variable graph
+function (l::GINConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::GINConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::GINConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-(l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::GINConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
+# For static graph
+function (l::GINConv)(el::NamedTuple, x::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, x)
+    _, V, _ = propagate(l, el, nothing, x, nothing, +, nothing, nothing)
+    return V
+end
 
 
 """
-    CGConv([fg,] (node_dim, edge_dim), out, init, bias=true, as_edge=false)
+    CGConv((node_dim, edge_dim), out, init, bias=true)
 
 Crystal Graph Convolutional network. Uses both node and edge features.
 
 # Arguments
 
-- `fg`: Optional [`FeaturedGraph`] argument(@ref)
 - `node_dim`: Dimensionality of the input node features. Also is necessarily the output dimensionality.
 - `edge_dim`: Dimensionality of the input edge features.
 - `out`: Dimensionality of the output features.
 - `init`: Initialization algorithm for each of the weight matrices
 - `bias`: Whether or not to learn an additive bias parameter.
-- `as_edge`: When call to layer `CGConv(M)`, accept input feature as node features or edge features.
-
-# Usage
-
-You can call `CGConv` in several different ways:
-                                    
-- Pass a FeaturedGraph: `CGConv(fg)`, returns `FeaturedGraph` 
-- Pass both node and edge features: `CGConv(X, E)` 
-- Pass one matrix, which is determined as node features or edge features by `as_edge` keyword argument.
 """
-struct CGConv{E, V<:AbstractFeaturedGraph, A<:AbstractMatrix, B} <: MessagePassing
-    fg::V
+struct CGConv{A<:AbstractMatrix,B} <: MessagePassing
     Wf::A
     Ws::A
     bf::B
@@ -565,42 +527,36 @@ end
 
 Flux.trainable(l::CGConv) = (l.Wf, l.Ws, l.bf, l.bs)
 
-function CGConv(fg::G, dims::NTuple{2,Int};
-                init=glorot_uniform, bias=true, as_edge=false) where {G<:AbstractFeaturedGraph}
+function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true)
     node_dim, edge_dim = dims
     Wf = init(node_dim, 2*node_dim + edge_dim)
     Ws = init(node_dim, 2*node_dim + edge_dim)
     bf = Flux.create_bias(Wf, bias, node_dim)
     bs = Flux.create_bias(Ws, bias, node_dim)
-    T, S = typeof(Wf), typeof(bf)
-
-    CGConv{as_edge,G,T,S}(fg, Wf, Ws, bf, bs)
+    return CGConv(Wf, Ws, bf, bs)
 end
 
-function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true, as_edge=false)
-    CGConv(NullGraph(), dims; init=init, bias=bias, as_edge=as_edge)
-end
-
-message(c::CGConv,
-        x_i::AbstractVector, x_j::AbstractVector, e::AbstractVector) = begin
+function message(c::CGConv, x_i::AbstractArray, x_j::AbstractArray, e::AbstractArray)
     z = vcat(x_i, x_j, e)
-    σ.(c.Wf * z + c.bf) .* softplus.(c.Ws * z + c.bs)
+    return σ.(_matmul(c.Wf, z) .+ c.bf) .* softplus.(_matmul(c.Ws, z) .+ c.bs)
 end
-update(c::CGConv, m::AbstractVector, x) = x + m
 
-function (c::CGConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix, E::AbstractMatrix)
+update(c::CGConv, m::AbstractArray, x) = x + m
+
+# For variable graph
+function (l::CGConv)(fg::AbstractFeaturedGraph)
+    X = node_feature(fg)
+    E = edge_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     GraphSignals.check_num_edges(fg, E)
-    _, Y, _ = propagate(c, fg, E, X, global_feature(fg), +)
-    Y
+    _, V, _ = propagate(l, graph(fg), E, X, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::CGConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg,
-                                               nf=l(fg, node_feature(fg), edge_feature(fg)),
-                                               ef=edge_feature(fg))
-# (l::CGConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-
-(l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)
-
-(l::CGConv{true})(M::AbstractMatrix) = l(l.fg, node_feature(l.fg), M)
-(l::CGConv{false})(M::AbstractMatrix) = l(l.fg, M, edge_feature(l.fg))
+# For static graph
+function (l::CGConv)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, X)
+    GraphSignals.check_num_edges(el.E, E)
+    _, V, _ = propagate(l, el, E, X, nothing, +, nothing, nothing)
+    return V
+end
