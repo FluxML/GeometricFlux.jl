@@ -461,13 +461,12 @@ end
 
 
 """
-    GINConv([fg,] nn, [eps=0])
+    GINConv(nn, [eps=0])
 
     Graph Isomorphism Network.
 
 # Arguments
 
-- `fg`: Optionally pass in a FeaturedGraph as input.
 - `nn`: A neural network/layer.
 - `eps`: Weighting factor.
 
@@ -483,32 +482,34 @@ GINConv(nn, eps=0f0) = GINConv(nn, eps)
 
 @functor GINConv
 
-Flux.trainable(g::GINConv) = (fg=g.fg, nn=g.nn)
+Flux.trainable(g::GINConv) = (g.nn,)
 
-message(g::GINConv, x_i::AbstractVector, x_j::AbstractVector) = x_j 
-update(g::GINConv, m::AbstractVector, x) = g.nn((1 + g.eps) * x + m)
+message(g::GINConv, x_i::AbstractArray, x_j::AbstractArray) = x_j 
+update(g::GINConv, m::AbstractArray, x::AbstractArray) = g.nn((1 + g.eps) * x + m)
 
-function (g::GINConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
-    gf = graph(fg)
-    GraphSignals.check_num_nodes(gf, X)
-    _, X, _ = propagate(g, fg, edge_feature(fg), X, global_feature(fg), +)
-    X
+# For variable graph
+function (l::GINConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::GINConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::GINConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-(l::GINConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::GINConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
+# For static graph
+function (l::GINConv)(el::NamedTuple, x::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, x)
+    _, V, _ = propagate(l, el, nothing, x, nothing, +, nothing, nothing)
+    return V
+end
 
 
 """
-    CGConv([fg,] (node_dim, edge_dim), out, init, bias=true, as_edge=false)
+    CGConv((node_dim, edge_dim), out, init, bias=true, as_edge=false)
 
 Crystal Graph Convolutional network. Uses both node and edge features.
 
 # Arguments
 
-- `fg`: Optional [`FeaturedGraph`] argument(@ref)
 - `node_dim`: Dimensionality of the input node features. Also is necessarily the output dimensionality.
 - `edge_dim`: Dimensionality of the input edge features.
 - `out`: Dimensionality of the output features.
@@ -524,8 +525,7 @@ You can call `CGConv` in several different ways:
 - Pass both node and edge features: `CGConv(X, E)` 
 - Pass one matrix, which is determined as node features or edge features by `as_edge` keyword argument.
 """
-struct CGConv{E, V<:AbstractFeaturedGraph, A<:AbstractMatrix, B} <: MessagePassing
-    fg::V
+struct CGConv{E,A<:AbstractMatrix,B} <: MessagePassing
     Wf::A
     Ws::A
     bf::B
@@ -536,8 +536,8 @@ end
 
 Flux.trainable(l::CGConv) = (l.Wf, l.Ws, l.bf, l.bs)
 
-function CGConv(fg::G, dims::NTuple{2,Int};
-                init=glorot_uniform, bias=true, as_edge=false) where {G<:AbstractFeaturedGraph}
+function CGConv(dims::NTuple{2,Int}; init=glorot_uniform,
+                bias=true, as_edge=false)
     node_dim, edge_dim = dims
     Wf = init(node_dim, 2*node_dim + edge_dim)
     Ws = init(node_dim, 2*node_dim + edge_dim)
@@ -545,32 +545,27 @@ function CGConv(fg::G, dims::NTuple{2,Int};
     bs = Flux.create_bias(Ws, bias, node_dim)
     T, S = typeof(Wf), typeof(bf)
 
-    CGConv{as_edge,G,T,S}(fg, Wf, Ws, bf, bs)
+    CGConv{as_edge,G,T,S}(Wf, Ws, bf, bs)
 end
 
-function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true, as_edge=false)
-    CGConv(NullGraph(), dims; init=init, bias=bias, as_edge=as_edge)
-end
-
-message(c::CGConv,
-        x_i::AbstractVector, x_j::AbstractVector, e::AbstractVector) = begin
+function message(c::CGConv, x_i::AbstractVector, x_j::AbstractVector, e::AbstractVector)
     z = vcat(x_i, x_j, e)
-    σ.(c.Wf * z + c.bf) .* softplus.(c.Ws * z + c.bs)
+    return σ.(c.Wf * z + c.bf) .* softplus.(c.Ws * z + c.bs)
 end
+
 update(c::CGConv, m::AbstractVector, x) = x + m
 
-function (c::CGConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix, E::AbstractMatrix)
+# For variable graph
+function (l::CGConv)(fg::AbstractFeaturedGraph)
+    X = node_feature(fg)
+    E = edge_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     GraphSignals.check_num_edges(fg, E)
-    _, Y, _ = propagate(c, fg, E, X, global_feature(fg), +)
-    Y
+    _, V, _ = propagate(l, graph(fg), E, X, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::CGConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg,
-                                               nf=l(fg, node_feature(fg), edge_feature(fg)),
-                                               ef=edge_feature(fg))
-# (l::CGConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-
+# For static graph
 (l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)
 
 (l::CGConv{true})(M::AbstractMatrix) = l(l.fg, node_feature(l.fg), M)

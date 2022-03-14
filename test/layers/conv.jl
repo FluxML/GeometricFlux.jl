@@ -275,7 +275,7 @@
             @test size(Y) == (out_channel, N, batch_size)
 
             g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
-            @test length(g.grads) == 8
+            @test length(g.grads) == 2
         end
     end
 
