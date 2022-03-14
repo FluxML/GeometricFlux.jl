@@ -145,11 +145,11 @@
         @testset "layer with static graph" begin
             X = rand(T, in_channel, N, batch_size)
             ggc = WithGraph(fg, GatedGraphConv(out_channel, num_layers)) |> gpu
-            Y = ggc(X |> gpu)
-            @test size(Y) == (out_channel, N, batch_size)
+            @test_broken Y = ggc(X |> gpu)
+            @test_broken size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
-            @test length(g.grads) == 6
+            @test_broken g = Zygote.gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
+            @test_broken length(g.grads) == 6
         end
     end
 

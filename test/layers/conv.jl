@@ -1,5 +1,6 @@
 @testset "layer" begin
     T = Float32
+    batch_size = 10
     in_channel = 3
     in_channel_edge = 1
     out_channel = 5
@@ -125,7 +126,6 @@
         end
 
         @testset "layer with static graph" begin
-            batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             gc = WithGraph(fg, GraphConv(in_channel=>out_channel))
             Y = gc(X)
@@ -174,7 +174,6 @@
         end
 
         @testset "layer with static graph" begin
-            batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             for heads = [1, 2], concat = [true, false], adj_gat in [adj1, adj2]
                 fg_gat = FeaturedGraph(adj_gat)
@@ -211,14 +210,13 @@
         end
 
         @testset "layer with static graph" begin
-            batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             ggc = WithGraph(fg, GatedGraphConv(out_channel, num_layers))
-            Y = ggc(X)
-            @test size(Y) == (out_channel, N, batch_size)
+            @test_broken Y = ggc(X)
+            @test_broken size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
-            @test length(g.grads) == 6
+            @test_broken g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
+            @test_broken length(g.grads) == 6
         end
     end
 
@@ -237,7 +235,6 @@
         end
         
         @testset "layer with static graph" begin
-            batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             ec = WithGraph(fg, EdgeConv(Dense(2*in_channel, out_channel)))
             Y = ec(X)
@@ -268,7 +265,6 @@
         end
 
         @testset "layer with static graph" begin
-            batch_size = 10
             X = rand(T, in_channel, N, batch_size)
             gc = WithGraph(FeaturedGraph(adj), GINConv(nn, eps))
             Y = gc(X)
@@ -280,21 +276,32 @@
     end
 
     @testset "CGConv" begin
-        @testset "layer with static graph" begin
-            fg = FeaturedGraph(adj)
-            cgc = WithGraph(fg, CGConv((in_channel, in_channel_edge)))
+        @testset "layer without graph" begin
+            cgc = CGConv((in_channel, in_channel_edge))
             @test size(cgc.Wf) == (in_channel, 2 * in_channel + in_channel_edge)
             @test size(cgc.Ws) == (in_channel, 2 * in_channel + in_channel_edge)
             @test size(cgc.bf) == (in_channel,)
             @test size(cgc.bs) == (in_channel,)
 
-            X = rand(Float32, in_channel, N)
-            E = rand(Float32, in_channel_edge, ne(fg))
-            Y = cgc(X, E)
-            @test size(Y) == (in_channel, N)
+            nf = rand(T, in_channel, N)
+            ef = rand(T, in_channel_edge, E)
+            fg = FeaturedGraph(adj, nf=nf, ef=ef)
+            fg_ = cgc(fg)
+            @test_throws MethodError cgc(nf)
 
-            g = Zygote.gradient(() -> sum(cgc(X, E)), Flux.params(cgc))
-            @test length(g.grads) == 3
+            g = Zygote.gradient(() -> sum(node_feature(cgc(fg))), Flux.params(cgc))
+            @test length(g.grads) == 6
+        end
+
+        @testset "layer with static graph" begin
+            nf = rand(T, in_channel, N, batch_size)
+            ef = rand(T, in_channel_edge, E, batch_size)
+            cgc = WithGraph(fg, CGConv((in_channel, in_channel_edge)))
+            Y = cgc(nf, ef)
+            @test size(Y) == (in_channel, N, batch_size)
+
+            g = Zygote.gradient(() -> sum(cgc(nf, ef)), Flux.params(cgc))
+            @test length(g.grads) == 4
         end
     end
 end

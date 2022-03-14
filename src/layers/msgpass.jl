@@ -63,8 +63,7 @@ update_edge(mp::MessagePassing, e, vi, vj, u) = GeometricFlux.message(mp, vi, vj
 update_vertex(mp::MessagePassing, ē, vi, u) = GeometricFlux.update(mp, ē, vi)
 
 # For static graph
-function WithGraph(fg::AbstractFeaturedGraph, mp::MessagePassing)
-    return WithGraph(to_namedtuple(fg), mp)
-end
+WithGraph(fg::AbstractFeaturedGraph, mp::MessagePassing) =
+    WithGraph(to_namedtuple(fg), mp)
 
-(wg::WithGraph{<:MessagePassing})(X::AbstractArray) = wg.layer(wg.graph, X)
+(wg::WithGraph{<:MessagePassing})(args...) = wg.layer(wg.graph, args...)

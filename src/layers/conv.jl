@@ -504,7 +504,7 @@ end
 
 
 """
-    CGConv((node_dim, edge_dim), out, init, bias=true, as_edge=false)
+    CGConv((node_dim, edge_dim), out, init, bias=true)
 
 Crystal Graph Convolutional network. Uses both node and edge features.
 
@@ -515,17 +515,8 @@ Crystal Graph Convolutional network. Uses both node and edge features.
 - `out`: Dimensionality of the output features.
 - `init`: Initialization algorithm for each of the weight matrices
 - `bias`: Whether or not to learn an additive bias parameter.
-- `as_edge`: When call to layer `CGConv(M)`, accept input feature as node features or edge features.
-
-# Usage
-
-You can call `CGConv` in several different ways:
-                                    
-- Pass a FeaturedGraph: `CGConv(fg)`, returns `FeaturedGraph` 
-- Pass both node and edge features: `CGConv(X, E)` 
-- Pass one matrix, which is determined as node features or edge features by `as_edge` keyword argument.
 """
-struct CGConv{E,A<:AbstractMatrix,B} <: MessagePassing
+struct CGConv{A<:AbstractMatrix,B} <: MessagePassing
     Wf::A
     Ws::A
     bf::B
@@ -536,24 +527,21 @@ end
 
 Flux.trainable(l::CGConv) = (l.Wf, l.Ws, l.bf, l.bs)
 
-function CGConv(dims::NTuple{2,Int}; init=glorot_uniform,
-                bias=true, as_edge=false)
+function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true)
     node_dim, edge_dim = dims
     Wf = init(node_dim, 2*node_dim + edge_dim)
     Ws = init(node_dim, 2*node_dim + edge_dim)
     bf = Flux.create_bias(Wf, bias, node_dim)
     bs = Flux.create_bias(Ws, bias, node_dim)
-    T, S = typeof(Wf), typeof(bf)
-
-    CGConv{as_edge,G,T,S}(Wf, Ws, bf, bs)
+    return CGConv(Wf, Ws, bf, bs)
 end
 
-function message(c::CGConv, x_i::AbstractVector, x_j::AbstractVector, e::AbstractVector)
+function message(c::CGConv, x_i::AbstractArray, x_j::AbstractArray, e::AbstractArray)
     z = vcat(x_i, x_j, e)
-    return σ.(c.Wf * z + c.bf) .* softplus.(c.Ws * z + c.bs)
+    return σ.(_matmul(c.Wf, z) .+ c.bf) .* softplus.(_matmul(c.Ws, z) .+ c.bs)
 end
 
-update(c::CGConv, m::AbstractVector, x) = x + m
+update(c::CGConv, m::AbstractArray, x) = x + m
 
 # For variable graph
 function (l::CGConv)(fg::AbstractFeaturedGraph)
@@ -566,7 +554,9 @@ function (l::CGConv)(fg::AbstractFeaturedGraph)
 end
 
 # For static graph
-(l::CGConv)(X::AbstractMatrix, E::AbstractMatrix) = l(l.fg, X, E)
-
-(l::CGConv{true})(M::AbstractMatrix) = l(l.fg, node_feature(l.fg), M)
-(l::CGConv{false})(M::AbstractMatrix) = l(l.fg, M, edge_feature(l.fg))
+function (l::CGConv)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, X)
+    GraphSignals.check_num_edges(el.E, E)
+    _, V, _ = propagate(l, el, E, X, nothing, +, nothing, nothing)
+    return V
+end
