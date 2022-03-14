@@ -34,8 +34,7 @@ aggregate_vertices(::GraphNet, aggr, V) = aggregate(aggr, V)
 @inline aggregate_vertices(::GraphNet, ::Nothing, V) = nothing
 
 function propagate(gn::GraphNet, sg::SparseGraph, E, V, u, naggr, eaggr, vaggr)
-    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
-    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    el = to_namedtuple(sg)
     return propagate(gn, el, E, V, u, naggr, eaggr, vaggr)
 end
 
@@ -55,4 +54,11 @@ function propagate(gn::GraphNet, el::NamedTuple, E, V, u, naggr, eaggr, vaggr)
     v̄ = aggregate_vertices(gn, vaggr, V)
     u = update_global(gn, ē, v̄, u)
     return E, V, u
+end
+
+to_namedtuple(fg::AbstractFeaturedGraph) = to_namedtuple(graph(fg))
+
+function to_namedtuple(sg::SparseGraph)
+    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
+    return (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
 end

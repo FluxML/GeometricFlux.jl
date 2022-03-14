@@ -127,26 +127,53 @@
         end
     end
 
-    # @testset "GatedGraphConv" begin
-    #     num_layers = 3
-    #     ggc = GatedGraphConv(fg, out_channel, num_layers) |> gpu
-    #     @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+    @testset "GatedGraphConv" begin
+        num_layers = 3
+        @testset "layer without graph" begin
+            ggc = GatedGraphConv(out_channel, num_layers) |> gpu
+            @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = ggc(X)
-    #     @test size(Y) == (out_channel, N)
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X) |> gpu
+            fg_ = ggc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
 
-    #     g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
-    #     @test length(g.grads) == 6
-    # end
+            g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
+            @test length(g.grads) == 8
+        end
 
-    # @testset "EdgeConv" begin
-    #     ec = EdgeConv(fg, Dense(2*in_channel, out_channel)) |> gpu
-    #     X = rand(in_channel, N) |> gpu
-    #     Y = ec(X)
-    #     @test size(Y) == (out_channel, N)
+        @testset "layer with static graph" begin
+            X = rand(T, in_channel, N, batch_size)
+            ggc = WithGraph(fg, GatedGraphConv(out_channel, num_layers)) |> gpu
+            Y = ggc(X |> gpu)
+            @test size(Y) == (out_channel, N, batch_size)
 
-    #     g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
-    #     @test length(g.grads) == 2
-    # end
+            g = Zygote.gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
+            @test length(g.grads) == 6
+        end
+    end
+
+    @testset "EdgeConv" begin
+        @testset "layer without graph" begin
+            ec = EdgeConv(Dense(2*in_channel, out_channel)) |> gpu
+
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X) |> gpu
+            fg_ = ec(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
+            @test length(g.grads) == 4
+        end
+
+        @testset "layer with static graph" begin
+            X = rand(in_channel, N, batch_size)
+            ec = WithGraph(fg, EdgeConv(Dense(2*in_channel, out_channel))) |> gpu
+            Y = ec(X |> gpu)
+            @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(ec(X |> gpu)), Flux.params(ec))
+            @test length(g.grads) == 2
+        end
+    end
 end

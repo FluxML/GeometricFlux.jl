@@ -39,10 +39,8 @@ end
 
 @functor GCNConv
 
-(l::GCNConv)(Ã::AbstractMatrix, x::AbstractMatrix) = l.σ.(l.weight * x * Ã .+ l.bias)
-
 function (l::GCNConv)(Ã::AbstractMatrix, X::AbstractArray)
-    z = NNlib.batched_mul(l.weight, NNlib.batched_mul(X, Ã))
+    z = _matmul(l.weight, _matmul(X, Ã))
     return l.σ.(z .+ l.bias)
 end
 
@@ -113,26 +111,14 @@ end
 
 Flux.trainable(l::ChebConv) = (l.weight, l.bias)
 
-function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractMatrix)
-    Z_prev = X
-    Z = X * L̃
-    Y = view(l.weight,:,:,1) * Z_prev
-    Y += view(l.weight,:,:,2) * Z
-    for k = 3:l.k
-        Z, Z_prev = 2 .* Z * L̃ - Z_prev, Z
-        Y += view(l.weight,:,:,k) * Z
-    end
-    return l.σ.(Y .+ l.bias)
-end
-
 function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractArray)
     Z_prev = X
-    Z = NNlib.batched_mul(X, L̃)
-    Y = NNlib.batched_mul(view(l.weight,:,:,1), Z_prev)
-    Y += NNlib.batched_mul(view(l.weight,:,:,2), Z)
+    Z = _matmul(X, L̃)
+    Y = _matmul(view(l.weight,:,:,1), Z_prev)
+    Y += _matmul(view(l.weight,:,:,2), Z)
     for k = 3:l.k
-        Z, Z_prev = 2 .* NNlib.batched_mul(Z, L̃) .- Z_prev, Z
-        Y += NNlib.batched_mul(view(l.weight,:,:,k), Z)
+        Z, Z_prev = 2 .* _matmul(Z, L̃) .- Z_prev, Z
+        Y += _matmul(view(l.weight,:,:,k), Z)
     end
     return l.σ.(Y .+ l.bias)
 end
@@ -203,11 +189,9 @@ end
 
 Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
 
-message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = NNlib.batched_mul(gc.weight2, x_j)
-message(gc::GraphConv, x_i, x_j::AbstractMatrix, e_ij) = gc.weight2 * x_j
+message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = _matmul(gc.weight2, x_j)
 
-update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(NNlib.batched_mul(gc.weight1, x) .+ m .+ gc.bias)
-update(gc::GraphConv, m::AbstractMatrix, x::AbstractMatrix) = gc.σ.(gc.weight1 * x .+ m .+ gc.bias)
+update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(_matmul(gc.weight1, x) .+ m .+ gc.bias)
 
 # For variable graph
 function (l::GraphConv)(fg::AbstractFeaturedGraph)
@@ -219,7 +203,7 @@ end
 
 # For static graph
 function (gc::GraphConv)(el::NamedTuple, x::AbstractArray)
-    GraphSignals.check_num_nodes(el.N, size(x, 2))
+    GraphSignals.check_num_nodes(el.N, x)
     _, x, _ = propagate(gc, el, nothing, x, nothing, +, nothing, nothing)
     return x
 end
@@ -339,8 +323,7 @@ function (l::GATConv)(fg::AbstractFeaturedGraph)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
     @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
-    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
-    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
+    el = to_namedtuple(sg)
     Ē = update_batch_edge(l, el, nothing, X, nothing)
     V = update_batch_vertex(l, el, Ē, X, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
@@ -365,20 +348,18 @@ end
 
 
 """
-    GatedGraphConv([fg,] out, num_layers; aggr=+, init=glorot_uniform)
+    GatedGraphConv(out, num_layers; aggr=+, init=glorot_uniform)
 
 Gated graph convolution layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `out`: The dimension of output features.
 - `num_layers`: The number of gated recurrent unit.
 - `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
 `*`, `/`, `max`, `min` and `mean` are available.
 """
-struct GatedGraphConv{V<:AbstractFeaturedGraph, A<:AbstractArray{<:Number,3}, R} <: MessagePassing
-    fg::V
+struct GatedGraphConv{A<:AbstractArray{<:Number,3}, R} <: MessagePassing
     weight::A
     gru::R
     out_ch::Int
@@ -386,48 +367,46 @@ struct GatedGraphConv{V<:AbstractFeaturedGraph, A<:AbstractArray{<:Number,3}, R}
     aggr
 end
 
-function GatedGraphConv(fg::AbstractFeaturedGraph, out_ch::Int, num_layers::Int;
-                        aggr=+, init=glorot_uniform)
+function GatedGraphConv(out_ch::Int, num_layers::Int; aggr=+, init=glorot_uniform)
     w = init(out_ch, out_ch, num_layers)
     gru = GRUCell(out_ch, out_ch)
-    GatedGraphConv(fg, w, gru, out_ch, num_layers, aggr)
+    GatedGraphConv(w, gru, out_ch, num_layers, aggr)
 end
-
-GatedGraphConv(out_ch::Int, num_layers::Int; kwargs...) =
-    GatedGraphConv(NullGraph(), out_ch, num_layers; kwargs...)
 
 @functor GatedGraphConv
 
 Flux.trainable(l::GatedGraphConv) = (l.weight, l.gru)
 
-message(ggc::GatedGraphConv, x_i, x_j::AbstractVector, e_ij) = x_j
+message(ggc::GatedGraphConv, x_i, x_j::AbstractArray, e_ij) = x_j
 
-update(ggc::GatedGraphConv, m::AbstractVector, x) = m
+update(ggc::GatedGraphConv, m::AbstractArray, x) = m
 
+# For variable graph
+function (l::GatedGraphConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    V = l(to_namedtuple(fg), nf)
+    return ConcreteFeaturedGraph(fg, nf=V)
+end
 
-function (ggc::GatedGraphConv)(fg::AbstractFeaturedGraph, H::AbstractMatrix{T}) where {T<:Real}
-    GraphSignals.check_num_nodes(fg, H)
-    m, n = size(H)
-    @assert (m <= ggc.out_ch) "number of input features must less or equals to output features."
-    if m < ggc.out_ch
+# For static graph
+function (l::GatedGraphConv)(el::NamedTuple, H::AbstractArray{T}) where {T<:Real}
+    GraphSignals.check_num_nodes(el.N, H)
+    m, n = size(H)[1:2]
+    @assert (m <= l.out_ch) "number of input features must less or equals to output features."
+    if m < l.out_ch
         Hpad = Zygote.ignore() do
-            fill!(similar(H, T, ggc.out_ch - m, n), 0)
+            fill!(similar(H, T, l.out_ch - m, n, size(H)[3:end]...), 0)
         end
         H = vcat(H, Hpad)
     end
-    for i = 1:ggc.num_layers
-        M = view(ggc.weight, :, :, i) * H
-        _, M = propagate(ggc, fg, edge_feature(fg), M, global_feature(fg), +)
-        H, _ = ggc.gru(H, M)
+    for i = 1:l.num_layers
+        M = _matmul(view(l.weight, :, :, i), H)
+        _, M = propagate(l, el, nothing, M, nothing, l.aggr, nothing, nothing)
+        H, _ = l.gru(H, M)
     end
-    H
+    return H
 end
-
-(l::GatedGraphConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::GatedGraphConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, +)  # edge number check break this
-(l::GatedGraphConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::GatedGraphConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
-
 
 function Base.show(io::IO, l::GatedGraphConv)
     print(io, "GatedGraphConv(($(l.out_ch) => $(l.out_ch))^$(l.num_layers)")

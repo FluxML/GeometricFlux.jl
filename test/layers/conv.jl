@@ -135,7 +135,6 @@
             @test length(g.grads) == 3
         end
 
-
         @testset "bias=false" begin
             @test length(Flux.params(GraphConv(2=>3))) == 3
             @test length(Flux.params(GraphConv(2=>3, bias=false))) == 2
@@ -194,126 +193,108 @@
         end
     end
 
-    # @testset "GatedGraphConv" begin
-    #     num_layers = 3
-    #     X = rand(T, in_channel, N)
-    #     Xt = transpose(rand(T, N, in_channel))
-    #     @testset "layer with graph" begin
-    #         ggc = GatedGraphConv(fg, out_channel, num_layers)
-    #         @test adjacency_list(ggc.fg) == [[2,4], [1,3], [2,4], [1,3]]
-    #         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+    @testset "GatedGraphConv" begin
+        num_layers = 3
 
-    #         Y = ggc(X)
-    #         @test size(Y) == (out_channel, N)
+        @testset "layer without graph" begin
+            ggc = GatedGraphConv(out_channel, num_layers)
+            @test size(ggc.weight) == (out_channel, out_channel, num_layers)
 
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
+            fg_ = ggc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws MethodError ggc(X)
 
-    #         # Test with transposed features
-    #         Y = ggc(Xt)
-    #         @test size(Y) == (out_channel, N)
+            g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
+            @test length(g.grads) == 8
+        end
 
-    #         g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
-    #         @test length(g.grads) == 6
-    #     end
+        @testset "layer with static graph" begin
+            batch_size = 10
+            X = rand(T, in_channel, N, batch_size)
+            ggc = WithGraph(fg, GatedGraphConv(out_channel, num_layers))
+            Y = ggc(X)
+            @test size(Y) == (out_channel, N, batch_size)
 
-    #     @testset "layer without graph" begin
-    #         ggc = GatedGraphConv(out_channel, num_layers)
-    #         @test size(ggc.weight) == (out_channel, out_channel, num_layers)
+            g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
+            @test length(g.grads) == 6
+        end
+    end
 
-    #         fg = FeaturedGraph(adj, nf=X)
-    #         fg_ = ggc(fg)
-    #         @test size(node_feature(fg_)) == (out_channel, N)
-    #         @test_throws MethodError ggc(X)
+    @testset "EdgeConv" begin
+        @testset "layer without graph" begin
+            ec = EdgeConv(Dense(2*in_channel, out_channel))
 
-    #         # Test with transposed features
-    #         fgt = FeaturedGraph(adj, nf=Xt)
-    #         fgt_ = ggc(fgt)
-    #         @test size(node_feature(fgt_)) == (out_channel, N)
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
+            fg_ = ec(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws MethodError ec(X)
 
-    #         g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
-    #         @test length(g.grads) == 8
-    #     end
-    # end
+            g = Zygote.gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
+            @test length(g.grads) == 4
+        end
+        
+        @testset "layer with static graph" begin
+            batch_size = 10
+            X = rand(T, in_channel, N, batch_size)
+            ec = WithGraph(fg, EdgeConv(Dense(2*in_channel, out_channel)))
+            Y = ec(X)
+            @test size(Y) == (out_channel, N, batch_size)
 
-    # @testset "EdgeConv" begin
-    #     X = rand(T, in_channel, N)
-    #     Xt = transpose(rand(T, N, in_channel))
-    #     @testset "layer with graph" begin
-    #         ec = EdgeConv(fg, Dense(2*in_channel, out_channel))
-    #         @test adjacency_list(ec.fg) == [[2,4], [1,3], [2,4], [1,3]]
+            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            @test length(g.grads) == 2
+        end
+    end
 
-    #         Y = ec(X)
-    #         @test size(Y) == (out_channel, N)
+    @testset "GINConv" begin
+        nn = Flux.Chain(Dense(in_channel, out_channel))
+        eps = 0.001
+        @testset "layer without graph" begin
+            gc = GraphConv(in_channel=>out_channel)
+            @test size(gc.weight1) == (out_channel, in_channel)
+            @test size(gc.weight2) == (out_channel, in_channel)
+            @test size(gc.bias) == (out_channel,)
 
-    #         # Test with transposed features
-    #         Y = ec(Xt)
-    #         @test size(Y) == (out_channel, N)
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
+            fg_ = gc(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws MethodError gc(X)
 
-    #         g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
-    #         @test length(g.grads) == 2
-    #     end
+            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            @test length(g.grads) == 5
+        end
 
-    #     @testset "layer without graph" begin
-    #         ec = EdgeConv(Dense(2*in_channel, out_channel))
+        @testset "layer with static graph" begin
+            batch_size = 10
+            X = rand(T, in_channel, N, batch_size)
+            gc = WithGraph(FeaturedGraph(adj), GINConv(nn, eps))
+            Y = gc(X)
+            @test size(Y) == (out_channel, N, batch_size)
 
-    #         fg = FeaturedGraph(adj, nf=X)
-    #         fg_ = ec(fg)
-    #         @test size(node_feature(fg_)) == (out_channel, N)
-    #         @test_throws MethodError ec(X)
+            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            @test length(g.grads) == 8
+        end
+    end
 
-    #         # Test with transposed features
-    #         fgt = FeaturedGraph(adj, nf=Xt)
-    #         fgt_ = ec(fgt)
-    #         @test size(node_feature(fgt_)) == (out_channel, N)
+    @testset "CGConv" begin
+        @testset "layer with static graph" begin
+            fg = FeaturedGraph(adj)
+            cgc = WithGraph(fg, CGConv((in_channel, in_channel_edge)))
+            @test size(cgc.Wf) == (in_channel, 2 * in_channel + in_channel_edge)
+            @test size(cgc.Ws) == (in_channel, 2 * in_channel + in_channel_edge)
+            @test size(cgc.bf) == (in_channel,)
+            @test size(cgc.bs) == (in_channel,)
 
-    #         g = Zygote.gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
-    #         @test length(g.grads) == 4
-    #     end
-    # end
+            X = rand(Float32, in_channel, N)
+            E = rand(Float32, in_channel_edge, ne(fg))
+            Y = cgc(X, E)
+            @test size(Y) == (in_channel, N)
 
-    # @testset "GINConv" begin
-    #     X = rand(Float32, in_channel, N)
-    #     Xt = transpose(rand(Float32, N, in_channel))
-    #     nn = Flux.Chain(Dense(in_channel, out_channel))
-    #     eps = 0.001
-
-    #     @testset "layer with graph" begin
-    #         gc = GINConv(FeaturedGraph(adj), nn, eps)
-    #         @test size(gc.nn.layers[1].weight) == (out_channel, in_channel)
-    #         @test size(gc.nn.layers[1].bias) == (out_channel, )
-    #         @test GraphSignals.adjacency_matrix(gc.fg) == adj
-
-    #         fg = FeaturedGraph(adj, nf=X)
-    #         Y = gc(fg)
-    #         @test size(node_feature(Y)) == (out_channel, N)
-
-    #         # Test with transposed features
-    #         Y = gc(FeaturedGraph(adj, nf=Xt))
-    #         @test size(node_feature(Y)) == (out_channel, N)
-
-    #         g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
-    #         @test length(g.grads) == 8
-    #     end
-    # end
-
-    # @testset "CGConv" begin
-    #     fg = FeaturedGraph(adj)
-    #     X = rand(Float32, in_channel, N)
-    #     E = rand(Float32, in_channel_edge, ne(fg))
-    #     Xt = transpose(rand(Float32, N, in_channel))
-    #     @testset "layer with graph" begin
-    #         cgc = CGConv(FeaturedGraph(adj),
-    #                      (in_channel, in_channel_edge))
-    #         @test size(cgc.Wf) == (in_channel, 2 * in_channel + in_channel_edge)
-    #         @test size(cgc.Ws) == (in_channel, 2 * in_channel + in_channel_edge)
-    #         @test size(cgc.bf) == (in_channel,)
-    #         @test size(cgc.bs) == (in_channel,)
-
-    #         Y = cgc(X, E)
-    #         @test size(Y) == (in_channel, N)
-
-    #         Yg = cgc(FeaturedGraph(adj, nf=X, ef=E))
-    #         @test size(node_feature(Yg)) == (in_channel, N)
-    #         @test edge_feature(Yg) == E
-    #     end
-    # end
+            g = Zygote.gradient(() -> sum(cgc(X, E)), Flux.params(cgc))
+            @test length(g.grads) == 3
+        end
+    end
 end
