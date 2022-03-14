@@ -170,10 +170,10 @@
             X = rand(in_channel, N, batch_size)
             ec = WithGraph(fg, EdgeConv(Dense(2*in_channel, out_channel))) |> gpu
             Y = ec(X |> gpu)
-            @test size(Y) == (out_channel, N)
+            @test size(Y) == (out_channel, N, batch_size)
 
             g = Zygote.gradient(() -> sum(ec(X |> gpu)), Flux.params(ec))
-            @test length(g.grads) == 2
+            @test length(g.grads) == 3
         end
     end
 end

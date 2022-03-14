@@ -168,12 +168,12 @@ Graph neural network layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 """
-struct GraphConv{A<:AbstractMatrix,B,F} <: MessagePassing
+struct GraphConv{A<:AbstractMatrix,B,F,O} <: MessagePassing
     weight1::A
     weight2::A
     bias::B
     σ::F
-    aggr
+    aggr::O
 end
 
 function GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+;
@@ -197,14 +197,14 @@ update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(_matmul(gc.we
 function (l::GraphConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
     GraphSignals.check_num_nodes(fg, nf)
-    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, l.aggr, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
 
 # For static graph
 function (gc::GraphConv)(el::NamedTuple, x::AbstractArray)
     GraphSignals.check_num_nodes(el.N, x)
-    _, x, _ = propagate(gc, el, nothing, x, nothing, +, nothing, nothing)
+    _, x, _ = propagate(gc, el, nothing, x, nothing, gc.aggr, nothing, nothing)
     return x
 end
 
@@ -235,7 +235,7 @@ Graph attentional layer.
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 """
-struct GATConv{T, A<:AbstractMatrix{T}, B, F} <: MessagePassing
+struct GATConv{T,A<:AbstractMatrix{T},B,F} <: MessagePassing
     weight::A
     bias::B
     a::A
@@ -359,12 +359,12 @@ Gated graph convolution layer.
 - `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
 `*`, `/`, `max`, `min` and `mean` are available.
 """
-struct GatedGraphConv{A<:AbstractArray{<:Number,3}, R} <: MessagePassing
+struct GatedGraphConv{A<:AbstractArray{<:Number,3},R,O} <: MessagePassing
     weight::A
     gru::R
     out_ch::Int
     num_layers::Int
-    aggr
+    aggr::O
 end
 
 function GatedGraphConv(out_ch::Int, num_layers::Int; aggr=+, init=glorot_uniform)
@@ -417,47 +417,46 @@ end
 
 
 """
-    EdgeConv([fg,] nn; aggr=max)
+    EdgeConv(nn; aggr=max)
 
 Edge convolutional layer.
 
 # Arguments
 
-- `fg`: Optionally pass a [`FeaturedGraph`](@ref). 
 - `nn`: A neural network (e.g. a Dense layer or a MLP). 
 - `aggr`: An aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
 """
-struct EdgeConv{V<:AbstractFeaturedGraph} <: MessagePassing
-    fg::V
-    nn
-    aggr
+struct EdgeConv{N,O} <: MessagePassing
+    nn::N
+    aggr::O
 end
 
-EdgeConv(fg::AbstractFeaturedGraph, nn; aggr=max) = EdgeConv(fg, nn, aggr)
-EdgeConv(nn; kwargs...) = EdgeConv(NullGraph(), nn; kwargs...)
+EdgeConv(nn; aggr=max) = EdgeConv(nn, aggr)
 
 @functor EdgeConv
 
 Flux.trainable(l::EdgeConv) = (l.nn,)
 
-message(ec::EdgeConv, x_i::AbstractVector, x_j::AbstractVector, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
-update(ec::EdgeConv, m::AbstractVector, x) = m
+message(ec::EdgeConv, x_i::AbstractArray, x_j::AbstractArray, e_ij) = ec.nn(vcat(x_i, x_j .- x_i))
+update(ec::EdgeConv, m::AbstractArray, x) = m
 
-function (ec::EdgeConv)(fg::AbstractFeaturedGraph, X::AbstractMatrix)
-    GraphSignals.check_num_nodes(fg, X)
-    _, X, _ = propagate(ec, fg, edge_feature(fg), X, global_feature(fg), ec.aggr)
-    X
+# For variable graph
+function (l::EdgeConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, l.aggr, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end
 
-(l::EdgeConv)(fg::AbstractFeaturedGraph) = FeaturedGraph(fg, nf = l(fg, node_feature(fg)))
-# (l::EdgeConv)(fg::AbstractFeaturedGraph) = propagate(l, fg, l.aggr)  # edge number check break this
-(l::EdgeConv)(x::AbstractMatrix) = l(l.fg, x)
-(l::EdgeConv)(::NullGraph, x::AbstractMatrix) = throw(ArgumentError("concrete FeaturedGraph is not provided."))
+# For static graph
+function (l::EdgeConv)(el::NamedTuple, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, X)
+    _, X, _ = propagate(l, el, nothing, X, nothing, l.aggr, nothing, nothing)
+    return X
+end
 
 function Base.show(io::IO, l::EdgeConv)
-    print(io, "EdgeConv(", l.nn)
-    print(io, ", aggr=", l.aggr)
-    print(io, ")")
+    print(io, "EdgeConv(", l.nn, ", aggr=", l.aggr, ")")
 end
 
 
@@ -475,19 +474,12 @@ end
 The definition of this is as defined in the original paper,
 Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
 """
-struct GINConv{G,R} <: MessagePassing
-    fg::G
-    nn
+struct GINConv{N,R<:Real} <: MessagePassing
+    nn::N
     eps::R
-
-    function GINConv(fg::G, nn, eps::R=0f0) where {G<:AbstractFeaturedGraph,R<:Real}
-        new{G,R}(fg, nn, eps)
-    end
 end
 
-function GINConv(nn, eps::Real=0f0)
-    GINConv(NullGraph(), nn, eps)
-end
+GINConv(nn, eps=0f0) = GINConv(nn, eps)
 
 @functor GINConv
 
