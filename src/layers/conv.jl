@@ -326,14 +326,11 @@ function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
     return hcat(hs...)  # dims: (out*heads, N, [bch_sz])
 end
 
-function check_self_loops(sg::SparseGraph)
-    for i in 1:nv(sg)
-        if !(i in collect(GraphSignals.rowvalview(sg.S, i)))
-            return false
-        end
-    end
-    return true
-end
+update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u) =
+    [update_batch_edge(gat, el, X, i) for i in 1:el.N]
+
+# graph attention
+aggregate_neighbors(gat::GATConv, el::NamedTuple, aggr, E) = aggr(E...)  # dims: (out, N, heads, [bch_sz])
 
 function update(gat::GATConv, M::AbstractArray, X)
     M = M .+ gat.bias
@@ -345,7 +342,7 @@ function update(gat::GATConv, M::AbstractArray, X)
         M = gat.σ.(mean(M, dims=2))
         M = reshape(M, :, dims...)  # dims: (out, N, [bch_sz])
     end
-    return M
+    return _reshape(M)
 end
 
 # For variable graph
@@ -353,10 +350,9 @@ function (l::GATConv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
-    @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    @assert Zygote.ignore(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
     el = to_namedtuple(sg)
-    Ē = update_batch_edge(l, el, nothing, X, nothing)
-    V = update_batch_vertex(l, el, Ē, X, nothing)
+    _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
 
