@@ -146,3 +146,77 @@ WithGraph(fg::AbstractFeaturedGraph, l::VariationalGraphEncoder) =
         WithGraph(fg, l.logσ),
         l.z_dim
     )
+
+
+"""
+    DeepSet(ϕ, ρ, aggr=+)
+
+Deep set model.
+
+# Arguments
+
+- `ϕ`: The dimension of input features.
+- `ρ`: The dimension of output features.
+- `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
+`*`, `/`, `max`, `min` and `mean` are available.
+
+# Examples
+
+```jldoctest
+julia> ϕ = Dense(64, 16)
+Dense(64, 16)       # 1_040 parameters
+
+julia> ρ = Dense(16, 4)
+Dense(16, 4)        # 68 parameters
+
+julia> DeepSet(ϕ, ρ)
+DeepSet(Dense(64, 16), Dense(16, 4), aggr=+)
+
+julia> DeepSet(ϕ, ρ, aggr=max)
+DeepSet(Dense(64, 16), Dense(16, 4), aggr=max)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
+"""
+struct DeepSet{T,S,O} <: GraphNet
+    ϕ::T
+    ρ::S
+    aggr::O
+end
+
+DeepSet(ϕ, ρ; aggr=+) = DeepSet(ϕ, ρ, aggr)
+
+update_vertex(l::DeepSet, Ē, V, u) = l.ϕ(V)
+
+update_global(l::DeepSet, ē, v̄, u) = l.ρ(v̄)
+
+# For variable graph
+function (l::DeepSet)(fg::AbstractFeaturedGraph)
+    X = node_feature(fg)
+    u = global_feature(fg)
+    GraphSignals.check_num_nodes(fg, X)
+    _, _, u = propagate(l, graph(fg), nothing, X, u, nothing, nothing, l.aggr)
+    return ConcreteFeaturedGraph(fg, gf=u)
+end
+
+# For static graph
+function (l::DeepSet)(el::NamedTuple, X::AbstractArray, u=nothing)
+    GraphSignals.check_num_nodes(el.N, X)
+    _, _, u = propagate(l, el, nothing, X, u, nothing, nothing, l.aggr)
+    return u
+end
+
+WithGraph(fg::AbstractFeaturedGraph, l::DeepSet) = WithGraph(to_namedtuple(fg), l)
+(wg::WithGraph{<:DeepSet})(args...) = wg.layer(wg.graph, args...)
+
+function Base.show(io::IO, l::DeepSet)
+    print(io, "DeepSet(", l.ϕ, ", ", l.ρ)
+    print(io, ", aggr=", l.aggr)
+    print(io, ")")
+end
+
+function Base.show(io::IO, l::WithGraph{<:DeepSet})
+    print(io, "WithGraph(Graph(#V=", l.graph.N)
+    print(io, ", #E=", l.graph.E, "), ")
+    print(io, l.layer, ")")
+end

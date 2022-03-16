@@ -1,4 +1,5 @@
 @testset "models" begin
+    batch_size = 10
     in_channel = 3
     out_channel = 5
     N = 4
@@ -59,6 +60,32 @@
             fg_ = vgae(fg)
             Y = node_feature(fg_)
             @test size(Y) == (N, N)
+        end
+
+        @testset "DeepSet" begin
+            ϕ = Dense(64, 16)
+            ρ = Dense(16, 4)
+            @testset "layer without graph" begin
+                deepset = DeepSet(ϕ, ρ)
+
+                X = rand(T, 64, N)
+                fg = FeaturedGraph(adj, nf=X)
+                fg_ = deepset(fg)
+                @test size(global_feature(fg_)) == (4, 1)
+
+                g = Zygote.gradient(() -> sum(global_feature(deepset(fg))), Flux.params(deepset))
+                @test length(g.grads) == 2
+            end
+
+            @testset "layer with static graph" begin
+                X = rand(T, 64, N, batch_size)
+                deepset = WithGraph(fg, DeepSet(ϕ, ρ))
+                Y = deepset(X)
+                @test size(Y) == (4, 1, batch_size)
+
+                g = Zygote.gradient(() -> sum(deepset(X)), Flux.params(deepset))
+                @test length(g.grads) == 0
+            end
         end
     end
 end

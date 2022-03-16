@@ -51,6 +51,7 @@ export
     VGAE,
     InnerProductDecoder,
     VariationalGraphEncoder,
+    DeepSet,
 
     # layer/utils
     WithGraph,
