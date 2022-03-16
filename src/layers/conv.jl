@@ -294,14 +294,14 @@ end
 Flux.trainable(l::GATConv) = (l.weight, l.bias, l.a)
 
 # neighbor attention
-function message(gat::GATConv, Xi::AbstractMatrix, Xj::AbstractMatrix, e_ij)
-    Xi = reshape(Xi, size(Xi)..., 1)
-    Xj = reshape(Xj, size(Xj)..., 1)
-    m = message(gat, Xi, Xj, nothing)
-    return reshape(m, :)
+function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractMatrix, u)
+    X = reshape(X, size(X)..., 1)
+    M = update_batch_edge(gat, el, E, X, u)
+    return reshape(M, size(M)[1:2]...)
 end
 
-function message(gat::GATConv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
+function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
+    Xi, Xj = _gather(X, el.xs), _gather(X, el.nbrs)
     _, nb, bch_sz = size(Xj)
     heads = gat.heads
     Q = reshape(NNlib.batched_mul(gat.weight, Xi), :, heads, nb, bch_sz)  # dims: (out, heads, nb, bch_sz)
@@ -309,28 +309,15 @@ function message(gat::GATConv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
     V = reshape(NNlib.batched_mul(gat.weight, Xj), :, heads, nb, bch_sz)
     QK = vcat(Q, K)  # dims: (2out, heads, nb, bch_sz)
     A = leakyrelu.(sum(QK .* gat.a, dims=1), gat.negative_slope)  # dims: (1, heads, nb, bch_sz)
-    α = Flux.softmax(A, dims=3)  # dims: (1, heads, nb, bch_sz)
-    return reshape(sum(V .* α, dims=3), :, 1, bch_sz)  # dims: (out*heads, 1, bch_sz)
+    A = Flux.softmax(A, dims=3)  # dims: (1, heads, nb, bch_sz)
+    A = reshape(V .* A, :, nb, bch_sz)
+    N = incidence_matrix(el.xs, el.N)
+    return NNlib.batched_mul(A, N)  # dims: (out*heads, N, bch_sz)
 end
 
 # graph attention
-function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
-    function _message(gat, el, i, X)
-        xs = el.xs[el.xs .== i]
-        nbrs = el.nbrs[el.xs .== i]
-        Xi = _gather(X, xs)
-        Xj = _gather(X, nbrs)
-        return message(gat, Xi, Xj, nothing)
-    end
-    hs = [_message(gat, el, i, X) for i in 1:el.N]
-    return hcat(hs...)  # dims: (out*heads, N, [bch_sz])
-end
-
-update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u) =
-    [update_batch_edge(gat, el, X, i) for i in 1:el.N]
-
-# graph attention
-aggregate_neighbors(gat::GATConv, el::NamedTuple, aggr, E) = aggr(E...)  # dims: (out, N, heads, [bch_sz])
+aggregate_neighbors(gat::GATConv, el::NamedTuple, aggr, E::AbstractArray) = E  # dims: (out*heads, N, [bch_sz])
+aggregate_neighbors(gat::GATConv, el::NamedTuple, aggr, E::AbstractMatrix) = E
 
 function update(gat::GATConv, M::AbstractArray, X)
     M = M .+ gat.bias
@@ -342,7 +329,7 @@ function update(gat::GATConv, M::AbstractArray, X)
         M = gat.σ.(mean(M, dims=2))
         M = reshape(M, :, dims...)  # dims: (out, N, [bch_sz])
     end
-    return _reshape(M)
+    return M
 end
 
 # For variable graph
@@ -360,8 +347,7 @@ end
 function (l::GATConv)(el::NamedTuple, X::AbstractArray)
     GraphSignals.check_num_nodes(el.N, X)
     # TODO: should have self loops check for el
-    Ē = update_batch_edge(l, el, nothing, X, nothing)
-    V = update_batch_vertex(l, el, Ē, X, nothing)
+    _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return V
 end
 
@@ -486,7 +472,7 @@ function (gat::GATv2Conv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
-    @assert Zygote.ignore(() -> check_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    @assert Zygote.ignore(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
     es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
     el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
     Ē = update_batch_edge(gat, el, nothing, X, nothing)

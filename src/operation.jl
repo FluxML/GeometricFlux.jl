@@ -22,4 +22,11 @@ aggregate(::typeof(max), X) = maximum(X, dims=2)
 aggregate(::typeof(min), X) = minimum(X, dims=2)
 aggregate(::typeof(mean), X) = mean(X, dims=2)
 
+function incidence_matrix(xs::AbstractVector{T}, N) where {T}
+    A = similar(xs, T, size(xs, 1), N)
+    copyto!(A, Array(I(N))[Array(xs), :])
+    return A
+end
+
 @non_differentiable batched_index(x...)
+@non_differentiable incidence_matrix(x...)

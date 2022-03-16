@@ -3,7 +3,7 @@ module GeometricFlux
 using DelimitedFiles
 using SparseArrays
 using Statistics: mean
-using LinearAlgebra: Adjoint, norm, Transpose
+using LinearAlgebra
 using Random
 using Reexport
 

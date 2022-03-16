@@ -6,6 +6,7 @@ using Flux.Data: DataLoader
 using GeometricFlux
 using GeometricFlux.Datasets
 using GraphSignals
+using Graphs
 using Parameters: @with_kw
 using ProgressMeter: Progress, next!
 using Statistics
@@ -20,12 +21,20 @@ function load_data(dataset, batch_size, train_repeats=32, test_repeats=2)
     train_idx = 1:size(train_X, 2)
     test_idx = test_indices(Planetoid(), dataset)
 
+    add_all_self_loops!(g)
     fg = FeaturedGraph(g)
     train_data = (repeat(train_X, outer=(1,1,train_repeats)), repeat(train_y, outer=(1,1,train_repeats)))
     test_data = (repeat(test_X, outer=(1,1,test_repeats)), repeat(test_y, outer=(1,1,test_repeats)))
     train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
     test_loader = DataLoader(test_data, batchsize=batch_size, shuffle=true)
     return train_loader, test_loader, fg, train_idx, test_idx
+end
+
+function add_all_self_loops!(g)
+    for i in vertices(g)
+        add_edge!(g, i, i)
+    end
+    return g
 end
 
 @with_kw mutable struct Args
@@ -70,7 +79,6 @@ function train(; kws...)
     # build model
     model = Chain(
         WithGraph(fg, GATConv(args.input_dim=>args.hidden_dim, heads=args.heads)),
-        Dropout(0.6),
         WithGraph(fg, GATConv(args.hidden_dim*args.heads=>args.target_dim, heads=args.heads, concat=false)),
     ) |> device
 
