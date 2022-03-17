@@ -59,6 +59,8 @@ end
 to_namedtuple(fg::AbstractFeaturedGraph) = to_namedtuple(graph(fg))
 
 function to_namedtuple(sg::SparseGraph)
-    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
+    es, nbrs, xs = collect(edges(sg))
     return (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
 end
+
+@non_differentiable to_namedtuple(x...)
