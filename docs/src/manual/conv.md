@@ -119,6 +119,7 @@ where ``f_{\Theta}`` denotes a neural network parametrized by ``\Theta``, *i.e.*
 ```@docs
 GINConv
 ```
+
 Reference: [How Powerful are Graph Neural Networks?](https://arxiv.org/pdf/1810.00826.pdf)
 
 ## Crystal Graph Convolutional Network

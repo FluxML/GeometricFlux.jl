@@ -12,11 +12,9 @@ of size `(num_features, num_nodes)`.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 
-# Example
+# Examples
 
 ```jldoctest
-julia> using GeometricFlux, Flux
-
 julia> gc = GCNConv(1024=>256, relu)
 GCNConv(1024 => 256, relu)
 ```
@@ -83,7 +81,7 @@ Chebyshev spectral graph convolutional layer.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
 
-# Example
+# Examples
 
 ```jldoctest
 julia> cc = ChebConv(1024=>256, 5, relu)
@@ -106,6 +104,8 @@ function ChebConv(ch::Pair{Int,Int}, k::Int, σ=identity;
     b = Flux.create_bias(W, bias, out)
     ChebConv(W, b, k, σ)
 end
+
+@deprecate ChebConv(fg, args...; kwargs...) WithGraph(fg, ChebConv(args...; kwargs...))
 
 @functor ChebConv
 
@@ -167,6 +167,18 @@ Graph neural network layer.
 `*`, `/`, `max`, `min` and `mean` are available.
 - `bias`: Add learnable bias.
 - `init`: Weights' initializer.
+
+# Examples
+
+```jldoctest
+julia> GraphConv(1024=>256, relu)
+GraphConv(1024 => 256, relu, aggr=+)
+
+julia> GraphConv(1024=>256, relu, *)
+GraphConv(1024 => 256, relu, aggr=*)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct GraphConv{A<:AbstractMatrix,B,F,O} <: MessagePassing
     weight1::A
@@ -184,6 +196,8 @@ function GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+;
     b = Flux.create_bias(W1, bias, out)
     GraphConv(W1, W2, b, σ, aggr)
 end
+
+@deprecate GraphConv(fg, args...; kwargs...) WithGraph(fg, GraphConv(args...; kwargs...))
 
 @functor GraphConv
 
@@ -234,6 +248,24 @@ Graph attentional layer.
 - `heads`: Number attention heads 
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
+
+# Examples
+
+```jldoctest
+julia> GATConv(1024=>256, relu)
+GATConv(1024=>256, heads=1, concat=true, LeakyReLU(λ=0.2))
+
+julia> GATConv(1024=>256, relu, heads=4)
+GATConv(1024=>1024, heads=4, concat=true, LeakyReLU(λ=0.2))
+
+julia> GATConv(1024=>256, relu, heads=4, concat=false)
+GATConv(1024=>1024, heads=4, concat=false, LeakyReLU(λ=0.2))
+
+julia> GATConv(1024=>256, relu, negative_slope=0.1f0)
+GATConv(1024=>256, heads=1, concat=true, LeakyReLU(λ=0.1))
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct GATConv{T,A<:AbstractMatrix{T},B,F} <: MessagePassing
     weight::A
@@ -254,6 +286,8 @@ function GATConv(ch::Pair{Int,Int}, σ=identity; heads::Int=1, concat::Bool=true
     a = init(2*out, heads)
     GATConv(W, b, a, σ, negative_slope, ch, heads, concat)
 end
+
+@deprecate GATConv(fg, args...; kwargs...) WithGraph(fg, GATConv(args...; kwargs...))
 
 @functor GATConv
 
@@ -342,6 +376,8 @@ function Base.show(io::IO, l::GATConv)
     in_channel = size(l.weight, ndims(l.weight))
     out_channel = size(l.weight, ndims(l.weight)-1)
     print(io, "GATConv(", in_channel, "=>", out_channel)
+    print(io, ", heads=", l.heads)
+    print(io, ", concat=", l.concat)
     print(io, ", LeakyReLU(λ=", l.negative_slope)
     print(io, "))")
 end
@@ -358,6 +394,18 @@ Gated graph convolution layer.
 - `num_layers`: The number of gated recurrent unit.
 - `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
 `*`, `/`, `max`, `min` and `mean` are available.
+
+# Examples
+
+```jldoctest
+julia> GatedGraphConv(256, 4)
+GatedGraphConv((256 => 256)^4, aggr=+)
+
+julia> GatedGraphConv(256, 4, aggr=*)
+GatedGraphConv((256 => 256)^4, aggr=*)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct GatedGraphConv{A<:AbstractArray{<:Number,3},R,O} <: MessagePassing
     weight::A
@@ -372,6 +420,8 @@ function GatedGraphConv(out_ch::Int, num_layers::Int; aggr=+, init=glorot_unifor
     gru = GRUCell(out_ch, out_ch)
     GatedGraphConv(w, gru, out_ch, num_layers, aggr)
 end
+
+@deprecate GatedGraphConv(fg, args...; kwargs...) WithGraph(fg, GatedGraphConv(args...; kwargs...))
 
 @functor GatedGraphConv
 
@@ -424,7 +474,20 @@ Edge convolutional layer.
 # Arguments
 
 - `nn`: A neural network (e.g. a Dense layer or a MLP). 
-- `aggr`: An aggregate function applied to the result of message function. `+`, `max` and `mean` are available.
+- `aggr`: An aggregate function applied to the result of message function.
+`+`, `max` and `mean` are available.
+
+# Examples
+
+```jldoctest
+julia> EdgeConv(Dense(1024, 256, relu))
+EdgeConv(Dense(1024, 256, relu), aggr=max)
+
+julia> EdgeConv(Dense(1024, 256, relu), aggr=+)
+EdgeConv(Dense(1024, 256, relu), aggr=+)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct EdgeConv{N,O} <: MessagePassing
     nn::N
@@ -432,6 +495,8 @@ struct EdgeConv{N,O} <: MessagePassing
 end
 
 EdgeConv(nn; aggr=max) = EdgeConv(nn, aggr)
+
+@deprecate EdgeConv(fg, args...; kwargs...) WithGraph(fg, EdgeConv(args...; kwargs...))
 
 @functor EdgeConv
 
@@ -470,8 +535,17 @@ end
 - `nn`: A neural network/layer.
 - `eps`: Weighting factor.
 
-The definition of this is as defined in the original paper,
-Xu et. al. (2018) https://arxiv.org/abs/1810.00826.
+# Examples
+
+```jldoctest
+julia> GINConv(Dense(1024, 256, relu))
+GINConv(Dense(1024, 256, relu), ϵ=0.0)
+
+julia> GINConv(Dense(1024, 256, relu), 1.f-6)
+GINConv(Dense(1024, 256, relu), ϵ=1.0e-6)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct GINConv{N,R<:Real} <: MessagePassing
     nn::N
@@ -479,6 +553,8 @@ struct GINConv{N,R<:Real} <: MessagePassing
 end
 
 GINConv(nn, eps=0f0) = GINConv(nn, eps)
+
+@deprecate GINConv(fg, args...; kwargs...) WithGraph(fg, GINConv(args...; kwargs...))
 
 @functor GINConv
 
@@ -502,9 +578,13 @@ function (l::GINConv)(el::NamedTuple, x::AbstractArray)
     return V
 end
 
+function Base.show(io::IO, l::GINConv)
+    print(io, "GINConv(", l.nn, ", ϵ=", l.eps, ")")
+end
+
 
 """
-    CGConv((node_dim, edge_dim), out, init, bias=true)
+    CGConv((node_dim, edge_dim), init, bias=true)
 
 Crystal Graph Convolutional network. Uses both node and edge features.
 
@@ -512,9 +592,17 @@ Crystal Graph Convolutional network. Uses both node and edge features.
 
 - `node_dim`: Dimensionality of the input node features. Also is necessarily the output dimensionality.
 - `edge_dim`: Dimensionality of the input edge features.
-- `out`: Dimensionality of the output features.
 - `init`: Initialization algorithm for each of the weight matrices
 - `bias`: Whether or not to learn an additive bias parameter.
+
+# Examples
+
+```jldoctest
+julia> CGConv((128, 32))
+CGConv(node dim=128, edge dim=32)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph.
 """
 struct CGConv{A<:AbstractMatrix,B} <: MessagePassing
     Wf::A
@@ -522,6 +610,8 @@ struct CGConv{A<:AbstractMatrix,B} <: MessagePassing
     bf::B
     bs::B
 end
+
+@deprecate CGConv(fg, args...; kwargs...) WithGraph(fg, CGConv(args...; kwargs...))
 
 @functor CGConv
 
@@ -559,4 +649,10 @@ function (l::CGConv)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
     GraphSignals.check_num_edges(el.E, E)
     _, V, _ = propagate(l, el, E, X, nothing, +, nothing, nothing)
     return V
+end
+
+function Base.show(io::IO, l::CGConv)
+    node_dim, d = size(l.Wf)
+    edge_dim = d - 2*node_dim
+    print(io, "CGConv(node dim=", node_dim, ", edge dim=", edge_dim, ")")
 end

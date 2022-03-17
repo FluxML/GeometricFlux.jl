@@ -4,6 +4,8 @@ using GeometricFlux
 
 bib = CitationBibliography(joinpath(@__DIR__, "bibliography.bib"), sorting=:nyt)
 
+DocMeta.setdocmeta!(GeometricFlux, :DocTestSetup, :(using GeometricFlux, Flux); recursive=true)
+
 makedocs(
     bib,
     sitename = "GeometricFlux.jl",
