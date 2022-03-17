@@ -67,3 +67,9 @@ WithGraph(fg::AbstractFeaturedGraph, mp::MessagePassing) =
     WithGraph(to_namedtuple(fg), mp)
 
 (wg::WithGraph{<:MessagePassing})(args...) = wg.layer(wg.graph, args...)
+
+function Base.show(io::IO, l::WithGraph{<:MessagePassing})
+    print(io, "WithGraph(Graph(#V=", l.graph.N)
+    print(io, ", #E=", l.graph.E, "), ")
+    print(io, l.layer, ")")
+end
