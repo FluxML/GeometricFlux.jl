@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.1]
+
+- fix VGAE example and correct precision
+- implement new message-passing scheme, including `GraphConv`, `GATConv`, `GatedGraphConv`, `EdgeConv`, `GINConv` and `CGConv` layers
+- fix tests for `GraphNet`
+- add `WithGraph` for `Chain`
+
 ## [0.10.0]
 
 - update docs and add defining GNN layer to doc
