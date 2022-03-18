@@ -42,9 +42,9 @@ end
 - `update_batch_edge`: (E_in_dim, E) -> (E_out_dim, E)
 - `aggregate_neighbors`: (E_out_dim, E) -> (E_out_dim, V)
 - `update_batch_vertex`: (V_in_dim, V) -> (V_out_dim, V)
-- `aggregate_edges`: (E_out_dim, E) -> (E_out_dim,)
-- `aggregate_vertices`: (V_out_dim, V) -> (V_out_dim,)
-- `update_global`: (dim,) -> (dim,)
+- `aggregate_edges`: (E_out_dim, E) -> (E_out_dim, 1)
+- `aggregate_vertices`: (V_out_dim, V) -> (V_out_dim, 1)
+- `update_global`: (dim, 1) -> (dim, 1)
 """
 function propagate(gn::GraphNet, el::NamedTuple, E, V, u, naggr, eaggr, vaggr)
     E = update_batch_edge(gn, el, E, V, u)
