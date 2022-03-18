@@ -74,7 +74,7 @@
                 @test size(global_feature(fg_)) == (4, 1)
 
                 g = Zygote.gradient(() -> sum(global_feature(deepset(fg))), Flux.params(deepset))
-                @test length(g.grads) == 2
+                @test length(g.grads) == 6
             end
 
             @testset "layer with static graph" begin
@@ -84,7 +84,7 @@
                 @test size(Y) == (4, 1, batch_size)
 
                 g = Zygote.gradient(() -> sum(deepset(X)), Flux.params(deepset))
-                @test length(g.grads) == 0
+                @test length(g.grads) == 4
             end
         end
     end

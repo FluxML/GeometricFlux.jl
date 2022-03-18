@@ -155,8 +155,8 @@ Deep set model.
 
 # Arguments
 
-- `ϕ`: The dimension of input features.
-- `ρ`: The dimension of output features.
+- `ϕ`: Neural network layer for each input before aggregation.
+- `ρ`: Neural network layer after aggregation.
 - `aggr`: An aggregate function applied to the result of message function. `+`, `-`,
 `*`, `/`, `max`, `min` and `mean` are available.
 
@@ -185,6 +185,10 @@ struct DeepSet{T,S,O} <: GraphNet
 end
 
 DeepSet(ϕ, ρ; aggr=+) = DeepSet(ϕ, ρ, aggr)
+
+@functor DeepSet
+
+update_batch_edge(l::DeepSet, el::NamedTuple, E, V, u) = nothing
 
 update_vertex(l::DeepSet, Ē, V, u) = l.ϕ(V)
 
