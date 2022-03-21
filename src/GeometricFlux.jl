@@ -16,6 +16,7 @@ using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
 @reexport using GraphSignals
 using Graphs
 using NNlib, NNlibCUDA
+using Optimisers
 using Zygote
 
 import Word2Vec: word2vec, wordvectors, get_vector
