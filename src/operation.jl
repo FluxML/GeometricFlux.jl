@@ -28,5 +28,40 @@ function incidence_matrix(xs::AbstractVector{T}, N) where {T}
     return A
 end
 
+function indexed_softmax(x::AbstractArray, xs, N; dims=1)
+    # memory pre-allocation approach leads to loss fluctuation but not drop anyway
+    # be aware of model loss while optimizing this code snippet
+    as = map(1:N) do i
+        idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(x))
+        NNlib.softmax(x[idx...]; dims)
+    end
+    return cat(as...; dims)
+end
+
+function ∇indexed_softmax(dy::AbstractArray{T}, y::AbstractArray{S}, xs, N; dims=1) where {T,S}
+    dx = if NNlib.within_grad()
+        tmp = dy .* y
+        for i in 1:N
+            idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
+            tmp[idx...] .= tmp[idx...] .- y[idx...] .* sum(tmp[idx...]; dims)
+        end
+        tmp
+    else
+        out = similar(y, promote_type(T,S))
+        out .= dy .* y
+        for i in 1:N
+            idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
+            out[idx...] .= out[idx...] .- y[idx...] .* sum(out[idx...]; dims)
+        end
+        out
+    end
+end
+
+function ChainRulesCore.rrule(::typeof(indexed_softmax), x, xs, N; dims=1)
+    y = indexed_softmax(x, xs, N; dims)
+    indexed_softmax_pullback(dy) = (NoTangent(), ∇indexed_softmax(unthunk(dy), y, xs, N; dims), NoTangent(), NoTangent())
+    return y, indexed_softmax_pullback
+end
+
 @non_differentiable batched_index(x...)
 @non_differentiable incidence_matrix(x...)

@@ -40,7 +40,7 @@ end
 @with_kw mutable struct Args
     η = 0.01                # learning rate
     batch_size = 8          # batch size
-    epochs = 200            # number of epochs
+    epochs = 20             # number of epochs
     seed = 0                # random seed
     cuda = true             # use GPU
     heads = 8               # attention heads

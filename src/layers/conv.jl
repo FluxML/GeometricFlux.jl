@@ -309,10 +309,10 @@ function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
     V = reshape(NNlib.batched_mul(gat.weight, Xj), :, heads, nb, bch_sz)
     QK = vcat(Q, K)  # dims: (2out, heads, nb, bch_sz)
     A = leakyrelu.(sum(QK .* gat.a, dims=1), gat.negative_slope)  # dims: (1, heads, nb, bch_sz)
-    A = Flux.softmax(A, dims=3)  # dims: (1, heads, nb, bch_sz)
-    A = reshape(V .* A, :, nb, bch_sz)
+    α = indexed_softmax(A, el.xs, el.N, dims=3)  # dims: (1, heads, nb, bch_sz)
     N = incidence_matrix(el.xs, el.N)
-    return NNlib.batched_mul(A, N)  # dims: (out*heads, N, bch_sz)
+    Y = NNlib.batched_mul(reshape(V .* α, :, nb, bch_sz), N)  # dims: (out*heads, N, bch_sz)
+    return Y
 end
 
 # graph attention
