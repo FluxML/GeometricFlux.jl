@@ -79,6 +79,7 @@ function train(; kws...)
     # build model
     model = Chain(
         WithGraph(fg, GATConv(args.input_dim=>args.hidden_dim, heads=args.heads)),
+        Dropout(0.6),
         WithGraph(fg, GATConv(args.hidden_dim*args.heads=>args.target_dim, heads=args.heads, concat=false)),
     ) |> device
 
