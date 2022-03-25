@@ -29,13 +29,12 @@ function incidence_matrix(xs::AbstractVector{T}, N) where {T}
 end
 
 function indexed_softmax(x::AbstractArray, xs, N; dims=1)
-    # memory pre-allocation approach leads to loss fluctuation but not drop anyway
-    # be aware of model loss while optimizing this code snippet
-    as = map(1:N) do i
-        idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(x))
-        NNlib.softmax(x[idx...]; dims)
+    y = copy(x)
+    for i in 1:N
+        idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
+        NNlib.softmax!(view(y, idx...); dims)
     end
-    return cat(as...; dims)
+    return y
 end
 
 function ∇indexed_softmax(dy::AbstractArray{T}, y::AbstractArray{S}, xs, N; dims=1) where {T,S}
