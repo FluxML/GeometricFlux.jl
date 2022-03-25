@@ -316,8 +316,8 @@ function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
 end
 
 # graph attention
-aggregate_neighbors(gat::GATConv, el::NamedTuple, aggr, E::AbstractArray) = E  # dims: (out*heads, N, [bch_sz])
-aggregate_neighbors(gat::GATConv, el::NamedTuple, aggr, E::AbstractMatrix) = E
+aggregate_neighbors(::GATConv, el::NamedTuple, aggr, E::AbstractArray) = E  # dims: (out*heads, N, [bch_sz])
+aggregate_neighbors(::GATConv, el::NamedTuple, aggr, E::AbstractMatrix) = E
 
 function update(gat::GATConv, M::AbstractArray, X)
     M = M .+ gat.bias
@@ -424,14 +424,14 @@ end
 
 Flux.trainable(l::GATv2Conv) = (l.wi, l.wj, l.biasi, l.biasj, l.a)
 
-function message(gat::GATv2Conv, Xi::AbstractMatrix, Xj::AbstractMatrix, e_ij)
-    Xi = reshape(Xi, size(Xi)..., 1)
-    Xj = reshape(Xj, size(Xj)..., 1)
-    m = message(gat, Xi, Xj, nothing)
-    return reshape(m, :)
+function update_batch_edge(gat::GATv2Conv, el::NamedTuple, E, X::AbstractMatrix, u)
+    X = reshape(X, size(X)..., 1)
+    M = update_batch_edge(gat, el, E, X, u)
+    return reshape(M, size(M)[1:2]...)
 end
 
-function message(gat::GATv2Conv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
+function update_batch_edge(gat::GATv2Conv, el::NamedTuple, E, X::AbstractArray, u)
+    Xi, Xj = _gather(X, el.xs), _gather(X, el.nbrs)
     _, nb, bch_sz = size(Xj)
     heads = gat.heads
     Q = reshape(NNlib.batched_mul(gat.wi, Xi) .+ gat.biasi, :, heads, nb, bch_sz)  # dims: (out, heads, nb, bch_sz)
@@ -439,21 +439,14 @@ function message(gat::GATv2Conv, Xi::AbstractArray, Xj::AbstractArray, e_ij)
     V = reshape(NNlib.batched_mul(gat.wj, Xj) .+ gat.biasj, :, heads, nb, bch_sz)
     QK = Q + K  # dims: (out, heads, nb, bch_sz)
     A = leakyrelu.(sum(QK .* gat.a, dims=1), gat.negative_slope)  # dims: (1, heads, nb, bch_sz)
-    α = Flux.softmax(A, dims=3)  # dims: (1, heads, nb, bch_sz)
-    return reshape(sum(V .* α, dims=3), :, 1, bch_sz)  # dims: (out*heads, 1, bch_sz)
+    α = indexed_softmax(A, el.xs, el.N, dims=3)  # dims: (1, heads, nb, bch_sz)
+    N = incidence_matrix(el.xs, el.N)
+    Y = NNlib.batched_mul(reshape(V .* α, :, nb, bch_sz), N)  # dims: (out*heads, N, bch_sz)
+    return Y
 end
 
-function update_batch_edge(gat::GATv2Conv, el::NamedTuple, E, X::AbstractArray, u)
-    function _message(gat, el, i, X)
-        xs = el.xs[el.xs .== i]
-        nbrs = el.nbrs[el.xs .== i]
-        Xi = _gather(X, xs)
-        Xj = _gather(X, nbrs)
-        return message(gat, Xi, Xj, nothing)
-    end
-    hs = [_message(gat, el, i, X) for i in 1:el.N]
-    return hcat(hs...)  # dims: (out*heads, N, [bch_sz])
-end
+aggregate_neighbors(::GATv2Conv, el::NamedTuple, aggr, E::AbstractArray) = E  # dims: (out*heads, N, [bch_sz])
+aggregate_neighbors(::GATv2Conv, el::NamedTuple, aggr, E::AbstractMatrix) = E
 
 function update(gat::GATv2Conv, M::AbstractArray, X)
     if gat.concat || gat.heads == 1
@@ -468,15 +461,13 @@ function update(gat::GATv2Conv, M::AbstractArray, X)
 end
 
 # For variable graph
-function (gat::GATv2Conv)(fg::AbstractFeaturedGraph)
+function (l::GATv2Conv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
     @assert Zygote.ignore(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
-    es, nbrs, xs = Zygote.ignore(() -> collect(edges(sg)))
-    el = (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
-    Ē = update_batch_edge(gat, el, nothing, X, nothing)
-    V = update_batch_vertex(gat, el, Ē, X, nothing)
+    el = to_namedtuple(sg)
+    _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
 
@@ -484,8 +475,7 @@ end
 function (l::GATv2Conv)(el::NamedTuple, X::AbstractArray)
     GraphSignals.check_num_nodes(el.N, X)
     # TODO: should have self loops check for el
-    Ē = update_batch_edge(l, el, nothing, X, nothing)
-    V = update_batch_vertex(l, el, Ē, X, nothing)
+    _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return V
 end
 

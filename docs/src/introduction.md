@@ -27,3 +27,33 @@ Graph signals include node signals, edge signals and global (or graph) signals. 
     <figcaption><em>Signals and graph signals.</em></figcaption>
 </figure>
 ```
+
+## Variable graph: `FeaturedGraph` as Container for Graph and Features
+
+A GNN model accepts a graph and features as input. To this end, `FeaturedGraph` object is designed as a container for graph and various kinds of features. It can be passed to a GNN model directly.
+
+```julia
+T = Float32
+fg = FeaturedGraph(g, nf=rand(10, 5), ef=rand(7, 11), gf=)
+```
+
+It is worth noting that it is better to convert element type of graph to `Float32` explicitly. It can avoid some issues when training or inferring a GNN model.
+
+```julia
+train_data = [(FeaturedGraph(g, nf=train_X), train_y) for _ in 1:N]
+```
+
+A set of `FeaturedGraph` can include different graph structures `g` and different features `train_X` and then pass into the same GNN model in order to train/infer on variable graphs.
+
+## Build GNN Model
+
+```julia
+model = Chain(
+    GCNConv(input_dim=>hidden_dim, relu),
+    GraphParallel(node_layer=Dropout(0.5)),
+    GCNConv(hidden_dim=>target_dim),
+    node_feature,
+)
+```
+
+A GNN model can be built by stacking GNN layers with or without regular Flux layers. Regular Flux layers should be wrapped in `GraphParallel` and specified as `node_layer` which is applied to node features.
