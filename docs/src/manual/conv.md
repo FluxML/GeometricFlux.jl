@@ -13,7 +13,7 @@ where ``\hat{A} = A + I``, ``A`` denotes the adjacency matrix, and
 GCNConv
 ```
 
-Reference: [Semi-supervised Classification with Graph Convolutional Networks](https://arxiv.org/abs/1609.02907)
+Reference: [Kipf2017](@cite)
 
 ---
 
@@ -37,7 +37,7 @@ and ``\hat{L} = \frac{2}{\lambda_{max}} L - I``.
 ChebConv
 ```
 
-Reference: [Convolutional Neural Networks on Graphs with Fast Localized Spectral Filtering](https://arxiv.org/abs/1606.09375)
+Reference: [Defferrard2016](@cite)
 
 ---
 
@@ -51,7 +51,7 @@ Reference: [Convolutional Neural Networks on Graphs with Fast Localized Spectral
 GraphConv
 ```
 
-Reference: [Weisfeiler and Leman Go Neural: Higher-order Graph Neural Networks](https://arxiv.org/abs/1810.02244)
+Reference: [Morris2019](@cite)
 
 ---
 
@@ -71,7 +71,7 @@ where the attention coefficient ``\alpha_{i,j}`` can be calculated from
 GATConv
 ```
 
-Reference: [Graph Attention Networks](https://arxiv.org/abs/1710.10903)
+Reference: [GAT2018](@cite)
 
 ---
 
@@ -82,7 +82,8 @@ Reference: [Graph Attention Networks](https://arxiv.org/abs/1710.10903)
 GATv2Conv
 ```
 
-Reference: [How Attentive are Graph Attention Networks?](https://arxiv.org/abs/2105.14491)
+Reference: [Brody2022](@cite)
+
 ---
 
 ## Gated Graph Convolution Layer
@@ -98,7 +99,7 @@ Reference: [How Attentive are Graph Attention Networks?](https://arxiv.org/abs/2
 GatedGraphConv
 ```
 
-Reference: [Gated Graph Sequence Neural Networks](https://arxiv.org/abs/1511.05493)
+Reference: [Li2016](@cite)
 
 ---
 
@@ -114,7 +115,7 @@ where ``f_{\Theta}`` denotes a neural network parametrized by ``\Theta``, *i.e.*
 EdgeConv
 ```
 
-Reference: [Dynamic Graph CNN for Learning on Point Clouds](https://arxiv.org/abs/1801.07829)
+Reference: [Wang2019](@cite)
 
 ---
 
@@ -130,7 +131,9 @@ where ``f_{\Theta}`` denotes a neural network parametrized by ``\Theta``, *i.e.*
 GINConv
 ```
 
-Reference: [How Powerful are Graph Neural Networks?](https://arxiv.org/pdf/1810.00826.pdf)
+Reference: [Xu2019](@cite)
+
+---
 
 ## Crystal Graph Convolutional Network
 
@@ -144,4 +147,4 @@ where ``\textbf{z}_{i,j} = [\textbf{x}_i, \textbf{x}_j}, \textbf{e}_{i,j}]`` den
 CGConv
 ```
 
-Reference: [Crystal Graph Convolutional Neural Networks for an Accurate and Interpretable Prediction of Material Properties](https://arxiv.org/pdf/1710.10324.pdf)
+Reference: [Xie2018](@cite)
