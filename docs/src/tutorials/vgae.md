@@ -101,4 +101,4 @@ for epoch = 1:args.epochs
 end
 ```
 
-For a complete example, please check [examples/vgae.jl](../../examples/vgae.jl).
+For a complete example, please check [examples/vgae.jl](https://github.com/FluxML/GeometricFlux.jl/blob/master/examples/vgae.jl).
