@@ -29,6 +29,10 @@ makedocs(
              "Tutorials" => [
                   "Semi-Supervised Learning with GCN" => "tutorials/semisupervised_gcn.md",
                   "GCN with Fixed Graph" => "tutorials/gcn_fixed_graph.md",
+                  "Graph Attention Network" => "tutorials/gat.md",
+                  "DeepSet for Digit Sum" => "tutorials/deepset.md",
+                  "Variational Graph Autoencoder" => "tutorials/vgae.md",
+                  "Graph Embedding" => "tutorials/graph_embedding.md",
                 ],
              "Abstractions" => [
                "Message passing scheme" => "abstractions/msgpass.md",

@@ -3,18 +3,17 @@ const Alias = Tuple{SparseVector{Int}, SparseVector{Float64}}
 """
     node2vec(g; walks_per_node, len, p, q, dims)
 
-Returns an embedding matrix with size of `nv(g)` x `dims`. It computes node embeddings
-on graph `g` accroding to node2vec [node2vec2016](@cite). It performs biased random walks on the graph,
+Returns an embedding matrix with size of (`nv(g)`, `dims`). It computes node embeddings
+on graph `g`. It performs biased random walks on the graph,
 then computes word embeddings by treating those random walks as sentences.
 
 # Arguments
 
 - `g::FeaturedGraph`: The graph to perform random walk on.
-- `walks_per_node::Int`: Number of walks starting on each node,
-total number of walks is `nv(g) * walks_per_node`
+- `walks_per_node::Int`: Number of walks starting on each node, total number of walks is `nv(g) * walks_per_node`
 - `len::Int`: Length of random walks
-- `p::Real`: Return parameter from [node2vec2016](@cite)
-- `q::Real`: In-out parameter from [node2vec2016](@cite)
+- `p::Real`: Return parameter. It controls the likelihood of immediately revisiting a node in the walk
+- `q::Real`: In-out parameter. It allows the search to differentiate between inward and outward nodes.
 - `dims::Int`: Number of vector dimensions
 """
 function node2vec(g::FeaturedGraph; walks_per_node::Int=100, len::Int=5, p::Real=0.5, q::Real=0.5, dims::Int=128)
@@ -57,9 +56,8 @@ end
 
 
 """
-    Conducts a random walk over `g` in O(l) time,
-weighted by alias sampling probabilities `alias_nodes`
-and `alias_edges`.
+Conducts a random walk over `g` in O(l) time.
+It is weighted by alias sampling probabilities `alias_nodes` and `alias_edges`.
 """
 function node2vec_walk(
     g::FeaturedGraph,
@@ -108,10 +106,8 @@ function weighted_outneighbors(fg::FeaturedGraph, i::Integer)
 end
 
 """
-    Computes weighted probability transition aliases J and q for nodes and edges
-using return parameter `p` and In-out parameter `q`
-
-Implementation as specified in the node2vec paper [node2vec2016](@cite).
+Computes weighted probability transition aliases J and q for nodes and edges
+using return parameter `p` and in-out parameter `q`.
 """
 function preprocess_modified_weights(g::FeaturedGraph, p::Real, q::Real)
 

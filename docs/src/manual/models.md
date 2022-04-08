@@ -15,7 +15,7 @@ where ``A`` denotes the adjacency matrix.
 GeometricFlux.GAE
 ```
 
-Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
+Reference: [Kipf2016](@cite)
 
 ---
 
@@ -33,7 +33,7 @@ where ``A`` denotes the adjacency matrix, ``X`` denotes node features.
 GeometricFlux.VGAE
 ```
 
-Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
+Reference: [Kipf2016](@cite)
 
 ---
 
@@ -49,7 +49,7 @@ where ``\phi`` and ``\rho`` denote two neural networks and ``x_i`` is the node f
 GeometricFlux.DeepSet
 ```
 
-Reference: [Deep Sets](https://papers.nips.cc/paper/2017/hash/f22e4747da1aa27e363d86d40ff442fe-Abstract.html)
+Reference: [Zaheer2017](@cite)
 
 ---
 
@@ -67,7 +67,7 @@ where ``Z`` denotes the input matrix from encoder.
 GeometricFlux.InnerProductDecoder
 ```
 
-Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
+Reference: [Kipf2016](@cite)
 
 ---
 
@@ -82,4 +82,4 @@ Z_{\mu}, Z_{logσ} = GCN_{\mu}(H, A), GCN_{\sigma}(H, A)
 GeometricFlux.VariationalGraphEncoder
 ```
 
-Reference: [Variational Graph Auto-Encoders](https://arxiv.org/abs/1611.07308)
+Reference: [Kipf2016](@cite)
