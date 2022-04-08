@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0]
+
+- Adds GATv2 layer
+- add DeepSet model and digit sum example
+- fix GAT example
+- add tutorials
+- replace `Flux.destructure` by `Optimisers.destructure`
+
 ## [0.10.1]
 
 - fix VGAE example and correct precision
