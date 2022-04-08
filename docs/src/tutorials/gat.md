@@ -77,4 +77,4 @@ for epoch = 1:args.epochs
 end
 ```
 
-For a complete example, please check [examples/gat.jl](../../examples/gat.jl).
+For a complete example, please check [examples/gat.jl](https://github.com/FluxML/GeometricFlux.jl/blob/master/examples/gat.jl).

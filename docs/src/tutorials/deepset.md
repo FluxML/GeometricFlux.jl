@@ -78,4 +78,4 @@ for epoch = 1:args.epochs
 end
 ```
 
-For a complete example, please check [examples/digitsum_deepsets.jl](../../examples/digitsum_deepsets.jl).
+For a complete example, please check [examples/digitsum_deepsets.jl](https://github.com/FluxML/GeometricFlux.jl/blob/master/examples/digitsum_deepsets.jl).
