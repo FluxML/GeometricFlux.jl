@@ -590,10 +590,10 @@ Edge convolutional layer.
 
 ```jldoctest
 julia> EdgeConv(Dense(1024, 256, relu))
-EdgeConv(Dense(1024, 256, relu), aggr=max)
+EdgeConv(Dense(1024 => 256, relu), aggr=max)
 
 julia> EdgeConv(Dense(1024, 256, relu), aggr=+)
-EdgeConv(Dense(1024, 256, relu), aggr=+)
+EdgeConv(Dense(1024 => 256, relu), aggr=+)
 ```
 
 See also [`WithGraph`](@ref) for training layer with static graph.
@@ -648,10 +648,10 @@ end
 
 ```jldoctest
 julia> GINConv(Dense(1024, 256, relu))
-GINConv(Dense(1024, 256, relu), ϵ=0.0)
+GINConv(Dense(1024 => 256, relu), ϵ=0.0)
 
 julia> GINConv(Dense(1024, 256, relu), 1.f-6)
-GINConv(Dense(1024, 256, relu), ϵ=1.0e-6)
+GINConv(Dense(1024 => 256, relu), ϵ=1.0e-6)
 ```
 
 See also [`WithGraph`](@ref) for training layer with static graph.

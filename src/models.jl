@@ -164,16 +164,16 @@ Deep set model.
 
 ```jldoctest
 julia> ϕ = Dense(64, 16)
-Dense(64, 16)       # 1_040 parameters
+Dense(64 => 16)     # 1_040 parameters
 
 julia> ρ = Dense(16, 4)
-Dense(16, 4)        # 68 parameters
+Dense(16 => 4)      # 68 parameters
 
 julia> DeepSet(ϕ, ρ)
-DeepSet(Dense(64, 16), Dense(16, 4), aggr=+)
+DeepSet(Dense(64 => 16), Dense(16 => 4), aggr=+)
 
 julia> DeepSet(ϕ, ρ, aggr=max)
-DeepSet(Dense(64, 16), Dense(16, 4), aggr=max)
+DeepSet(Dense(64 => 16), Dense(16 => 4), aggr=max)
 ```
 
 See also [`WithGraph`](@ref) for training layer with static graph.

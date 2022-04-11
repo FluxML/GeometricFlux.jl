@@ -27,11 +27,11 @@ julia> adj = [0 1 0 1;
 
 julia> fg = FeaturedGraph(adj);
 
-julia> gc = WithGraph(fg, GCNConv(1024=>256))
-WithGraph(Graph(#V=4, #E=4), GCNConv(1024 => 256))
+julia> gc = WithGraph(fg, GCNConv(1024=>256))  # graph preprocessed by adding self loops
+WithGraph(Graph(#V=4, #E=8), GCNConv(1024 => 256))
 
 julia> WithGraph(fg, Dense(10, 5))
-Dense(10, 5)        # 55 parameters
+Dense(10 => 5)      # 55 parameters
 
 julia> model = Chain(
            GCNConv(32=>32),
@@ -103,7 +103,7 @@ julia> l = GraphParallel(
             node_layer=Dropout(0.5),
             global_layer=Dense(10, 5)
        )
-GraphParallel(node_layer=Dropout(0.5), edge_layer=identity, global_layer=Dense(10, 5))
+GraphParallel(node_layer=Dropout(0.5), edge_layer=identity, global_layer=Dense(10 => 5))
 ```
 """
 struct GraphParallel{N,E,G}
