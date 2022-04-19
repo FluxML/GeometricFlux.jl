@@ -765,3 +765,176 @@ function Base.show(io::IO, l::CGConv)
     edge_dim = d - 2*node_dim
     print(io, "CGConv(node dim=", node_dim, ", edge dim=", edge_dim, ")")
 end
+
+"""
+    SAGEConv(in => out, σ=identity, aggr=mean; normalize=true, project=false,
+             bias=true, num_sample=10, init=glorot_uniform)
+
+SAmple and aggreGatE convolutional layer for GraphSAGE network.
+
+# Arguments
+
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `σ`: Activation function.
+- `aggr`: An aggregate function applied to the result of message function. `mean`, `max`,
+`LSTM` and `GCNConv` are available.
+- `normalize::Bool`: Whether to normalize features across all nodes or not.
+- `project::Bool`: Whether to project, i.e. `Dense(in, in)`, before aggregation.
+- `bias`: Add learnable bias.
+- `num_sample::Int`: Number of samples for each node from their neighbors.
+- `init`: Weights' initializer.
+
+# Examples
+
+```jldoctest
+julia> SAGEConv(1024=>256, relu)
+SAGEConv(1024 => 256, relu, aggr=mean, normalize=true, #sample=10)
+
+julia> SAGEConv(1024=>256, relu, num_sample=5)
+SAGEConv(1024 => 256, relu, aggr=mean, normalize=true, #sample=5)
+
+julia> MeanAggregator(1024=>256, relu, normalize=false)
+SAGEConv(1024 => 256, relu, aggr=mean, normalize=false, #sample=10)
+
+julia> MeanPoolAggregator(1024=>256, relu)
+SAGEConv(1024 => 256, relu, project=Dense(1024 => 1024), aggr=mean, normalize=true, #sample=10)
+
+julia> MaxPoolAggregator(1024=>256, relu)
+SAGEConv(1024 => 256, relu, project=Dense(1024 => 1024), aggr=max, normalize=true, #sample=10)
+
+julia> LSTMAggregator(1024=>256, relu)
+SAGEConv(1024 => 256, relu, aggr=LSTMCell(1024 => 1024), normalize=true, #sample=10)
+```
+
+See also [`WithGraph`](@ref) for training layer with static graph and [`MeanAggregator`](@ref),
+[`MeanPoolAggregator`](@ref), [`MaxPoolAggregator`](@ref) and [`LSTMAggregator`](@ref).
+"""
+struct SAGEConv{A,B,F,P,O} <: MessagePassing
+    weight1::A
+    weight2::A
+    bias::B
+    σ::F
+    proj::P
+    aggr::O
+    normalize::Bool
+    num_sample::Int
+end
+
+function SAGEConv(ch::Pair{Int,Int}, σ=identity, aggr=mean;
+                  normalize::Bool=true, project::Bool=false, bias::Bool=true,
+                  num_sample::Int=10, init=glorot_uniform)
+    in, out = ch
+    weight1 = init(out, in)
+    weight2 = init(out, in)
+    bias = Flux.create_bias(weight1, bias, out)
+    proj = project ? Dense(in, in) : identity
+    return SAGEConv(weight1, weight2, bias, σ, proj, aggr, normalize, num_sample)
+end
+
+@functor SAGEConv
+
+message(l::SAGEConv, x_i, x_j::AbstractArray, e) = l.proj(x_j)
+
+function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E)
+    batch_size = size(E)[end]
+    # E = sample(E, l.num_sample)
+    dstsize = (size(E, 1), el.N, batch_size)
+    xs = batched_index(el.xs, batch_size)
+    Ē = _scatter(aggr, E, xs, dstsize)
+    return Ē
+end
+
+function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E::AbstractMatrix)
+    # E = sample(E, l.num_sample)
+    Ē = _scatter(aggr, E, el.xs)
+    return Ē
+end
+
+function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractArray)
+    # E = sample(E, l.num_sample)
+    state, Ē = lstm(lstm.state0, E)
+    return Ē
+end
+
+function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractMatrix)
+    # E = sample(E, l.num_sample)
+    state, Ē = lstm(lstm.state0, E)
+    return Ē
+end
+
+function update(l::SAGEConv, m::AbstractArray, x::AbstractArray)
+    y = l.σ.(_matmul(l.weight1, x) + _matmul(l.weight2, m) .+ l.bias)
+    l.normalize && (y = l2normalize(y; dims=2))  # across all nodes
+    return y
+end
+
+# For variable graph
+function (l::SAGEConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, l.aggr, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
+end
+
+# For static graph
+function (l::SAGEConv)(el::NamedTuple, x::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, x)
+    _, V, _ = propagate(l, el, nothing, x, nothing, l.aggr, nothing, nothing)
+    return V
+end
+
+function Base.show(io::IO, l::SAGEConv)
+    out_channel, in_channel = size(l.weight1)
+    print(io, "SAGEConv(", in_channel, " => ", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
+    l.proj == identity || print(io, ", project=", l.proj)
+    print(io, ", aggr=", l.aggr)
+    print(io, ", normalize=", l.normalize)
+    print(io, ", #sample=", l.num_sample)
+    print(io, ")")
+end
+
+"""
+    MeanAggregator(in => out, σ=identity; normalize=true, project=false,
+                   bias=true, num_sample=10, init=glorot_uniform)
+
+SAGEConv with mean aggregator.
+
+See also [`SAGEConv`](@ref).
+"""
+MeanAggregator(args...; kwargs...) = SAGEConv(args..., mean; kwargs...)
+
+"""
+    MeanAggregator(in => out, σ=identity; normalize=true,
+                   bias=true, num_sample=10, init=glorot_uniform)
+
+SAGEConv with meanpool aggregator.
+
+See also [`SAGEConv`](@ref).
+"""
+MeanPoolAggregator(args...; kwargs...) = SAGEConv(args..., mean; project=true, kwargs...)
+
+"""
+    MeanAggregator(in => out, σ=identity; normalize=true,
+                   bias=true, num_sample=10, init=glorot_uniform)
+
+SAGEConv with maxpool aggregator.
+
+See also [`SAGEConv`](@ref).
+"""
+MaxPoolAggregator(args...; kwargs...) = SAGEConv(args..., max; project=true, kwargs...)
+
+
+"""
+    LSTMAggregator(in => out, σ=identity; normalize=true, project=false,
+                   bias=true, num_sample=10, init=glorot_uniform)
+
+SAGEConv with LSTM aggregator.
+
+See also [`SAGEConv`](@ref).
+"""
+function LSTMAggregator(args...; kwargs...)
+    in_ch = args[1][1]
+    return SAGEConv(args..., Flux.LSTMCell(in_ch, in_ch); kwargs...)
+end
