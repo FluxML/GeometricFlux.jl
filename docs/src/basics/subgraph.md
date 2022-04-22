@@ -1,6 +1,6 @@
 # Subgraph
 
-## Subgraph of `FeaturedGraph`
+## Subgraph of [`FeaturedGraph`](@ref)
 
 A [`FeaturedGraph`](@ref) object can derive a subgraph from a selected subset of the vertices of the graph.
 
