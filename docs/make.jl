@@ -24,6 +24,7 @@ makedocs(
                  "Building Layers" => "basics/layers.md",
                  "Subgraph" => "basics/subgraph.md",
                  "Neighborhood graphs" => "basics/neighborhood_graph.md",
+                 "Random graphs" => "basics/random_graph.md",
                  "Batch Learning" => "basics/batch.md",
                 ],
              "Cooperate with Flux Layers" => "cooperate.md",
