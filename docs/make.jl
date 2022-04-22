@@ -10,7 +10,7 @@ makedocs(
     bib,
     sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
-      assets = ["assets/flux.css"],
+      assets = ["assets/flux.css", "assets/favicon.ico"],
       canonical = "https://fluxml.ai/GeometricFlux.jl/stable/",
       analytics = "G-M61P0B2Y8E",
     ),
