@@ -10,7 +10,7 @@ makedocs(
     bib,
     sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
-      assets = ["assets/flux.css"],
+      assets = ["assets/flux.css", "assets/favicon.ico"],
       canonical = "https://fluxml.ai/GeometricFlux.jl/stable/",
       analytics = "G-M61P0B2Y8E",
     ),
@@ -23,6 +23,8 @@ makedocs(
                  "Graph Passing" => "basics/passgraph.md",
                  "Building Layers" => "basics/layers.md",
                  "Subgraph" => "basics/subgraph.md",
+                 "Neighborhood graphs" => "basics/neighborhood_graph.md",
+                 "Random graphs" => "basics/random_graph.md",
                  "Batch Learning" => "basics/batch.md",
                 ],
              "Cooperate with Flux Layers" => "cooperate.md",
@@ -43,7 +45,8 @@ makedocs(
                "Pooling Layers" => "manual/pool.md",
                "Embeddings" => "manual/embedding.md",
                "Models" => "manual/models.md",
-               "Linear Algebra" => "manual/linalg.md"
+               "Linear Algebra" => "manual/linalg.md",
+               "Neighborhood graphs" => "manual/neighborhood_graph.md",
                ],
              "References" => "references.md",
     ]

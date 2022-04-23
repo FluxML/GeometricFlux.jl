@@ -9,7 +9,7 @@ train_data = [(FeaturedGraph(g, nf=train_X), train_y) for _ in 1:N]
 train_batch = Flux.batch(train_data)
 ```
 
-It batches up `FeaturedGraph` objects into specified mini-batch. A batch is passed to a GNN model and trained/inferred one by one. It is hard for `FeaturedGraph` objects to train or infer in real batch for GPU.
+It batches up [`FeaturedGraph`](@ref) objects into specified mini-batch. A batch is passed to a GNN model and trained/inferred one by one. It is hard for [`FeaturedGraph`](@ref) objects to train or infer in real batch for GPU.
 
 ## Batch Learning for Static Graph Strategy
 

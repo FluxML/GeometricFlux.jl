@@ -1,21 +1,21 @@
 # Graph Passing Strategy
 
-Graph is an input data structure for graph neural network. Passing a graph into a GNN layer can have different behaviors. If the graph remains fixed across samples, that is, all samples utilize the same graph structure, a static graph is used. Or, graphs can be carried within `FeaturedGraph` to provide variable graphs to GNN layer. Users have the flexibility to pick an adequate approach for their own needs.
+Graph is an input data structure for graph neural network. Passing a graph into a GNN layer can have different behaviors. If the graph remains fixed across samples, that is, all samples utilize the same graph structure, a static graph is used. Or, graphs can be carried within [`FeaturedGraph`](@ref) to provide variable graphs to GNN layer. Users have the flexibility to pick an adequate approach for their own needs.
 
 ## Variable Graph Strategy
 
-Variable graphs are supported through `FeaturedGraph`, which contains both the graph information and the features. Each `FeaturedGraph` can contain a distinct graph structure and its features. Data of `FeaturedGraph` are fed directly to graph convolutional layer or graph neural network to let each feature be learned on different graph structures. A adjacency matrix `adj_mat` is given to construct a `FeaturedGraph` as follows:
+Variable graphs are supported through [`FeaturedGraph`](@ref), which contains both the graph information and the features. Each [`FeaturedGraph`](@ref) can contain a distinct graph structure and its features. Data of [`FeaturedGraph`](@ref) are fed directly to graph convolutional layer or graph neural network to let each feature be learned on different graph structures. A adjacency matrix `adj_mat` is given to construct a [`FeaturedGraph`](@ref) as follows:
 
 ```
 fg = FeaturedGraph(adj_mat, features)
 layer = GCNConv(feat=>h1, relu)
 ```
 
-`Simple(Di)Graph`, `SimpleWeighted(Di)Graph` or `Meta(Di)Graph` provided by the packages Graphs, SimpleWeightedGraphs and MetaGraphs, respectively, are acceptable for constructing a `FeaturedGraph`. An adjacency list is also accepted, too.
+`Simple(Di)Graph`, `SimpleWeighted(Di)Graph` or `Meta(Di)Graph` provided by the packages Graphs, SimpleWeightedGraphs and MetaGraphs, respectively, are acceptable for constructing a [`FeaturedGraph`](@ref). An adjacency list is also accepted, too.
 
-### `FeaturedGraph` in, `FeaturedGraph` out
+### [`FeaturedGraph`](@ref) in, [`FeaturedGraph`](@ref) out
 
-Since a variable graph is provided from data, a `FeaturedGraph` object or a set of `FeaturedGraph` objects should be fed in a GNN model. The `FeaturedGraph` object should contain a graph and sufficient features that a GNN model needed. After operations, a `FeaturedGraph` object is given as output.
+Since a variable graph is provided from data, a [`FeaturedGraph`](@ref) object or a set of [`FeaturedGraph`](@ref) objects should be fed in a GNN model. The [`FeaturedGraph`](@ref) object should contain a graph and sufficient features that a GNN model needed. After operations, a [`FeaturedGraph`](@ref) object is given as output.
 
 ```julia
 fg = FeaturedGraph(g, nf=X)
@@ -36,11 +36,11 @@ layer = WithGraph(fg, GCNConv(feat=>h1, relu))
 
 ### Cached Graph in Layers
 
-While a variable graph is given by `FeaturedGraph`, a GNN layer doesn't need a static graph anymore. A cache mechanism is designed to cache static graph to reduce computation time. A cached graph is retrieved from `WithGraph` layer and operation is then performed. For each time, it will assign current computed graph back to layer.
+While a variable graph is given by [`FeaturedGraph`](@ref), a GNN layer doesn't need a static graph anymore. A cache mechanism is designed to cache static graph to reduce computation time. A cached graph is retrieved from [`WithGraph`](@ref) layer and operation is then performed. For each time, it will assign current computed graph back to layer.
 
 ### Array in, Array out
 
-Since a static graph is provided from `WithGraph` layer, it doesn't accept a `FeaturedGraph` object anymore. Instead, it accepts a regular array as input, and outputs an array back.
+Since a static graph is provided from [`WithGraph`](@ref) layer, it doesn't accept a [`FeaturedGraph`](@ref) object anymore. Instead, it accepts a regular array as input, and outputs an array back.
 
 ```julia
 fg = FeaturedGraph(g)
@@ -50,11 +50,11 @@ H = layer(X)
 
 ## What you feed is what you get
 
-In GeometricFlux, there are are two APIs which allow different input/output types for GNN layers. For example, `GCNConv` layer provides the following two APIs:
+In GeometricFlux, there are are two APIs which allow different input/output types for GNN layers. For example, [`GCNConv`](@ref) layer provides the following two APIs:
 
 ```julia
 (g::WithGraph{<:GCNConv})(X::AbstractArray) -> AbstractArray
 (g::GCNConv)(fg::FeaturedGraph) -> FeaturedGraph
 ```
 
-If your feed a `GCNConv` layer with a `Array`, it will return you a `Array`. If you feed a `GCNConv` layer with a `FeaturedGraph`, it will return you a `FeaturedGraph`. **These APIs ensure the consistency between input and output types.**
+If your feed a [`GCNConv`](@ref) layer with a `Array`, it will return you a `Array`. If you feed a [`GCNConv`](@ref) layer with a [`FeaturedGraph`](@ref), it will return you a [`FeaturedGraph`](@ref). **These APIs ensure the consistency between input and output types.**
