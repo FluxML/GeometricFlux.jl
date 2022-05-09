@@ -44,6 +44,7 @@ export
     SAGEConv,
     MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
     LSTMAggregator,
+    EGNNConv,
 
     # layer/pool
     GlobalPool,

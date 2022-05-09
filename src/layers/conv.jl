@@ -753,6 +753,7 @@ function Base.show(io::IO, l::CGConv)
 end
 
 """
+<<<<<<< HEAD
     SAGEConv(in => out, σ=identity, aggr=mean; normalize=true, project=false,
              bias=true, num_sample=10, init=glorot_uniform)
 
@@ -924,4 +925,74 @@ See also [`SAGEConv`](@ref).
 function LSTMAggregator(args...; kwargs...)
     in_ch = args[1][1]
     return SAGEConv(args..., Flux.LSTMCell(in_ch, in_ch); kwargs...)
+end
+
+"""
+    EGNNConv((in_dim, int_dim, out_dim); init)
+"""
+
+struct EGNNConv{A<:AbstractMatrix} <: MessagePassing
+   nn_edge
+   nn_x
+   nn_h
+
+   in_dim::Int
+   int_dim::Int
+   out_dim::Int
+end
+
+@functor EGNNConv
+
+function EGNNConv(dims::NTuple{3,Int}; init=glorot_uniform)
+    in_dim, int_dim, out_dim = dims
+
+    m_len = in_dim * 2 + 2
+
+    nn_edge = Flux.Dense(m_len, int_dim)
+
+    nn_x = Flux.Dense(m_len, 1)
+    nn_h = Flux.Dense(in_dim + int_dim, out_dim)
+
+    return EGNNConv(nn_edge, nn_x, nn_h, dims...)
+end
+
+function message(egnn::EGNNConv, v_i, v_j, e)
+    in_dim = egnn.in_dim
+    h_i = v_i[1:in_dim]
+    h_j = v_j[1:in_dim]
+
+    x_i = v_i[in_dim+1:end]
+    x_j = v_j[in_dim+1:end]
+
+    a = e[1]
+
+    input = vcat(h_i, h_j, norm(x_i - x_j, 2)^2, a)
+    edge_msg = egnn.nn_edge(input)
+    return vcat(edge_msg, (x_i - x_j) * e.nn_x(edge_msg), 1)
+end
+
+function update(e::EGNNConv, m::AbstractArray, h)
+    in_dim = e.in_dim
+    hout_size = e.nn_h.W.size[1]
+
+    mi = m[1:e.int_dim]
+    x_msg = m[e.int_dim+1:end-1]
+    M = m[end]
+    coord_dim = length(x_msg)
+
+    C = 1/(M-1)
+
+    nn_node_out = e.nn_h(vcat(h[1:in_dim], mi))
+
+    z = zeros(hout_size + coord_dim)
+    z[1:hout_size] = nn_node_out
+    z[hout_size+1:end] = h[in_dim+1:end] + C * x_msg
+    return z
+end
+
+function(egnn::EGNNConv)(fg::AbstractFeaturedGraph)
+    X = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, X)
+    _, V, _ = propagate(l, graph(fg), nothing, X, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
 end

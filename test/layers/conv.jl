@@ -424,4 +424,15 @@
             end
         end
     end
+
+    @testset "EGNNConv" begin
+        @testset "layer without static graph" begin
+            int_dim = 5
+            egnn = EGNNConv((in_channel, int_dim, out_channel))
+
+            nf = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=nf)
+            fg_ = egnn(fg)
+        end
+    end
 end
