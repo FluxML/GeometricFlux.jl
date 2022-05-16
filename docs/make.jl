@@ -17,6 +17,14 @@ makedocs(
     clean = false,
     modules = [GeometricFlux,GraphSignals],
     pages = ["Home" => "index.md",
+             "Tutorials" => [
+                 "Semi-Supervised Learning with GCN" => "tutorials/semisupervised_gcn.md",
+                 "GCN with Fixed Graph" => "tutorials/gcn_fixed_graph.md",
+                 "Graph Attention Network" => "tutorials/gat.md",
+                 "DeepSet for Digit Sum" => "tutorials/deepset.md",
+                 "Variational Graph Autoencoder" => "tutorials/vgae.md",
+                 "Graph Embedding" => "tutorials/graph_embedding.md",
+              ],
              "Introduction" => "introduction.md",
              "Basics" => [
                  "Graph Convolutions" => "basics/conv.md",
@@ -28,17 +36,10 @@ makedocs(
                  "Batch Learning" => "basics/batch.md",
                 ],
              "Cooperate with Flux Layers" => "cooperate.md",
-             "Tutorials" => [
-                  "Semi-Supervised Learning with GCN" => "tutorials/semisupervised_gcn.md",
-                  "GCN with Fixed Graph" => "tutorials/gcn_fixed_graph.md",
-                  "Graph Attention Network" => "tutorials/gat.md",
-                  "DeepSet for Digit Sum" => "tutorials/deepset.md",
-                  "Variational Graph Autoencoder" => "tutorials/vgae.md",
-                  "Graph Embedding" => "tutorials/graph_embedding.md",
-                ],
              "Abstractions" => [
                "Message passing scheme" => "abstractions/msgpass.md",
                "Graph network block" => "abstractions/gn.md"],
+             "Dynamic Graph Update" => "dynamicgraph.md",
              "Manual" => [
                "FeaturedGraph" => "manual/featuredgraph.md",
                "Convolutional Layers" => "manual/conv.md",

@@ -6,14 +6,16 @@ An abstract type of graph neural network layer for GeometricFlux.
 abstract type AbstractGraphLayer end
 
 """
-    WithGraph(fg, layer)
+    WithGraph([g], layer; dynamic=nothing)
 
 Train GNN layers with static graph.
 
 # Arguments
 
-- `fg`: A fixed `FeaturedGraph` to train with.
+- `g`: If a `FeaturedGraph` is given, a fixed graph is used to train with.
 - `layer`: A GNN layer.
+- `dynamic`: If a function is given, it enables dynamic graph update by constructing
+dynamic graph through given function within layers.
 
 # Example
 
