@@ -21,12 +21,12 @@ Suggestions, issues and pull requsts are welcome.
 
 ## Features
 
-* Extend Flux deep learning framework in Julia and compatible with Flux layers.
-* Support of CUDA GPU with CUDA.jl
-* Integrate with existing JuliaGraphs ecosystem
-* Support generic graph neural network architectures
-* Variable graph inputs are supported. You use it when diverse graph structures are prepared as inputs to the same model.
-* Integrate GNN benchmark datasets (WIP)
+* Extending Flux deep learning framework in Julia and seamlessly integration with regular Flux layers.
+* Support of CUDA GPU with CUDA.jl and mini-batched training leveraging advantages of GPU
+* Integration with existing JuliaGraphs ecosystem
+* Support Message-passing and graph network architectures
+* Support of static graph and variable graph strategy. Variable graph strategy is useful when training the model over diverse graph structures.
+* Integration of GNN benchmark datasets
 
 ### Featured Graphs
 
@@ -69,3 +69,20 @@ evalcb() = @show(accuracy(train_X, train_y))
 
 Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
 ```
+
+## Roadmap
+
+To achieve geometric deep learning raised by Bronstein *et al*, 5G fields of deep learning models will be supported in GeometricFlux.jl. For details, you could check the [geometric deep learning official website](https://geometricdeeplearning.com/).
+
+5G including the following fields:
+
+* **Graphs** and Sets
+  * including classical GNN models and networks over sets.
+  * Transformer models are regard as a kind of GNN with complete graph, and you can check [chengchingwen/Transformers.jl](https://github.com/chengchingwen/Transformers.jl) for more details.
+* **Grids** and Euclidean spaces
+  * including classical convolutional neural networks, multi-layer perceptrons etc.
+  * for operators over functional spaces of regular grid, you can check [SciML/NeuralOperators.jl](https://github.com/SciML/NeuralOperators.jl) for more details.
+* **Groups** and Homogeneous spaces
+  * including a series of equivariant/invariant models.
+* **Geodesics** and Manifolds
+* **Gauges** and Bundles
