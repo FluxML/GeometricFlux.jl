@@ -6,14 +6,16 @@ An abstract type of graph neural network layer for GeometricFlux.
 abstract type AbstractGraphLayer end
 
 """
-    WithGraph(fg, layer)
+    WithGraph([g], layer; dynamic=nothing)
 
 Train GNN layers with static graph.
 
 # Arguments
 
-- `fg`: A fixed `FeaturedGraph` to train with.
+- `g`: If a `FeaturedGraph` is given, a fixed graph is used to train with.
 - `layer`: A GNN layer.
+- `dynamic`: If a function is given, it enables dynamic graph update by constructing
+dynamic graph through given function within layers.
 
 # Example
 
@@ -74,9 +76,10 @@ function Base.show(io::IO, l::WithGraph)
     print(io, l.layer, ")")
 end
 
-WithGraph(fg::AbstractFeaturedGraph, model::Chain) = Chain(map(l -> WithGraph(fg, l), model.layers)...)
-WithGraph(::AbstractFeaturedGraph, layer::WithGraph) = layer
-WithGraph(::AbstractFeaturedGraph, layer) = layer
+WithGraph(fg::AbstractFeaturedGraph, model::Chain; kwargs...) =
+    Chain(map(l -> WithGraph(fg, l; kwargs...), model.layers)...)
+WithGraph(::AbstractFeaturedGraph, layer::WithGraph; kwargs...) = layer
+WithGraph(::AbstractFeaturedGraph, layer; kwargs...) = layer
 
 update_batch_edge(l::WithGraph, args...) = update_batch_edge(l.layer, l.graph, args...)
 aggregate_neighbors(l::WithGraph, args...) = aggregate_neighbors(l.layer, l.graph, args...)
@@ -130,4 +133,8 @@ function Base.show(io::IO, l::GraphParallel)
     print(io, ", edge_layer=", l.edge_layer)
     print(io, ", global_layer=", l.global_layer)
     print(io, ")")
+end
+
+struct DynamicGraph{F}
+    method::F
 end

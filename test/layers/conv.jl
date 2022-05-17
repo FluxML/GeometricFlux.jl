@@ -296,6 +296,26 @@
             g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
             @test length(g.grads) == 2
         end
+
+        @testset "layer with dynamic graph" begin
+            X = rand(T, in_channel, N)
+            ec = WithGraph(EdgeConv(Dense(2*in_channel, out_channel)), dynamic=X -> GraphSignals.kneighbors_graph(X, 3))
+            Y = ec(X)
+            @test size(Y) == (out_channel, N)
+
+            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            @test length(g.grads) == 2
+        end
+
+        @testset "layer with dynamic graph in batch" begin
+            X = rand(T, in_channel, N, batch_size)
+            ec = WithGraph(EdgeConv(Dense(2*in_channel, out_channel)), dynamic=X -> GraphSignals.kneighbors_graph(X, 3))
+            Y = ec(X)
+            @test size(Y) == (out_channel, N, batch_size)
+
+            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            @test length(g.grads) == 2
+        end
     end
 
     @testset "GINConv" begin

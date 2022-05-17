@@ -63,13 +63,21 @@ update_edge(mp::MessagePassing, e, vi, vj, u) = GeometricFlux.message(mp, vi, vj
 update_vertex(mp::MessagePassing, ē, vi, u) = GeometricFlux.update(mp, ē, vi)
 
 # For static graph
-WithGraph(fg::AbstractFeaturedGraph, mp::MessagePassing) =
-    WithGraph(to_namedtuple(fg), mp)
-
 (wg::WithGraph{<:MessagePassing})(args...) = wg.layer(wg.graph, args...)
+
+# For dynamic graph
+function (wg::WithGraph{<:MessagePassing,<:DynamicGraph})(args...)
+    fg = wg.graph.method(args[1])
+    return wg.layer(to_namedtuple(fg), args...)
+end
 
 function Base.show(io::IO, l::WithGraph{<:MessagePassing})
     print(io, "WithGraph(Graph(#V=", l.graph.N)
     print(io, ", #E=", l.graph.E, "), ")
+    print(io, l.layer, ")")
+end
+
+function Base.show(io::IO, l::WithGraph{<:MessagePassing,<:DynamicGraph})
+    print(io, "WithGraph(DynamicGraph(", l.graph.method, "), ")
     print(io, l.layer, ")")
 end
