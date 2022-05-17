@@ -72,16 +72,17 @@ Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
 
 ## Roadmap
 
-To achieve geometric deep learning raised by Bronstein *et al*, there 5G fields of deep learning models will be supported in GeometricFlux.jl. For details, you could check the [geometric deep learning official website](https://geometricdeeplearning.com/).
+To achieve geometric deep learning raised by Bronstein *et al*, 5G fields of deep learning models will be supported in GeometricFlux.jl. For details, you could check the [geometric deep learning official website](https://geometricdeeplearning.com/).
 
 5G including the following fields:
 
-* Graphs and Sets
-  * including classical graph neural network models and networks over sets.
-* Grids and Euclidean spaces
+* **Graphs** and Sets
+  * including classical GNN models and networks over sets.
+  * Transformer models are regard as a kind of GNN with complete graph, and you can check [chengchingwen/Transformers.jl](https://github.com/chengchingwen/Transformers.jl) for more details.
+* **Grids** and Euclidean spaces
   * including classical convolutional neural networks, multi-layer perceptrons etc.
-  * for operators over regular grid spaces, you can check [SciML/NeuralOperators.jl](https://github.com/SciML/NeuralOperators.jl).
-* Groups and Homogeneous spaces
+  * for operators over functional spaces of regular grid, you can check [SciML/NeuralOperators.jl](https://github.com/SciML/NeuralOperators.jl) for more details.
+* **Groups** and Homogeneous spaces
   * including a series of equivariant/invariant models.
-* Geodesics and Manifolds
-* Gauges and Bundles
+* **Geodesics** and Manifolds
+* **Gauges** and Bundles
