@@ -408,14 +408,18 @@
             for conv in aggregators
                 X = rand(T, in_channel, N, batch_size)
                 l = WithGraph(fg, conv(in_channel=>out_channel, relu, num_sample=3))
-                Y = l(X)
-                @test size(Y) == (out_channel, N, batch_size)
-
-                g = Zygote.gradient(() -> sum(l(X)), Flux.params(l))
-                if l.layer.proj == identity
-                    @test length(g.grads) == 3
+                if conv == LSTMAggregator
+                    @test_throws ArgumentError l(X)
                 else
-                    @test length(g.grads) == 5
+                    Y = l(X)
+                    @test size(Y) == (out_channel, N, batch_size)
+
+                    g = Zygote.gradient(() -> sum(l(X)), Flux.params(l))
+                    if l.layer.proj == identity
+                        @test length(g.grads) == 3
+                    else
+                        @test length(g.grads) == 5
+                    end
                 end
             end
         end

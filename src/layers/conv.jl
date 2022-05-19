@@ -854,12 +854,8 @@ function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E::AbstractMatri
     return Ē
 end
 
-function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractArray)
-    sample_idx = sample_node_index(E, el.N; dims=2)
-    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
-    state, Ē = lstm(lstm.state0, E[idx...])
-    return Ē
-end
+aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractArray) =
+    throw(ArgumentError("SAGEConv with LSTM aggregator does not support batch learning."))
 
 function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractMatrix)
     sample_idx = sample_node_index(E, el.N; dims=2)
