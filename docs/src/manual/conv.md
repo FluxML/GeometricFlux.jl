@@ -1,4 +1,4 @@
-# Convolution Layers
+# Graph Convolutional Layers
 
 ## Graph Convolutional Layer
 
@@ -148,3 +148,23 @@ CGConv
 ```
 
 Reference: [Xie2018](@cite)
+
+---
+
+## SAmple and aggreGatE (GraphSAGE) Network
+
+```math
+\hat{\textbf{x}}_j = sample(\textbf{x}_j), \forall j \in \mathcal{N}(i) \\
+\textbf{m}_i = aggregate(\hat{\textbf{x}}_j) \\
+\textbf{x}_i' = \sigma (\Theta_1 \textbf{x}_i + \Theta_2 \textbf{m}_i)
+```
+
+```@docs
+SAGEConv
+MeanAggregator
+MeanPoolAggregator
+MaxPoolAggregator
+LSTMAggregator
+```
+
+Reference: [Hamilton2017](@cite) and [GraphSAGE website](http://snap.stanford.edu/graphsage/)
