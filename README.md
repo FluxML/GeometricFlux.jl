@@ -27,6 +27,7 @@ Suggestions, issues and pull requsts are welcome.
 * Support Message-passing and graph network architectures
 * Support of static graph and variable graph strategy. Variable graph strategy is useful when training the model over diverse graph structures.
 * Integration of GNN benchmark datasets
+* Support dynamic graph update towards manifold learning 2.0
 
 ### Featured Graphs
 

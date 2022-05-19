@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0]
+
+- add roadmap
+- add `SAGEConv` layer
+- support dynamic graph update
+
 ## [0.11.1]
 
 - fix link
