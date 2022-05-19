@@ -383,7 +383,7 @@
                        LSTMAggregator]
         @testset "layer without graph" begin
             for conv in aggregators
-                l = conv(in_channel=>out_channel, relu)
+                l = conv(in_channel=>out_channel, relu, num_sample=3)
 
                 X = rand(T, in_channel, N)
                 fg = FeaturedGraph(adj, nf=X)
@@ -393,7 +393,11 @@
 
                 g = Zygote.gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
                 if l.proj == identity
-                    @test length(g.grads) == 5
+                    if conv == LSTMAggregator
+                        @test length(g.grads) == 10
+                    else
+                        @test length(g.grads) == 5
+                    end
                 else
                     @test length(g.grads) == 7
                 end
@@ -403,7 +407,7 @@
         @testset "layer with static graph" begin
             for conv in aggregators
                 X = rand(T, in_channel, N, batch_size)
-                l = WithGraph(fg, conv(in_channel=>out_channel, relu))
+                l = WithGraph(fg, conv(in_channel=>out_channel, relu, num_sample=3))
                 Y = l(X)
                 @test size(Y) == (out_channel, N, batch_size)
 

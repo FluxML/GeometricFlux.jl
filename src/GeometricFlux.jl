@@ -2,7 +2,7 @@ module GeometricFlux
 
 using DelimitedFiles
 using SparseArrays
-using Statistics: mean
+using Statistics, StatsBase
 using LinearAlgebra
 using Random
 using Reexport

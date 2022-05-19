@@ -838,28 +838,33 @@ message(l::SAGEConv, x_i, x_j::AbstractArray, e) = l.proj(x_j)
 
 function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E)
     batch_size = size(E)[end]
-    # E = sample(E, l.num_sample)
-    dstsize = (size(E, 1), el.N, batch_size)
-    xs = batched_index(el.xs, batch_size)
-    Ē = _scatter(aggr, E, xs, dstsize)
+    sample_idx = sample_node_index(E, l.num_sample; dims=2)
+    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
+    dstsize = (size(E, 1), el.N, batch_size)  # ensure outcome has the same dimension as x in update
+    xs = batched_index(el.xs[sample_idx], batch_size)
+    Ē = _scatter(aggr, E[idx...], xs, dstsize)
     return Ē
 end
 
 function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E::AbstractMatrix)
-    # E = sample(E, l.num_sample)
-    Ē = _scatter(aggr, E, el.xs)
+    sample_idx = sample_node_index(E, l.num_sample; dims=2)
+    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
+    dstsize = (size(E, 1), el.N)  # ensure outcome has the same dimension as x in update
+    Ē = _scatter(aggr, E[idx...], el.xs[sample_idx], dstsize)
     return Ē
 end
 
 function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractArray)
-    # E = sample(E, l.num_sample)
-    state, Ē = lstm(lstm.state0, E)
+    sample_idx = sample_node_index(E, el.N; dims=2)
+    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
+    state, Ē = lstm(lstm.state0, E[idx...])
     return Ē
 end
 
 function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractMatrix)
-    # E = sample(E, l.num_sample)
-    state, Ē = lstm(lstm.state0, E)
+    sample_idx = sample_node_index(E, el.N; dims=2)
+    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
+    state, Ē = lstm(lstm.state0, E[idx...])
     return Ē
 end
 
