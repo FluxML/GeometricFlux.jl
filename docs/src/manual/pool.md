@@ -1,4 +1,4 @@
-# Pooling Layers
+# Graph Pooling Layers
 
 ## Global Pooling Layer
 
