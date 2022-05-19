@@ -22,6 +22,11 @@ aggregate(::typeof(max), X) = maximum(X, dims=2)
 aggregate(::typeof(min), X) = minimum(X, dims=2)
 aggregate(::typeof(mean), X) = mean(X, dims=2)
 
+function l2normalize(X::AbstractArray; dims=1)
+    l2norm = .√(sum(abs2, X, dims=dims))
+    return X ./ l2norm
+end
+
 function incidence_matrix(xs::AbstractVector{T}, N) where {T}
     A = similar(xs, T, size(xs, 1), N)
     copyto!(A, Array(I(N))[Array(xs), :])

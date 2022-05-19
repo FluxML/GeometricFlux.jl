@@ -377,4 +377,51 @@
             @test length(g.grads) == 4
         end
     end
+
+    @testset "SAGEConv" begin
+        aggregators = [MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
+                       LSTMAggregator]
+        @testset "layer without graph" begin
+            for conv in aggregators
+                l = conv(in_channel=>out_channel, relu, num_sample=3)
+
+                X = rand(T, in_channel, N)
+                fg = FeaturedGraph(adj, nf=X)
+                fg_ = l(fg)
+                @test size(node_feature(fg_)) == (out_channel, N)
+                @test_throws MethodError l(X)
+
+                g = Zygote.gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
+                if l.proj == identity
+                    if conv == LSTMAggregator
+                        @test length(g.grads) == 10
+                    else
+                        @test length(g.grads) == 5
+                    end
+                else
+                    @test length(g.grads) == 7
+                end
+            end
+        end
+        
+        @testset "layer with static graph" begin
+            for conv in aggregators
+                X = rand(T, in_channel, N, batch_size)
+                l = WithGraph(fg, conv(in_channel=>out_channel, relu, num_sample=3))
+                if conv == LSTMAggregator
+                    @test_throws ArgumentError l(X)
+                else
+                    Y = l(X)
+                    @test size(Y) == (out_channel, N, batch_size)
+
+                    g = Zygote.gradient(() -> sum(l(X)), Flux.params(l))
+                    if l.layer.proj == identity
+                        @test length(g.grads) == 3
+                    else
+                        @test length(g.grads) == 5
+                    end
+                end
+            end
+        end
+    end
 end

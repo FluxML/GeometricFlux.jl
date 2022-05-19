@@ -53,3 +53,10 @@ function alias_sample(J::AbstractVector{<:Integer}, q::AbstractVector{<:Real})
         return J[small_index]
     end
 end
+
+function sample_node_index(X::AbstractArray, num_sample::Int; dims::Int=1)
+    n = size(X, dims)
+    return StatsBase.sample(1:n, num_sample, replace=false)
+end
+
+@non_differentiable sample_node_index(x...)

@@ -2,7 +2,7 @@ module GeometricFlux
 
 using DelimitedFiles
 using SparseArrays
-using Statistics: mean
+using Statistics, StatsBase
 using LinearAlgebra
 using Random
 using Reexport
@@ -41,6 +41,9 @@ export
     EdgeConv,
     GINConv,
     CGConv,
+    SAGEConv,
+    MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
+    LSTMAggregator,
 
     # layer/pool
     GlobalPool,
