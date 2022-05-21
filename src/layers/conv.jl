@@ -105,8 +105,6 @@ function ChebConv(ch::Pair{Int,Int}, k::Int, σ=identity;
     ChebConv(W, b, k, σ)
 end
 
-@deprecate ChebConv(fg, args...; kwargs...) WithGraph(fg, ChebConv(args...; kwargs...))
-
 @functor ChebConv
 
 Flux.trainable(l::ChebConv) = (l.weight, l.bias)
@@ -197,8 +195,6 @@ function GraphConv(ch::Pair{Int,Int}, σ=identity, aggr=+;
     GraphConv(W1, W2, b, σ, aggr)
 end
 
-@deprecate GraphConv(fg, args...; kwargs...) WithGraph(fg, GraphConv(args...; kwargs...))
-
 @functor GraphConv
 
 Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
@@ -286,8 +282,6 @@ function GATConv(ch::Pair{Int,Int}, σ=identity; heads::Int=1, concat::Bool=true
     a = init(2*out, heads)
     GATConv(W, b, a, σ, negative_slope, ch, heads, concat)
 end
-
-@deprecate GATConv(fg, args...; kwargs...) WithGraph(fg, GATConv(args...; kwargs...))
 
 @functor GATConv
 
@@ -530,8 +524,6 @@ function GatedGraphConv(out_ch::Int, num_layers::Int; aggr=+, init=glorot_unifor
     GatedGraphConv(w, gru, out_ch, num_layers, aggr)
 end
 
-@deprecate GatedGraphConv(fg, args...; kwargs...) WithGraph(fg, GatedGraphConv(args...; kwargs...))
-
 @functor GatedGraphConv
 
 Flux.trainable(l::GatedGraphConv) = (l.weight, l.gru)
@@ -605,8 +597,6 @@ end
 
 EdgeConv(nn; aggr=max) = EdgeConv(nn, aggr)
 
-@deprecate EdgeConv(fg, args...; kwargs...) WithGraph(fg, EdgeConv(args...; kwargs...))
-
 @functor EdgeConv
 
 Flux.trainable(l::EdgeConv) = (l.nn,)
@@ -663,8 +653,6 @@ end
 
 GINConv(nn, eps=0f0) = GINConv(nn, eps)
 
-@deprecate GINConv(fg, args...; kwargs...) WithGraph(fg, GINConv(args...; kwargs...))
-
 @functor GINConv
 
 Flux.trainable(g::GINConv) = (g.nn,)
@@ -719,8 +707,6 @@ struct CGConv{A<:AbstractMatrix,B} <: MessagePassing
     bf::B
     bs::B
 end
-
-@deprecate CGConv(fg, args...; kwargs...) WithGraph(fg, CGConv(args...; kwargs...))
 
 @functor CGConv
 
