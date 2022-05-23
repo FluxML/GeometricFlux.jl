@@ -884,6 +884,7 @@ function Base.show(io::IO, l::SAGEConv)
 end
 
 """
+<<<<<<< HEAD
     MeanAggregator(in => out, σ=identity; normalize=true, project=false,
                    bias=true, num_sample=10, init=glorot_uniform)
 
@@ -931,14 +932,14 @@ end
     EGNNConv((in_dim, int_dim, out_dim); init)
 """
 
-struct EGNNConv{A<:AbstractMatrix} <: MessagePassing
+struct EGNNConv <: MessagePassing
    nn_edge
    nn_x
    nn_h
 
-   in_dim::Int
-   int_dim::Int
-   out_dim::Int
+   in_dim
+   int_dim
+   out_dim
 end
 
 @functor EGNNConv
@@ -948,12 +949,25 @@ function EGNNConv(dims::NTuple{3,Int}; init=glorot_uniform)
 
     m_len = in_dim * 2 + 2
 
-    nn_edge = Flux.Dense(m_len, int_dim)
+    nn_edge = Flux.Dense(m_len, int_dim; init=init)
 
-    nn_x = Flux.Dense(m_len, 1)
-    nn_h = Flux.Dense(in_dim + int_dim, out_dim)
+    nn_x = Flux.Dense(int_dim, 1; init=init)
+    nn_h = Flux.Dense(in_dim + int_dim, out_dim; init=init)
 
     return EGNNConv(nn_edge, nn_x, nn_h, dims...)
+end
+
+function EGNNConv(nn_edge, nn_x, nn_h; init=glorot_uniform)
+
+    # Assume that these are strictly MLPs (no conv)
+    nn_edge.init(init)
+    nn_x.init(init)
+    nn_h.init(init)
+
+    in_dim = nn_edge.layers[1].W |> x->size(x)[2]
+    int_dim = nn_edge.layers[end].W |> x->size(x)[1]
+    out_dim = nn_h.layers[end].W |> x->size(x)[1]
+    return EGNNConv(nn_edge, nn_x, nn_h, in_dim, int_dim, out_dim)
 end
 
 function message(egnn::EGNNConv, v_i, v_j, e)
@@ -964,35 +978,35 @@ function message(egnn::EGNNConv, v_i, v_j, e)
     x_i = v_i[in_dim+1:end]
     x_j = v_j[in_dim+1:end]
 
-    a = e[1]
+    if isnothing(e)
+        a = 1
+    else
+        a = e[1]
+    end
 
     input = vcat(h_i, h_j, norm(x_i - x_j, 2)^2, a)
     edge_msg = egnn.nn_edge(input)
-    return vcat(edge_msg, (x_i - x_j) * e.nn_x(edge_msg), 1)
+    return vcat(edge_msg, (x_i - x_j) * egnn.nn_x(edge_msg)[1], 1)
 end
 
-function update(e::EGNNConv, m::AbstractArray, h)
-    in_dim = e.in_dim
-    hout_size = e.nn_h.W.size[1]
-
+function update(e::EGNNConv, m, h)
     mi = m[1:e.int_dim]
     x_msg = m[e.int_dim+1:end-1]
     M = m[end]
-    coord_dim = length(x_msg)
 
     C = 1/(M-1)
 
-    nn_node_out = e.nn_h(vcat(h[1:in_dim], mi))
+    nn_node_out = e.nn_h(vcat(h[1:e.in_dim], mi))
 
-    z = zeros(hout_size + coord_dim)
+    z = zeros(e.out_dim + e.int_dim)
     z[1:hout_size] = nn_node_out
-    z[hout_size+1:end] = h[in_dim+1:end] + C * x_msg
+    z[hout_size+1:end] = h[e.in_dim+1:end] + C * x_msg
     return z
 end
 
 function(egnn::EGNNConv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
-    _, V, _ = propagate(l, graph(fg), nothing, X, nothing, +, nothing, nothing)
+    _, V, _ = propagate(egnn, graph(fg), nothing, X, nothing, +, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end

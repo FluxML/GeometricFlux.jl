@@ -19,6 +19,7 @@ function aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E)
     batch_size = size(E)[end]
     dstsize = (size(E, 1), el.N, batch_size)
     xs = batched_index(el.xs, batch_size)
+    @show E, xs
     return _scatter(aggr, E, xs, dstsize)
 end
 
