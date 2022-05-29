@@ -26,7 +26,7 @@
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError gc(X)
-            
+
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)
@@ -430,7 +430,7 @@
             int_dim = 5
             egnn = EGNNConv((in_channel, int_dim, out_channel))
 
-            nf = rand(T, in_channel, N)
+            nf = rand(T, in_channel + 3, N)
             fg = FeaturedGraph(adj, nf=nf)
             fg_ = egnn(fg)
         end

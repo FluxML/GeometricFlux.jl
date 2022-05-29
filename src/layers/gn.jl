@@ -19,11 +19,12 @@ function aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E)
     batch_size = size(E)[end]
     dstsize = (size(E, 1), el.N, batch_size)
     xs = batched_index(el.xs, batch_size)
-    @show E, xs
     return _scatter(aggr, E, xs, dstsize)
 end
 
-aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = _scatter(aggr, E, el.xs)
+aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = begin
+    _scatter(aggr, E, el.xs)
+end
 
 @inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, E) = nothing
 @inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing

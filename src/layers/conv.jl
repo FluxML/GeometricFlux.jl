@@ -723,6 +723,7 @@ end
 
 function message(c::CGConv, x_i::AbstractArray, x_j::AbstractArray, e::AbstractArray)
     z = vcat(x_i, x_j, e)
+
     return σ.(_matmul(c.Wf, z) .+ c.bf) .* softplus.(_matmul(c.Ws, z) .+ c.bs)
 end
 
@@ -753,7 +754,6 @@ function Base.show(io::IO, l::CGConv)
 end
 
 """
-<<<<<<< HEAD
     SAGEConv(in => out, σ=identity, aggr=mean; normalize=true, project=false,
              bias=true, num_sample=10, init=glorot_uniform)
 
@@ -884,7 +884,6 @@ function Base.show(io::IO, l::SAGEConv)
 end
 
 """
-<<<<<<< HEAD
     MeanAggregator(in => out, σ=identity; normalize=true, project=false,
                    bias=true, num_sample=10, init=glorot_uniform)
 
@@ -972,11 +971,13 @@ end
 
 function message(egnn::EGNNConv, v_i, v_j, e)
     in_dim = egnn.in_dim
-    h_i = v_i[1:in_dim]
-    h_j = v_j[1:in_dim]
+    h_i = v_i[1:in_dim,:]
+    h_j = v_j[1:in_dim,:]
 
-    x_i = v_i[in_dim+1:end]
-    x_j = v_j[in_dim+1:end]
+    N = size(h_i, 2)
+
+    x_i = v_i[in_dim+1:end,:]
+    x_j = v_j[in_dim+1:end,:]
 
     if isnothing(e)
         a = 1
@@ -984,23 +985,28 @@ function message(egnn::EGNNConv, v_i, v_j, e)
         a = e[1]
     end
 
-    input = vcat(h_i, h_j, norm(x_i - x_j, 2)^2, a)
+    input = vcat(h_i, h_j, sum((x_i - x_j).^2; dims=1), ones(N)' * a)
     edge_msg = egnn.nn_edge(input)
-    return vcat(edge_msg, (x_i - x_j) * egnn.nn_x(edge_msg)[1], 1)
+    output_vec = vcat(edge_msg, (x_i - x_j) .* egnn.nn_x(edge_msg)[1], ones(N)')
+    return reshape(output_vec, :, N)
 end
 
 function update(e::EGNNConv, m, h)
-    mi = m[1:e.int_dim]
-    x_msg = m[e.int_dim+1:end-1]
-    M = m[end]
+    N = size(m, 2)
+    mi = m[1:e.int_dim,:]
+    x_msg = m[e.int_dim+1:end-1,:]
+    M = m[end,:]
 
-    C = 1/(M-1)
+    C = 1 ./ (M.-1)
+    C = reshape(C, :, N)
 
-    nn_node_out = e.nn_h(vcat(h[1:e.in_dim], mi))
+    nn_node_out = e.nn_h(vcat(h[1:e.in_dim,:], mi))
 
-    z = zeros(e.out_dim + e.int_dim)
-    z[1:hout_size] = nn_node_out
-    z[hout_size+1:end] = h[e.in_dim+1:end] + C * x_msg
+    coord_dim = size(h,1) - e.in_dim
+
+    z = zeros(e.out_dim + coord_dim, N)
+    z[1:e.out_dim,:] = nn_node_out
+    z[e.out_dim+1:end,:] = h[e.in_dim+1:end,:] + C .* x_msg
     return z
 end
 
