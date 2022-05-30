@@ -22,9 +22,7 @@ function aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E)
     return _scatter(aggr, E, xs, dstsize)
 end
 
-aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = begin
-    _scatter(aggr, E, el.xs)
-end
+aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = _scatter(aggr, E, el.xs)
 
 @inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, E) = nothing
 @inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing

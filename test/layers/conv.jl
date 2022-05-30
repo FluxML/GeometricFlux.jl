@@ -425,10 +425,10 @@
         end
     end
 
-    @testset "EGNNConv" begin
+    @testset "EEquivGraphConv" begin
         @testset "layer without static graph" begin
             int_dim = 5
-            egnn = EGNNConv((in_channel, int_dim, out_channel))
+            egnn = EEquivGraphConv((in_channel, int_dim, out_channel))
 
             nf = rand(T, in_channel + 3, N)
             fg = FeaturedGraph(adj, nf=nf)

@@ -44,7 +44,7 @@ export
     SAGEConv,
     MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
     LSTMAggregator,
-    EGNNConv,
+    EEquivGraphConv,
 
     # layer/pool
     GlobalPool,
@@ -74,6 +74,7 @@ include("layers/gn.jl")
 include("layers/msgpass.jl")
 
 include("layers/conv.jl")
+include("layers/groups.jl")
 include("layers/pool.jl")
 include("models.jl")
 
