@@ -1,4 +1,4 @@
-@testset "layer" begin
+@testset "graph conv" begin
     T = Float32
     batch_size = 10
     in_channel = 3
@@ -422,17 +422,6 @@
                     end
                 end
             end
-        end
-    end
-
-    @testset "EEquivGraphConv" begin
-        @testset "layer without static graph" begin
-            int_dim = 5
-            egnn = EEquivGraphConv((in_channel, int_dim, out_channel))
-
-            nf = rand(T, in_channel + 3, N)
-            fg = FeaturedGraph(adj, nf=nf)
-            fg_ = egnn(fg)
         end
     end
 end
