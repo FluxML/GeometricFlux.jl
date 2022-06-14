@@ -13,10 +13,22 @@
     fg = FeaturedGraph(adj)
 
     @testset "EEquivGraphConv" begin
-        @testset "layer without static graph" begin
-            int_dim = 5
-            m_len = in_channel * 2 + 2
+        int_dim = 5
+        m_len = in_channel * 2 + 2
 
+        @testset "layer defined by dims" begin
+            egnn = EEquivGraphConv(in_channel, int_dim, out_channel)
+
+            nf = rand(T, in_channel + 3, N)
+            fg = FeaturedGraph(adj, nf=nf)
+            fg_ = egnn(fg)
+            nf_ = node_feature(fg_)
+
+            @test size(nf_)[1] == out_channel + 3
+
+        end
+
+        @testset "layer defined by NN functions" begin
             nn_edge = Flux.Dense(m_len, int_dim)
             nn_x = Flux.Dense(int_dim, 1)
             nn_h = Flux.Dense(in_channel + int_dim, out_channel)
@@ -25,6 +37,9 @@
             nf = rand(T, in_channel + 3, N)
             fg = FeaturedGraph(adj, nf=nf)
             fg_ = egnn(fg)
+            nf_ = node_feature(fg_)
+
+            @test size(nf_)[1] == out_channel + 3
         end
     end
 end

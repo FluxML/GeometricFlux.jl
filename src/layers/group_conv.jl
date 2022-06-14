@@ -1,6 +1,51 @@
 """
-    EEquivGraphConv((in_dim, int_dim, out_dim); init)
+    EEquivGraphConv(in_dim, int_dim, out_dim; init=glorot_uniform)
+    EEquivGraphConv(in_dim, nn_edge, nn_x, nn_h)
+
+E(n)-equivariant graph neural network layer as defined in the paper "[E(n) Equivariant Neural Networks](https://arxiv.org/abs/2102.09844)" by Satorras, Hoogeboom, and Welling (2021).
+
+# Arguments
+
+Either one of two sets of arguments:
+
+Set 1:
+
+- `in_dim`: node feature dimension. Data is assumed to be of the form [feature; coordinate], so `in_dim` must strictly be less than the dimension of the input vectors.
+- `int_dim`: intermediate dimension, can be arbitrary.
+- `out_dim`: the output of the layer will have dimension `out_dim` + (dimension of input vector - `in_dim`).
+- `init`: neural network initialization function, should be compatible with `Flux.Dense`.
+
+Set 2:
+
+- `in_dim`: as in Set 1.
+- `nn_edge`: a differentiable function that must take vectors of dimension `in_dim * 2 + 2` (output designated `int_dim`)
+- `nn_x`: a differentiable function that must take vectors of dimension `int_dim` to dimension `1`.
+- `nn_h`: a differentiable function that must take vectors of dimension `in_dim + int_dim` to `out_dim`.
+
+```jldoctest
+julia> in_dim, int_dim, out_dim = 3,6,5
+(3, 5, 5)
+
+julia> egnn = EEquivGraphConv(in_dim, int_dim, out_dim)
+EEquivGraphConv{Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}}(Dense(8 => 5), Dense(5 => 1), Dense(8 => 5), 3, 5, 5)
+
+julia> m_len = 2*in_dim + 2
+8
+
+julia> nn_edge = Flux.Dense(m_len, int_dim)
+Dense(8 => 5)       # 45 parameters
+
+julia> nn_x = Flux.Dense(int_dim, 1)
+Dense(5 => 1)       # 6 parameters
+
+julia> nn_h = Flux.Dense(in_dim + int_dim, out_dim)
+Dense(8 => 5)       # 45 parameters
+
+julia> egnn = EEquivGraphConv(in_dim, nn_edge, nn_x, nn_h)
+EEquivGraphConv{Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}}(Dense(8 => 5), Dense(5 => 1), Dense(8 => 5), 3, 5, 5)
+```
 """
+
 struct EEquivGraphConv{E,X,H} <: MessagePassing
    nn_edge::E
    nn_x::X
