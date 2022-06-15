@@ -31,6 +31,11 @@ export
     # layers/msgpass
     MessagePassing,
 
+    # layers/positional
+    AbstractPE,
+    positional_encode,
+    EEquivGraphPE,
+
     # layers/graph_conv
     GCNConv,
     ChebConv,
@@ -75,6 +80,7 @@ include("layers/graphlayers.jl")
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
+include("layers/positional.jl")
 include("layers/graph_conv.jl")
 include("layers/group_conv.jl")
 include("layers/pool.jl")

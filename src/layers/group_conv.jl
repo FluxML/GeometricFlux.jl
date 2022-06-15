@@ -6,21 +6,15 @@ E(n)-equivariant graph neural network layer as defined in the paper "[E(n) Equiv
 
 # Arguments
 
-Either one of two sets of arguments:
-
-Set 1:
-
 - `in_dim`: node feature dimension. Data is assumed to be of the form [feature; coordinate], so `in_dim` must strictly be less than the dimension of the input vectors.
 - `int_dim`: intermediate dimension, can be arbitrary.
 - `out_dim`: the output of the layer will have dimension `out_dim` + (dimension of input vector - `in_dim`).
 - `init`: neural network initialization function, should be compatible with `Flux.Dense`.
-
-Set 2:
-
-- `in_dim`: as in Set 1.
 - `nn_edge`: a differentiable function that must take vectors of dimension `in_dim * 2 + 2` (output designated `int_dim`)
 - `nn_x`: a differentiable function that must take vectors of dimension `int_dim` to dimension `1`.
 - `nn_h`: a differentiable function that must take vectors of dimension `in_dim + int_dim` to `out_dim`.
+
+# Examples
 
 ```jldoctest
 julia> in_dim, int_dim, out_dim = 3,6,5
@@ -56,6 +50,8 @@ struct EEquivGraphConv{E,X,H} <: MessagePassing
 end
 
 @functor EEquivGraphConv
+
+Flux.trainable(l::EEquivGraphConv) = (l.nn_edge, l.nn_x, l.nn_h)
 
 function EEquivGraphConv(in_dim::Int, int_dim::Int, out_dim::Int; init=glorot_uniform)
     m_len = 2in_dim + 2
@@ -120,9 +116,19 @@ function update(e::EEquivGraphConv, m, h)
     return z
 end
 
+# For variable graph
 function(egnn::EEquivGraphConv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     _, V, _ = propagate(egnn, graph(fg), nothing, X, nothing, +, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
+end
+
+function Base.show(io::IO, l::EEquivGraphConv)
+    in_channel = size(l.weight1, ndims(l.weight1))
+    out_channel = size(l.weight1, ndims(l.weight1)-1)
+    print(io, "GraphConv(", in_channel, " => ", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ", aggr=", l.aggr)
+    print(io, ")")
 end

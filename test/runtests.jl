@@ -22,6 +22,7 @@ cuda_tests = [
 tests = [
     "layers/gn",
     "layers/msgpass",
+    "layers/positional",
     "layers/graph_conv",
     "layers/group_conv",
     "layers/pool",
