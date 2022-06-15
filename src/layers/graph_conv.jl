@@ -723,6 +723,7 @@ end
 
 function message(c::CGConv, x_i::AbstractArray, x_j::AbstractArray, e::AbstractArray)
     z = vcat(x_i, x_j, e)
+
     return σ.(_matmul(c.Wf, z) .+ c.bf) .* softplus.(_matmul(c.Ws, z) .+ c.bs)
 end
 

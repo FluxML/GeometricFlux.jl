@@ -31,7 +31,7 @@ export
     # layers/msgpass
     MessagePassing,
 
-    # layers/conv
+    # layers/graph_conv
     GCNConv,
     ChebConv,
     GraphConv,
@@ -44,6 +44,9 @@ export
     SAGEConv,
     MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
     LSTMAggregator,
+
+    # layers/group_conv
+    EEquivGraphConv,
 
     # layer/pool
     GlobalPool,
@@ -72,7 +75,8 @@ include("layers/graphlayers.jl")
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
-include("layers/conv.jl")
+include("layers/graph_conv.jl")
+include("layers/group_conv.jl")
 include("layers/pool.jl")
 include("models.jl")
 
