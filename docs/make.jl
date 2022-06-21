@@ -42,8 +42,10 @@ makedocs(
              "Dynamic Graph Update" => "dynamicgraph.md",
              "Manual" => [
                "FeaturedGraph" => "manual/featuredgraph.md",
-               "Graph Convolutional Layers" => "manual/conv.md",
+               "Graph Convolutional Layers" => "manual/graph_conv.md",
                "Graph Pooling Layers" => "manual/pool.md",
+               "Group Convolutional Layers" => "manual/group_conv.md",
+               "Positional Encoding Layers" => "manual/positional.md",
                "Embeddings" => "manual/embedding.md",
                "Models" => "manual/models.md",
                "Linear Algebra" => "manual/linalg.md",

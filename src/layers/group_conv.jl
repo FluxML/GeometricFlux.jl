@@ -9,34 +9,20 @@ E(n)-equivariant graph neural network layer.
 - `out_dim`: the output of the layer will have dimension `out_dim` + (dimension of input vector - `in_dim`).
 - `pos_dim::Int`: dimension of positional encoding.
 - `edge_dim::Int`: dimension of edge feature.
-- `init`: neural network initialization function, should be compatible with `Flux.Dense`.
+- `init`: neural network initialization function.
 
 # Examples
 
 ```jldoctest
-julia> in_dim, int_dim, out_dim = 3,6,5
-(3, 5, 5)
+julia> in_dim, out_dim, pos_dim = 3, 5, 2
+(3, 5, 2)
 
-julia> egnn = EEquivGraphConv(in_dim, int_dim, out_dim)
-EEquivGraphConv{Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}}(Dense(8 => 5), Dense(5 => 1), Dense(8 => 5), 3, 5, 5)
-
-julia> m_len = 2*in_dim + 2
-8
-
-julia> nn_edge = Flux.Dense(m_len, int_dim)
-Dense(8 => 5)       # 45 parameters
-
-julia> nn_x = Flux.Dense(int_dim, 1)
-Dense(5 => 1)       # 6 parameters
-
-julia> nn_h = Flux.Dense(in_dim + int_dim, out_dim)
-Dense(8 => 5)       # 45 parameters
-
-julia> egnn = EEquivGraphConv(in_dim, nn_edge, nn_x, nn_h)
-EEquivGraphConv{Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}, Dense{typeof(identity), Matrix{Float32}, Vector{Float32}}}(Dense(8 => 5), Dense(5 => 1), Dense(8 => 5), 3, 5, 5)
+julia> egnn = EEquivGraphConv(in_dim=>out_dim, pos_dim, in_dim)
+EEquivGraphConv(ϕ_edge=Dense(10 => 5), ϕ_x=Dense(5 => 2), ϕ_h=Dense(8 => 5))
 ```
-"""
 
+See also [`WithGraph`](@ref) for training layer with static graph and [`EEquivGraphPE`](@ref) for positional encoding.
+"""
 struct EEquivGraphConv{X,E,H}
     pe::X
     nn_edge::E

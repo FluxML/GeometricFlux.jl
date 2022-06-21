@@ -9,6 +9,8 @@ GraphSignals.edge_feature
 GraphSignals.has_edge_feature
 GraphSignals.global_feature
 GraphSignals.has_global_feature
+GraphSignals.positional_feature
+GraphSignals.has_positional_feature
 GraphSignals.subgraph
 GraphSignals.ConcreteFeaturedGraph
 ```
