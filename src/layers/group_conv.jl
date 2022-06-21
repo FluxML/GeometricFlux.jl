@@ -23,7 +23,7 @@ EEquivGraphConv(ϕ_edge=Dense(10 => 5), ϕ_x=Dense(5 => 2), ϕ_h=Dense(8 => 5))
 
 See also [`WithGraph`](@ref) for training layer with static graph and [`EEquivGraphPE`](@ref) for positional encoding.
 """
-struct EEquivGraphConv{X,E,H}
+struct EEquivGraphConv{X,E,H} <: AbstractGraphLayer
     pe::X
     nn_edge::E
     nn_h::H
@@ -61,6 +61,15 @@ function(egnn::EEquivGraphConv)(fg::AbstractFeaturedGraph)
     return ConcreteFeaturedGraph(fg, nf=V, pf=X)
 end
 
+# For static graph
+function(l::EEquivGraphConv)(el::NamedTuple, H::AbstractArray, E::AbstractArray, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, H)
+    GraphSignals.check_num_nodes(el.N, X)
+    GraphSignals.check_num_edges(el.E, E)
+    _, V, X = propagate(l, el, E, H, X, +)
+    return V, X
+end
+
 function Base.show(io::IO, l::EEquivGraphConv)
     print(io, "EEquivGraphConv(ϕ_edge=", l.nn_edge)
     print(io, ", ϕ_x=", l.pe.nn)
@@ -96,3 +105,6 @@ function propagate(l::EEquivGraphConv, el::NamedTuple, E, V, X, aggr)
     V = update(l, Ē, V)
     return E, V, X
 end
+
+WithGraph(fg::AbstractFeaturedGraph, l::EEquivGraphConv) = WithGraph(to_namedtuple(fg), l)
+(wg::WithGraph{<:EEquivGraphConv})(args...) = wg.layer(wg.graph, args...)

@@ -32,5 +32,18 @@
             g = Zygote.gradient(() -> sum(node_feature(egnn(fg))), Flux.params(egnn))
             @test length(g.grads) == 8
         end
+
+        @testset "layer with static graph" begin
+            nf = rand(T, in_channel, N, batch_size)
+            ef = rand(T, in_channel_edge, E, batch_size)
+            pf = rand(T, pos_dim, N, batch_size)
+            l = WithGraph(fg, EEquivGraphConv(in_channel=>out_channel, pos_dim, in_channel_edge))
+            H, Y = l(nf, ef, pf)
+            @test size(H) == (out_channel, N, batch_size)
+            @test size(Y) == (pos_dim, N, batch_size)
+
+            g = Zygote.gradient(() -> sum(l(nf, ef, pf)[1]), Flux.params(l))
+            @test length(g.grads) == 6
+        end
     end
 end
