@@ -3,6 +3,8 @@
     batch_size = 10
     in_channel = 3
     out_channel = 5
+    pos_dim = 2
+    in_channel_edge = 7
 
     N = 4
     E = 4
@@ -13,33 +15,35 @@
     fg = FeaturedGraph(adj)
 
     @testset "EEquivGraphConv" begin
-        int_dim = 5
-        m_len = in_channel * 2 + 2
+        @testset "layer without graph" begin
+            egnn = EEquivGraphConv(in_channel=>out_channel, pos_dim, in_channel_edge)
 
-        @testset "layer defined by dims" begin
-            egnn = EEquivGraphConv(in_channel, int_dim, out_channel)
-
-            nf = rand(T, in_channel + 3, N)
-            fg = FeaturedGraph(adj, nf=nf)
+            nf = rand(T, in_channel, N)
+            ef = rand(T, in_channel_edge, E)
+            pf = rand(T, pos_dim, N)
+            fg = FeaturedGraph(adj, nf=nf, ef=ef, pf=pf)
             fg_ = egnn(fg)
             nf_ = node_feature(fg_)
+            pf_ = positional_feature(fg_)
 
-            @test size(nf_)[1] == out_channel + 3
+            @test size(nf_) == (out_channel, N)
+            @test size(pf_) == (pos_dim, N)
 
+            g = Zygote.gradient(() -> sum(node_feature(egnn(fg))), Flux.params(egnn))
+            @test length(g.grads) == 8
         end
 
-        @testset "layer defined by NN functions" begin
-            nn_edge = Flux.Dense(m_len, int_dim)
-            nn_x = Flux.Dense(int_dim, 1)
-            nn_h = Flux.Dense(in_channel + int_dim, out_channel)
-            egnn = EEquivGraphConv(in_channel, nn_edge, nn_x, nn_h)
+        @testset "layer with static graph" begin
+            nf = rand(T, in_channel, N, batch_size)
+            ef = rand(T, in_channel_edge, E, batch_size)
+            pf = rand(T, pos_dim, N, batch_size)
+            l = WithGraph(fg, EEquivGraphConv(in_channel=>out_channel, pos_dim, in_channel_edge))
+            H, Y = l(nf, ef, pf)
+            @test size(H) == (out_channel, N, batch_size)
+            @test size(Y) == (pos_dim, N, batch_size)
 
-            nf = rand(T, in_channel + 3, N)
-            fg = FeaturedGraph(adj, nf=nf)
-            fg_ = egnn(fg)
-            nf_ = node_feature(fg_)
-
-            @test size(nf_)[1] == out_channel + 3
+            g = Zygote.gradient(() -> sum(l(nf, ef, pf)[1]), Flux.params(l))
+            @test length(g.grads) == 6
         end
     end
 end
