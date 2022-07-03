@@ -52,9 +52,10 @@ Chain(
           # plus 2 non-trainable, 32 parameters, summarysize 1.006 MiB.
 ```
 """
-struct WithGraph{L<:AbstractGraphLayer,G}
+struct WithGraph{L<:AbstractGraphLayer,G,P}
     graph::G
     layer::L
+    position::P
 end
 
 @functor WithGraph
@@ -71,13 +72,15 @@ function Optimisers.destructure(m::WithGraph)
 end
 
 function Base.show(io::IO, l::WithGraph)
-    print(io, "WithGraph(Graph(#V=", nv(l.graph))
-    print(io, ", #E=", ne(l.graph), "), ")
-    print(io, l.layer, ")")
+    print(io, "WithGraph(Graph(#V=", nv(l.graph), ", #E=", ne(l.graph), "), ")
+    print(io, l.layer)
+    has_positional_feature(l.position) &&
+        print(io, ", domain_dim=", GraphSignals.pf_dims_repr(l.position))
+    print(io, ")")
 end
 
 WithGraph(fg::AbstractFeaturedGraph, model::Chain; kwargs...) =
-    Chain(map(l -> WithGraph(fg, l; kwargs...), model.layers)...)
+    Chain([WithGraph(fg, l; kwargs...) for l in model.layers]...)
 WithGraph(::AbstractFeaturedGraph, layer::WithGraph; kwargs...) = layer
 WithGraph(::AbstractFeaturedGraph, layer; kwargs...) = layer
 

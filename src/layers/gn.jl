@@ -56,5 +56,11 @@ function propagate(gn::GraphNet, el::NamedTuple, E, V, u, naggr, eaggr, vaggr)
     return E, V, u
 end
 
-WithGraph(fg::AbstractFeaturedGraph, gn::GraphNet) = WithGraph(GraphSignals.to_namedtuple(fg), gn)
-WithGraph(gn::GraphNet; dynamic=nothing) = WithGraph(DynamicGraph(dynamic), gn)
+WithGraph(fg::AbstractFeaturedGraph, gn::GraphNet) =
+    WithGraph(GraphSignals.to_namedtuple(fg), gn, positional_feature(fg))
+
+WithGraph(gn::GraphNet; dynamic=nothing) =
+    WithGraph(DynamicGraph(dynamic), gn, GraphSignals.NullDomain())
+
+WithGraph(fg::AbstractFeaturedGraph, gn::GraphNet, pos::GraphSignals.AbstractGraphDomain) =
+    WithGraph(GraphSignals.to_namedtuple(fg), gn, pos)
