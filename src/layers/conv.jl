@@ -45,7 +45,7 @@ end
 # For variable graph
 function (l::GCNConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
-    Ã = Zygote.ignore() do
+    Ã = ChainRulesCore.ignore_derivatives() do
         GraphSignals.normalized_adjacency_matrix(fg, eltype(nf); selfloop=true)
     end
     return ConcreteFeaturedGraph(fg, nf = l(Ã, nf))
@@ -127,7 +127,7 @@ function (l::ChebConv)(fg::AbstractFeaturedGraph)
     GraphSignals.check_num_nodes(fg, nf)
     @assert size(nf, 1) == size(l.weight, 2) "Input feature size must match input channel size."
     
-    L̃ = Zygote.ignore() do
+    L̃ = ChainRulesCore.ignore_derivatives() do
         GraphSignals.scaled_laplacian(fg, eltype(nf))
     end
     return ConcreteFeaturedGraph(fg, nf = l(L̃, nf))
@@ -331,7 +331,7 @@ function (l::GATConv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
-    @assert Zygote.ignore(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    @assert ChainRulesCore.ignore_derivatives(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
     el = to_namedtuple(sg)
     _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
@@ -459,7 +459,7 @@ function (l::GATv2Conv)(fg::AbstractFeaturedGraph)
     X = node_feature(fg)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
-    @assert Zygote.ignore(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
+    @assert ChainRulesCore.ignore_derivatives(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
     el = to_namedtuple(sg)
     _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
@@ -546,7 +546,7 @@ function (l::GatedGraphConv)(el::NamedTuple, H::AbstractArray{T}) where {T<:Real
     m, n = size(H)[1:2]
     @assert (m <= l.out_ch) "number of input features must less or equals to output features."
     if m < l.out_ch
-        Hpad = Zygote.ignore() do
+        Hpad = ChainRulesCore.ignore_derivatives() do
             fill!(similar(H, T, l.out_ch - m, n, size(H)[3:end]...), 0)
         end
         H = vcat(H, Hpad)

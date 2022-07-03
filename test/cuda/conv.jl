@@ -24,7 +24,7 @@
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            g = gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
             @test length(g.grads) == 4
         end
 
@@ -33,7 +33,7 @@
             Y = gc(X |> gpu)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(gc(X |> gpu)), Flux.params(gc))
+            g = gradient(() -> sum(gc(X |> gpu)), Flux.params(gc))
             @test length(g.grads) == 3
         end
     end
@@ -53,7 +53,7 @@
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
+            g = gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
             @test length(g.grads) == 4
         end
 
@@ -62,7 +62,7 @@
             Y = cc(X |> gpu)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(cc(X |> gpu)), Flux.params(cc))
+            g = gradient(() -> sum(cc(X |> gpu)), Flux.params(cc))
             @test length(g.grads) == 3
         end
     end
@@ -79,7 +79,7 @@
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            g = gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
             @test length(g.grads) == 5
         end
 
@@ -89,7 +89,7 @@
             Y = gc(X |> gpu)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(gc(X |> gpu)), Flux.params(gc))
+            g = gradient(() -> sum(gc(X |> gpu)), Flux.params(gc))
             @test length(g.grads) == 4
         end
     end
@@ -112,7 +112,7 @@
             fg_ = gat(fg)
             @test size(node_feature(fg_)) == (out_channel * heads, N)
     
-            g = Zygote.gradient(() -> sum(node_feature(gat(fg))), Flux.params(gat))
+            g = gradient(() -> sum(node_feature(gat(fg))), Flux.params(gat))
             @test length(g.grads) == 5
         end
 
@@ -122,7 +122,7 @@
             Y = gat(X |> gpu)
             @test size(Y) == (out_channel * heads, N, batch_size)
     
-            g = Zygote.gradient(() -> sum(gat(X |> gpu)), Flux.params(gat))
+            g = gradient(() -> sum(gat(X |> gpu)), Flux.params(gat))
             @test length(g.grads) == 4
         end
     end
@@ -138,7 +138,7 @@
             fg_ = ggc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
+            g = gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
             @test length(g.grads) == 8
         end
 
@@ -148,7 +148,7 @@
             @test_broken Y = ggc(X |> gpu)
             @test_broken size(Y) == (out_channel, N, batch_size)
 
-            @test_broken g = Zygote.gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
+            @test_broken g = gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
             @test_broken length(g.grads) == 6
         end
     end
@@ -162,7 +162,7 @@
             fg_ = ec(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
+            g = gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
             @test length(g.grads) == 4
         end
 
@@ -172,7 +172,7 @@
             Y = ec(X |> gpu)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(ec(X |> gpu)), Flux.params(ec))
+            g = gradient(() -> sum(ec(X |> gpu)), Flux.params(ec))
             @test length(g.grads) == 3
         end
     end
