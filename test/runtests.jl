@@ -11,7 +11,6 @@ using LinearAlgebra
 using NNlib, NNlibCUDA
 using SparseArrays: SparseMatrixCSC
 using Statistics: mean
-using Zygote
 using Test
 
 cuda_tests = [
