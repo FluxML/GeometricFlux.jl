@@ -25,7 +25,6 @@ tests = [
     "layers/pool",
     "layers/graphlayers",
     "sampling",
-    "embedding/node2vec",
     "models",
 ]
 
@@ -33,6 +32,10 @@ if CUDA.functional()
     append!(tests, cuda_tests)
 else
     @warn "CUDA unavailable, not testing GPU support"
+end
+
+if !Sys.iswindows()
+    push!(tests, "embedding/node2vec")
 end
 
 @testset "GeometricFlux" begin
