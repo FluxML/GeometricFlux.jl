@@ -117,8 +117,8 @@ function train(; kws...)
     ρ = Dense(args.hidden_dims[3], args.target_dim)
     model = DeepSet(ϕ, ρ) |> device
 
-    # ADAM optimizer
-    opt = ADAM(args.η)
+    # Adam optimizer
+    opt = Adam(args.η)
     
     # parameters
     ps = Flux.params(model)

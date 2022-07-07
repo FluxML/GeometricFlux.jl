@@ -83,8 +83,8 @@ function train(; kws...)
         WithGraph(fg, GATConv(args.hidden_dim*args.heads=>args.target_dim, heads=args.heads, concat=false)),
     ) |> device
 
-    # ADAM optimizer
-    opt = ADAM(args.η)
+    # Adam optimizer
+    opt = Adam(args.η)
     
     # parameters
     ps = Flux.params(model)

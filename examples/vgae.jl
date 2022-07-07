@@ -94,8 +94,8 @@ function train(; kws...)
     
     model = VGAE(encoder, decoder) |> device
 
-    # ADAM optimizer
-    opt = ADAM(args.η)
+    # Adam optimizer
+    opt = Adam(args.η)
     
     # parameters
     ps = Flux.params(model)

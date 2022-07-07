@@ -74,8 +74,8 @@ function train(; kws...)
 
     model = GAE(encoder, σ) |> device
 
-    # ADAM optimizer
-    opt = ADAM(args.η)
+    # Adam optimizer
+    opt = Adam(args.η)
     
     # parameters
     ps = Flux.params(model)
