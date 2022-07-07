@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.4]
+
+- replace `ADAM` as `Adam`
+
 ## [0.12.3]
 
 - update doc for graph network
