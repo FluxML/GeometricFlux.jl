@@ -68,7 +68,7 @@ update_vertex(mp::MessagePassing, ē, vi, u) = GeometricFlux.update(mp, ē, vi
 # For dynamic graph
 function (wg::WithGraph{<:MessagePassing,<:DynamicGraph})(args...)
     fg = wg.graph.method(args[1])
-    return wg.layer(to_namedtuple(fg), args...)
+    return wg.layer(GraphSignals.to_namedtuple(fg), args...)
 end
 
 function Base.show(io::IO, l::WithGraph{<:MessagePassing})
