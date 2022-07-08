@@ -90,7 +90,7 @@ aggregate_neighbors(::EEquivGraphConv, el::NamedTuple, aggr, E::AbstractMatrix) 
 @inline aggregate_neighbors(::EEquivGraphConv, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing
 
 function propagate(l::EEquivGraphConv, sg::SparseGraph, E, V, X, aggr)
-    el = to_namedtuple(sg)
+    el = GraphSignals.to_namedtuple(sg)
     return propagate(l, el, E, V, X, aggr)
 end
 
@@ -106,5 +106,5 @@ function propagate(l::EEquivGraphConv, el::NamedTuple, E, V, X, aggr)
     return E, V, X
 end
 
-WithGraph(fg::AbstractFeaturedGraph, l::EEquivGraphConv) = WithGraph(to_namedtuple(fg), l)
+WithGraph(fg::AbstractFeaturedGraph, l::EEquivGraphConv) = WithGraph(GraphSignals.to_namedtuple(fg), l)
 (wg::WithGraph{<:EEquivGraphConv})(args...) = wg.layer(wg.graph, args...)

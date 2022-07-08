@@ -210,7 +210,7 @@ function (l::DeepSet)(el::NamedTuple, X::AbstractArray, u=nothing)
     return u
 end
 
-WithGraph(fg::AbstractFeaturedGraph, l::DeepSet) = WithGraph(to_namedtuple(fg), l)
+WithGraph(fg::AbstractFeaturedGraph, l::DeepSet) = WithGraph(GraphSignals.to_namedtuple(fg), l)
 (wg::WithGraph{<:DeepSet})(args...) = wg.layer(wg.graph, args...)
 
 function Base.show(io::IO, l::DeepSet)
