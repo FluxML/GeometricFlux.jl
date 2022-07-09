@@ -12,7 +12,6 @@
             1. 0. 1. 0.;
             0. 1. 0. 1.;
             1. 0. 1. 0.]
-    fg = FeaturedGraph(adj)
 
     @testset "EEquivGraphConv" begin
         @testset "layer without graph" begin
@@ -36,13 +35,13 @@
         @testset "layer with static graph" begin
             nf = rand(T, in_channel, N, batch_size)
             ef = rand(T, in_channel_edge, E, batch_size)
-            pf = rand(T, pos_dim, N, batch_size)
+            fg = FeaturedGraph(adj, pf = rand(T, pos_dim, N, batch_size))
             l = WithGraph(fg, EEquivGraphConv(in_channel=>out_channel, pos_dim, in_channel_edge))
-            H, Y = l(nf, ef, pf)
+            H, Y = l(nf, ef)
             @test size(H) == (out_channel, N, batch_size)
             @test size(Y) == (pos_dim, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(l(nf, ef, pf)[1]), Flux.params(l))
+            g = Zygote.gradient(() -> sum(l(nf, ef)[1]), Flux.params(l))
             @test length(g.grads) == 6
         end
     end

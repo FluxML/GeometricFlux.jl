@@ -53,7 +53,9 @@ end
 
 # For static graph
 WithGraph(fg::AbstractFeaturedGraph, l::GCNConv) =
-    WithGraph(GraphSignals.normalized_adjacency_matrix(fg, eltype(l.weight); selfloop=true), l)
+    WithGraph(GraphSignals.normalized_adjacency_matrix(fg, eltype(l.weight); selfloop=true),
+              l,
+              GraphSignals.NullDomain())
 
 function (wg::WithGraph{<:GCNConv})(X::AbstractArray)
     Ã = wg.graph
@@ -135,7 +137,9 @@ end
 
 # For static graph
 WithGraph(fg::AbstractFeaturedGraph, l::ChebConv) =
-    WithGraph(GraphSignals.scaled_laplacian(fg, eltype(l.weight)), l)
+    WithGraph(GraphSignals.scaled_laplacian(fg, eltype(l.weight)),
+              l,
+              GraphSignals.NullDomain())
 
 function (wg::WithGraph{<:ChebConv})(X::AbstractArray)
     L̃ = wg.graph

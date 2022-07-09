@@ -62,7 +62,7 @@ function(egnn::EEquivGraphConv)(fg::AbstractFeaturedGraph)
 end
 
 # For static graph
-function(l::EEquivGraphConv)(el::NamedTuple, H::AbstractArray, E::AbstractArray, X::AbstractArray)
+function(l::EEquivGraphConv)(el::NamedTuple, X::AbstractArray, H::AbstractArray, E::AbstractArray)
     GraphSignals.check_num_nodes(el.N, H)
     GraphSignals.check_num_nodes(el.N, X)
     GraphSignals.check_num_edges(el.E, E)
@@ -106,5 +106,11 @@ function propagate(l::EEquivGraphConv, el::NamedTuple, E, V, X, aggr)
     return E, V, X
 end
 
-WithGraph(fg::AbstractFeaturedGraph, l::EEquivGraphConv) = WithGraph(GraphSignals.to_namedtuple(fg), l)
-(wg::WithGraph{<:EEquivGraphConv})(args...) = wg.layer(wg.graph, args...)
+WithGraph(fg::AbstractFeaturedGraph, l::EEquivGraphConv) =
+    WithGraph(GraphSignals.to_namedtuple(fg), l, positional_feature(fg))
+
+WithGraph(fg::AbstractFeaturedGraph,
+          l::EEquivGraphConv,
+          pos::GraphSignals.AbstractGraphDomain) =
+    WithGraph(GraphSignals.to_namedtuple(fg), l, pos)
+(wg::WithGraph{<:EEquivGraphConv})(args...) = wg.layer(wg.graph, wg.position, args...)
