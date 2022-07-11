@@ -134,7 +134,7 @@ function summarize(ve::VariationalGraphEncoder, X::AbstractArray)
 end
 
 function sample(μ::AbstractArray{T}, logσ::AbstractArray{T}) where {T<:Real}
-    R = Zygote.ignore(() -> randn!(similar(logσ)))
+    R = ChainRulesCore.ignore_derivatives(() -> randn!(similar(logσ)))
     return μ + exp.(logσ) .* R
 end
 

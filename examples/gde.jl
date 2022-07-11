@@ -85,8 +85,8 @@ function train(; kws...)
         WithGraph(fg, GCNConv(args.hidden_dim=>args.target_dim)),
     ) |> device
 
-    # ADAM optimizer
-    opt = ADAM(args.η)
+    # Adam optimizer
+    opt = Adam(args.η)
     
     # parameters
     ps = Flux.params(model, node.p)

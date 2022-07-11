@@ -32,7 +32,7 @@
             fgt_ = gc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            g = gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
             @test length(g.grads) == 4
         end
 
@@ -45,7 +45,7 @@
             Y = gc(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            g = gradient(() -> sum(gc(X)), Flux.params(gc))
             @test length(g.grads) == 3
         end
 
@@ -85,7 +85,7 @@
             fgt_ = cc(fgt)
             @test size(node_feature(fgt_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
+            g = gradient(() -> sum(node_feature(cc(fg))), Flux.params(cc))
             @test length(g.grads) == 4
         end
 
@@ -98,7 +98,7 @@
             Y = cc(Xt)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(cc(X)), Flux.params(cc))
+            g = gradient(() -> sum(cc(X)), Flux.params(cc))
             @test length(g.grads) == 2
         end
 
@@ -121,7 +121,7 @@
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError gc(X)
 
-            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            g = gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
             @test length(g.grads) == 5
         end
 
@@ -131,7 +131,7 @@
             Y = gc(X)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            g = gradient(() -> sum(gc(X)), Flux.params(gc))
             @test length(g.grads) == 3
         end
 
@@ -168,7 +168,7 @@
                 @test size(node_feature(fg_)) == (concat ? (out_channel * heads, N) : (out_channel, N))
                 @test_throws MethodError gat(X)
 
-                g = Zygote.gradient(() -> sum(node_feature(gat(fg_gat))), Flux.params(gat))
+                g = gradient(() -> sum(node_feature(gat(fg_gat))), Flux.params(gat))
                 @test length(g.grads) == 5
             end
         end
@@ -181,7 +181,7 @@
                 Y = gat(X)
                 @test size(Y) == (concat ? (out_channel * heads, N, batch_size) : (out_channel, N, batch_size))
 
-                g = Zygote.gradient(() -> sum(gat(X)), Flux.params(gat))
+                g = gradient(() -> sum(gat(X)), Flux.params(gat))
                 @test length(g.grads) == 3
             end
         end
@@ -221,7 +221,7 @@
                 @test size(node_feature(fg_)) == (concat ? (out_channel * heads, N) : (out_channel, N))
                 @test_throws MethodError gat2(X)
 
-                g = Zygote.gradient(() -> sum(node_feature(gat2(fg_gat))), Flux.params(gat2))
+                g = gradient(() -> sum(node_feature(gat2(fg_gat))), Flux.params(gat2))
                 @test length(g.grads) == 7
             end
         end
@@ -234,7 +234,7 @@
                 Y = gat2(X)
                 @test size(Y) == (concat ? (out_channel * heads, N, batch_size) : (out_channel, N, batch_size))
 
-                g = Zygote.gradient(() -> sum(gat2(X)), Flux.params(gat2))
+                g = gradient(() -> sum(gat2(X)), Flux.params(gat2))
                 @test length(g.grads) == 5
             end
         end
@@ -258,7 +258,7 @@
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError ggc(X)
 
-            g = Zygote.gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
+            g = gradient(() -> sum(node_feature(ggc(fg))), Flux.params(ggc))
             @test length(g.grads) == 8
         end
 
@@ -268,7 +268,7 @@
             @test_broken Y = ggc(X)
             @test_broken size(Y) == (out_channel, N, batch_size)
 
-            @test_broken g = Zygote.gradient(() -> sum(ggc(X)), Flux.params(ggc))
+            @test_broken g = gradient(() -> sum(ggc(X)), Flux.params(ggc))
             @test_broken length(g.grads) == 6
         end
     end
@@ -283,7 +283,7 @@
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError ec(X)
 
-            g = Zygote.gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
+            g = gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
             @test length(g.grads) == 4
         end
         
@@ -293,7 +293,7 @@
             Y = ec(X)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            g = gradient(() -> sum(ec(X)), Flux.params(ec))
             @test length(g.grads) == 2
         end
 
@@ -303,7 +303,7 @@
             Y = ec(X)
             @test size(Y) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            g = gradient(() -> sum(ec(X)), Flux.params(ec))
             @test length(g.grads) == 2
         end
 
@@ -313,7 +313,7 @@
             Y = ec(X)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(ec(X)), Flux.params(ec))
+            g = gradient(() -> sum(ec(X)), Flux.params(ec))
             @test length(g.grads) == 2
         end
     end
@@ -333,7 +333,7 @@
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError gc(X)
 
-            g = Zygote.gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
+            g = gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
             @test length(g.grads) == 5
         end
 
@@ -343,7 +343,7 @@
             Y = gc(X)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(gc(X)), Flux.params(gc))
+            g = gradient(() -> sum(gc(X)), Flux.params(gc))
             @test length(g.grads) == 2
         end
     end
@@ -362,7 +362,7 @@
             fg_ = cgc(fg)
             @test_throws MethodError cgc(nf)
 
-            g = Zygote.gradient(() -> sum(node_feature(cgc(fg))), Flux.params(cgc))
+            g = gradient(() -> sum(node_feature(cgc(fg))), Flux.params(cgc))
             @test length(g.grads) == 6
         end
 
@@ -373,7 +373,7 @@
             Y = cgc(nf, ef)
             @test size(Y) == (in_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(cgc(nf, ef)), Flux.params(cgc))
+            g = gradient(() -> sum(cgc(nf, ef)), Flux.params(cgc))
             @test length(g.grads) == 4
         end
     end
@@ -391,7 +391,7 @@
                 @test size(node_feature(fg_)) == (out_channel, N)
                 @test_throws MethodError l(X)
 
-                g = Zygote.gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
+                g = gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
                 if l.proj == identity
                     if conv == LSTMAggregator
                         @test length(g.grads) == 10
@@ -414,7 +414,7 @@
                     Y = l(X)
                     @test size(Y) == (out_channel, N, batch_size)
 
-                    g = Zygote.gradient(() -> sum(l(X)), Flux.params(l))
+                    g = gradient(() -> sum(l(X)), Flux.params(l))
                     if l.layer.proj == identity
                         @test length(g.grads) == 3
                     else

@@ -2,6 +2,18 @@
 
 Message passing scheme is a popular GNN scheme in many frameworks. It adapts the property of connectivity of neighbors and form a general approach for spatial graph convolutional neural network. It comprises two user-defined functions and one aggregate function. A message function is defined to process information from edge states and node states from neighbors and itself. Messages from each node are obtained and aggregated by aggregate function to provide node-level information for update function. Update function takes current node state and aggregated message and gives a new node state.
 
+```math
+\begin{aligned}
+    m_{ij}^{(l+1)} &= message(h_i^{(l)}, h_j^{(l)}, e_{ij}^{(l)}) \\
+    m_{i}^{(l+1)} &= \Box_{j \in \mathcal{N}(i)} m_{ij}^{(l+1)} \\
+    h_i^{(l+1)} &= update(h_i^{(l)}, m_{i}^{(l+1)})
+\end{aligned}
+```
+
+where ``h_i`` and ``h_j`` are node features from node ``i`` and its neighbor node ``j``, ``e_{ij}`` is edge feature for edge ``(i, j)``, and ``u`` is global feature for whole graph. ``m_{ij}^{(l+1)}`` denotes messages for ``(i, j)`` in ``l``-th layer. ``message`` and ``update`` are message functions and update function, respectively. Aggregate function ``\Box`` can be any supported aggregate functions, e.g. `max`, `sum` or `mean`.
+
+> Reference: [Gilmer2017](@cite)
+
 Message passing scheme is realized into a abstract type `MessagePassing`. Any subtype of `MessagePassing` is a message passing layer which utilize default message and update functions:
 
 ```
