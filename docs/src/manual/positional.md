@@ -1,6 +1,17 @@
-# Positional Encoding Layers
+# Positional Encoding
 
-## ``E(n)``-equivariant Positional Encoding Layer
+## Positional Encoding Methods
+
+```@docs
+AbstractPositionalEncoding
+RandomWalkPE
+LaplacianPE
+positional_encode
+```
+
+## Positional Encoding Layers
+
+### ``E(n)``-equivariant Positional Encoding Layer
 
 It employs message-passing scheme and can be defined by following functions:
 
@@ -17,3 +28,16 @@ EEquivGraphPE
 Reference: [Satorras2021](@cite)
 
 ---
+
+### Learnable Structural Positional Encoding layer
+
+(WIP)
+
+```@docs
+LSPE
+```
+
+Reference: [Dwivedi2021](@cite)
+
+---
+

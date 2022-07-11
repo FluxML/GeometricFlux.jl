@@ -32,9 +32,12 @@ export
     MessagePassing,
 
     # layers/positional
-    AbstractPE,
+    AbstractPositionalEncoding,
+    RandomWalkPE,
+    LaplacianPE,
     positional_encode,
     EEquivGraphPE,
+    LSPE,
 
     # layers/graph_conv
     GCNConv,

@@ -38,4 +38,17 @@
             @test length(g.grads) == 2
         end
     end
+    
+    @testset "LSPE" begin
+        K = 3
+        f_h = GraphConv(in_channel=>out_channel)
+        f_e = Dense(in_channel, out_channel)
+        f_p = Dense(in_channel, out_channel)
+        l = LSPE(fg, f_h, f_e, f_p, K)
+
+        # nf = rand(T, out_channel, N)
+        # fg = FeaturedGraph(adj, nf=nf)
+        # fg_ = l(fg)
+        # @test size(node_feature(fg_)) == (out_channel, N)
+    end
 end
