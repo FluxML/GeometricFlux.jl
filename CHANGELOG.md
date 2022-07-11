@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0]
+
+- implement `EEquivGraphConv` layer with nested design
+- support positional encoding from GraphSignals
+- add `LSPE`
+
 ## [0.12.4]
 
 - replace `ADAM` as `Adam`
