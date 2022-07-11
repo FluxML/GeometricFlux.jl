@@ -1,4 +1,4 @@
-@testset "layer" begin
+@testset "graph conv" begin
     T = Float32
     batch_size = 10
     in_channel = 3
@@ -26,7 +26,7 @@
             fg_ = gc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test_throws MethodError gc(X)
-            
+
             # Test with transposed features
             fgt = FeaturedGraph(adj, nf=Xt)
             fgt_ = gc(fgt)

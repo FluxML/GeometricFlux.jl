@@ -165,7 +165,7 @@ aggregate_vertices(::GraphNet, aggr, V) = aggregate(aggr, V)
 @inline aggregate_vertices(::GraphNet, ::Nothing, V) = nothing
 
 function propagate(gn::GraphNet, sg::SparseGraph, E, V, u, naggr, eaggr, vaggr)
-    el = to_namedtuple(sg)
+    el = GraphSignals.to_namedtuple(sg)
     return propagate(gn, el, E, V, u, naggr, eaggr, vaggr)
 end
 
@@ -179,14 +179,11 @@ function propagate(gn::GraphNet, el::NamedTuple, E, V, u, naggr, eaggr, vaggr)
     return E, V, u
 end
 
-WithGraph(fg::AbstractFeaturedGraph, gn::GraphNet) = WithGraph(to_namedtuple(fg), gn)
-WithGraph(gn::GraphNet; dynamic=nothing) = WithGraph(DynamicGraph(dynamic), gn)
+WithGraph(fg::AbstractFeaturedGraph, gn::GraphNet) =
+    WithGraph(GraphSignals.to_namedtuple(fg), gn, positional_feature(fg))
 
-to_namedtuple(fg::AbstractFeaturedGraph) = to_namedtuple(graph(fg))
+WithGraph(gn::GraphNet; dynamic=nothing) =
+    WithGraph(DynamicGraph(dynamic), gn, GraphSignals.NullDomain())
 
-function to_namedtuple(sg::SparseGraph)
-    es, nbrs, xs = collect(edges(sg))
-    return (N=nv(sg), E=ne(sg), es=es, nbrs=nbrs, xs=xs)
-end
-
-@non_differentiable to_namedtuple(x...)
+WithGraph(fg::AbstractFeaturedGraph, gn::GraphNet, pos::GraphSignals.AbstractGraphDomain) =
+    WithGraph(GraphSignals.to_namedtuple(fg), gn, pos)

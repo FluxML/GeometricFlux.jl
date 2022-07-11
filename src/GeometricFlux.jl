@@ -30,7 +30,15 @@ export
     # layers/msgpass
     MessagePassing,
 
-    # layers/conv
+    # layers/positional
+    AbstractPositionalEncoding,
+    RandomWalkPE,
+    LaplacianPE,
+    positional_encode,
+    EEquivGraphPE,
+    LSPE,
+
+    # layers/graph_conv
     GCNConv,
     ChebConv,
     GraphConv,
@@ -43,6 +51,9 @@ export
     SAGEConv,
     MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
     LSTMAggregator,
+
+    # layers/group_conv
+    EEquivGraphConv,
 
     # layer/pool
     GlobalPool,
@@ -71,7 +82,9 @@ include("layers/graphlayers.jl")
 include("layers/gn.jl")
 include("layers/msgpass.jl")
 
-include("layers/conv.jl")
+include("layers/positional.jl")
+include("layers/graph_conv.jl")
+include("layers/group_conv.jl")
 include("layers/pool.jl")
 include("models.jl")
 
