@@ -23,7 +23,7 @@
             fg_ = l(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
+            g = gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
             @test length(g.grads) == 4
         end
 
@@ -34,7 +34,7 @@
             Y = l(nf, ef)
             @test size(Y) == (out_channel, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(l(nf, ef)), Flux.params(l))
+            g = gradient(() -> sum(l(nf, ef)), Flux.params(l))
             @test length(g.grads) == 2
         end
     end

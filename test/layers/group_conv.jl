@@ -28,7 +28,7 @@
             @test size(nf_) == (out_channel, N)
             @test size(pf_) == (pos_dim, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(egnn(fg))), Flux.params(egnn))
+            g = gradient(() -> sum(node_feature(egnn(fg))), Flux.params(egnn))
             @test length(g.grads) == 13
         end
 
@@ -45,7 +45,7 @@
             @test size(nf_) == (out_channel, N)
             @test size(pf_) == (pos_dim, N)
 
-            g = Zygote.gradient(() -> sum(node_feature(egnn(fg))), Flux.params(egnn))
+            g = gradient(() -> sum(node_feature(egnn(fg))), Flux.params(egnn))
             @test length(g.grads) == 13
         end
 
@@ -58,7 +58,7 @@
             @test size(H) == (out_channel, N, batch_size)
             @test size(Y) == (pos_dim, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(l(nf, ef)[1]), Flux.params(l))
+            g = gradient(() -> sum(l(nf, ef)[1]), Flux.params(l))
             @test length(g.grads) == 11
         end
 
@@ -70,7 +70,7 @@
             @test size(H) == (out_channel, N, batch_size)
             @test size(Y) == (pos_dim, N, batch_size)
 
-            g = Zygote.gradient(() -> sum(l(nf)[1]), Flux.params(l))
+            g = gradient(() -> sum(l(nf)[1]), Flux.params(l))
             @test length(g.grads) == 11
         end
     end

@@ -336,7 +336,7 @@ function (l::GATConv)(fg::AbstractFeaturedGraph)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
     @assert ChainRulesCore.ignore_derivatives(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
-    el = to_namedtuple(sg)
+    el = GraphSignals.to_namedtuple(sg)
     _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
@@ -464,7 +464,7 @@ function (l::GATv2Conv)(fg::AbstractFeaturedGraph)
     GraphSignals.check_num_nodes(fg, X)
     sg = graph(fg)
     @assert ChainRulesCore.ignore_derivatives(() -> GraphSignals.has_all_self_loops(sg)) "a vertex must have self loop (receive a message from itself)."
-    el = to_namedtuple(sg)
+    el = GraphSignals.to_namedtuple(sg)
     _, V, _ = propagate(l, el, nothing, X, nothing, hcat, nothing, nothing)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
@@ -540,7 +540,7 @@ update(ggc::GatedGraphConv, m::AbstractArray, x) = m
 function (l::GatedGraphConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
     GraphSignals.check_num_nodes(fg, nf)
-    V = l(GraphSignals.to_namedtuple(fg), nf)
+    V = l(GraphSignals.GraphSignals.to_namedtuple(fg), nf)
     return ConcreteFeaturedGraph(fg, nf=V)
 end
 
