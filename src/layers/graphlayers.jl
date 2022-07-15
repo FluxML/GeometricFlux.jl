@@ -89,7 +89,8 @@ aggregate_neighbors(l::WithGraph, args...) = aggregate_neighbors(l.layer, l.grap
 update_batch_vertex(l::WithGraph, args...) = update_batch_vertex(l.layer, l.graph, args...)
 
 """
-    GraphParallel(; node_layer=identity, edge_layer=identity, global_layer=identity)
+    GraphParallel(; node_layer=identity, edge_layer=identity, global_layer=identity,
+                    positional_layer=identity)
 
 Passing features in `FeaturedGraph` in parallel. It takes `FeaturedGraph` as input
 and it can be specified by assigning layers for specific (node, edge and global) features.
@@ -99,6 +100,7 @@ and it can be specified by assigning layers for specific (node, edge and global)
 - `node_layer`: A regular Flux layer for passing node features.
 - `edge_layer`: A regular Flux layer for passing edge features.
 - `global_layer`: A regular Flux layer for passing global features.
+- `positional_layer`: A regular Flux layer for passing positional features.
 
 # Example
 
@@ -109,25 +111,28 @@ julia> l = GraphParallel(
             node_layer=Dropout(0.5),
             global_layer=Dense(10, 5)
        )
-GraphParallel(node_layer=Dropout(0.5), edge_layer=identity, global_layer=Dense(10 => 5))
+GraphParallel(node_layer=Dropout(0.5), edge_layer=identity, global_layer=Dense(10 => 5), positional_layer=identity)
 ```
 """
-struct GraphParallel{N,E,G}
+struct GraphParallel{N,E,G,P}
     node_layer::N
     edge_layer::E
     global_layer::G
+    positional_layer::P
 end
 
 @functor GraphParallel
 
-GraphParallel(; node_layer=identity, edge_layer=identity, global_layer=identity) =
-    GraphParallel(node_layer, edge_layer, global_layer)
+GraphParallel(; node_layer=identity, edge_layer=identity, global_layer=identity,
+        positional_layer=identity) =
+    GraphParallel(node_layer, edge_layer, global_layer, positional_layer)
 
 function (l::GraphParallel)(fg::AbstractFeaturedGraph)
     nf = l.node_layer(node_feature(fg))
     ef = l.edge_layer(edge_feature(fg))
     gf = l.global_layer(global_feature(fg))
-    return ConcreteFeaturedGraph(fg, nf=nf, ef=ef, gf=gf)
+    pf = l.positional_layer(positional_feature(fg))
+    return ConcreteFeaturedGraph(fg, nf=nf, ef=ef, gf=gf, pf=pf)
 end
 
 function Base.show(io::IO, l::GraphParallel)
@@ -135,6 +140,7 @@ function Base.show(io::IO, l::GraphParallel)
     print(io, "node_layer=", l.node_layer)
     print(io, ", edge_layer=", l.edge_layer)
     print(io, ", global_layer=", l.global_layer)
+    print(io, ", positional_layer=", l.positional_layer)
     print(io, ")")
 end
 
