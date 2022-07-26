@@ -1,7 +1,18 @@
 module Datasets
 
-using Reexport
+using MLDatasets
 
-@reexport using GraphMLDatasets
+export
+    getobs,
+    numobs,
+    Cora,
+    CiteSeer,
+    KarateClub,
+    MovieLens,
+    OGBDataset,
+    PolBlogs,
+    PubMed,
+    Reddit,
+    TUDataset
 
 end
