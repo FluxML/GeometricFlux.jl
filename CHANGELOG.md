@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.2]
+
+- fix doc
+
 ## [0.13.1]
 
 - `GraphParallel` support `positional_layer`
