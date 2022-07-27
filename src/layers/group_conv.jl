@@ -18,7 +18,7 @@ julia> in_dim, out_dim, pos_dim = 3, 5, 2
 (3, 5, 2)
 
 julia> egnn = EEquivGraphConv(in_dim=>out_dim, pos_dim, in_dim)
-EEquivGraphConv(ϕ_edge=Dense(10 => 5), ϕ_x=Dense(5 => 2), ϕ_h=Dense(8 => 5))
+EEquivGraphConv(ϕ_edge=Chain(Dense(10 => 2), Dense(2 => 2)), ϕ_x=Chain(Dense(2 => 2), Dense(2 => 1; bias=false)), ϕ_h=Chain(Dense(5 => 2), Dense(2 => 5)))
 ```
 
 See also [`WithGraph`](@ref) for training layer with static graph and [`EEquivGraphPE`](@ref) for positional encoding.
