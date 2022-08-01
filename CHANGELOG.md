@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.3]
+
+- update doc for `FeaturedGraph`
+
 ## [0.13.2]
 
 - fix doc
