@@ -1,23 +1,37 @@
 # Batch Learning
 
-## Batch Learning for Variable Graph Strategy
+## Mini-batch Learning for [`FeaturedGraph`](@ref)
 
-Batch learning for variable graph strategy can be prepared as follows:
-
-```julia
-train_data = [(FeaturedGraph(g, nf=train_X), train_y) for _ in 1:N]
-train_batch = Flux.batch(train_data)
+```@raw html
+<figure>
+    <img src="../assets/FeaturedGraph-support-DataLoader.svg" width="50%" alt="FeaturedGraph-support-DataLoader.svg" /><br>
+    <figcaption><em>FeaturedGraph supports DataLoader.</em></figcaption>
+</figure>
 ```
 
-It batches up [`FeaturedGraph`](@ref) objects into specified mini-batch. A batch is passed to a GNN model and trained/inferred one by one. It is hard for [`FeaturedGraph`](@ref) objects to train or infer in real batch for GPU.
-
-## Batch Learning for Static Graph Strategy
-
-A efficient batch learning should use static graph strategy. Batch learning for static graph strategy can be prepared as follows:
+Batch learning for [`FeaturedGraph`](@ref) can be prepared as follows:
 
 ```julia
-train_data = (repeat(train_X, outer=(1,1,N)), repeat(train_y, outer=(1,1,N)))
-train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
+train_data = (FeaturedGraph(g, nf=train_X), train_y)
+train_batch = DataLoader(train_data, batchsize=batch_size, shuffle=true)
 ```
 
-An efficient batch learning should feed array to a GNN model. In the example, the mini-batch dimension is the third dimension for `train_X` array. The `train_X` array is split by `DataLoader` into mini-batches and feed a mini-batch to GNN model at a time. This strategy leverages the advantage of GPU training by accelerating training GNN model in a real batch learning.
+[`FeaturedGraph`](@ref) now supports `DataLoader` and one can specify mini-batch to it.
+A mini-batch is passed to a GNN model and trained/inferred in one [`FeaturedGraph`](@ref).
+
+## Mini-batch Learning for array
+
+```@raw html
+<figure>
+    <img src="../assets/cuda-minibatch.svg" width="50%" alt="cuda-minibatch.svg" /><br>
+    <figcaption><em>Mini-batch learning on CUDA.</em></figcaption>
+</figure>
+```
+
+Mini-batch learning for array can be prepared as follows:
+
+```julia
+train_loader = DataLoader((train_X, train_y), batchsize=batch_size, shuffle=true)
+```
+
+An array could be fed to a GNN model. In the example, the mini-batch dimension is the last dimension for `train_X` array. The `train_X` array is split by `DataLoader` into mini-batches and feed a mini-batch to GNN model at a time. This strategy leverages the advantage of GPU training by accelerating training GNN model in a real batch learning.
