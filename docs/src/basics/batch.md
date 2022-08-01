@@ -4,7 +4,7 @@
 
 ```@raw html
 <figure>
-    <img src="../assets/FeaturedGraph-support-DataLoader.svg" width="50%" alt="FeaturedGraph-support-DataLoader.svg" /><br>
+    <img src="../../assets/FeaturedGraph-support-DataLoader.svg" width="100%" alt="FeaturedGraph-support-DataLoader.svg" /><br>
     <figcaption><em>FeaturedGraph supports DataLoader.</em></figcaption>
 </figure>
 ```
@@ -23,7 +23,7 @@ A mini-batch is passed to a GNN model and trained/inferred in one [`FeaturedGrap
 
 ```@raw html
 <figure>
-    <img src="../assets/cuda-minibatch.svg" width="50%" alt="cuda-minibatch.svg" /><br>
+    <img src="../../assets/cuda-minibatch.svg" width="100%" alt="cuda-minibatch.svg" /><br>
     <figcaption><em>Mini-batch learning on CUDA.</em></figcaption>
 </figure>
 ```

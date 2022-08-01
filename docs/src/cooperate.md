@@ -28,7 +28,7 @@ model = Chain(
 
 ```@raw html
 <figure>
-    <img src="../assets/../src/assets/graphparallel.svg" width="50%" alt="graphparallel.svg" /><br>
+    <img src="../assets/graphparallel.svg" width="70%" alt="graphparallel.svg" /><br>
     <figcaption><em>GraphParallel wraps regular Flux layers for different kinds of features for integration to GNN layers.</em></figcaption>
 </figure>
 ```
