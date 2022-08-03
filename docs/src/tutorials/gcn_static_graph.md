@@ -1,10 +1,10 @@
-# GCN with Fixed Graph
+# GCN with Static Graph
 
-In the tutorial for semi-supervised learning with GCN, variable graphs are provided to GNN from `FeaturedGraph`, which contains a graph and node features. Each `FeaturedGraph` object can contain different graph and different node features, and can be train on the same GNN model. However, variable graph doesn't have the proper form of graph structure with respect to GNN layers and this lead to inefficient training/inference process. Fixed graph strategy can be used to train a GNN model with the same graph structure in GeometricFlux.
+In the tutorial for semi-supervised learning with GCN, variable graphs are provided to GNN from `FeaturedGraph`, which contains a graph and node features. Each `FeaturedGraph` object can contain different graph and different node features, and can be train on the same GNN model. However, variable graph doesn't have the proper form of graph structure with respect to GNN layers and this lead to inefficient training/inference process. Static graph strategy can be used to train a GNN model with the same graph structure in GeometricFlux.
 
-## Fixed Graph
+## Static Graph
 
-A fixed graph is given to a layer by `WithGraph` syntax. `WithGraph` wrap a `FeaturedGraph` object and a GNN layer as first and second arguments, respectively.
+A static graph is given to a layer by `WithGraph` syntax. `WithGraph` wrap a `FeaturedGraph` object and a GNN layer as first and second arguments, respectively.
 
 ```julia
 fg = FeaturedGraph(graph)
