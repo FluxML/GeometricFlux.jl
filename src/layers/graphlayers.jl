@@ -64,9 +64,7 @@ Flux.trainable(l::WithGraph) = (l.layer, )
 
 function Optimisers.destructure(m::WithGraph)
     p, re = destructure(m.layer)
-    function  re_withgraph(x)
-        WithGraph(re(x), m.fg)        
-    end
+    re_withgraph(x) = WithGraph(m.graph, re(x), m.position)
 
     return p, re_withgraph
 end
