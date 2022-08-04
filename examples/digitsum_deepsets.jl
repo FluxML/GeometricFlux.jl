@@ -20,19 +20,15 @@ function load_data(
     test_min_length,
     test_max_length
 )
-    train_X, train_y = MLDatasets.MNIST.traindata(Float32)
-    test_X, test_y = MLDatasets.MNIST.testdata(Float32)
-
-    train_X, train_y = shuffle_data(train_X, train_y)
-    test_X, test_y = shuffle_data(test_X, test_y)
+    train_data, test_data = MNIST(:train), MNIST(:test)
+    train_X, train_y = shuffle_data(train_data.features, train_data.targets)
+    test_X, test_y = shuffle_data(test_data.features, test_data.targets)
 
     train_data = generate_featuredgraphs(train_X, train_y, num_train_examples, 1:train_max_length)
     test_data = generate_featuredgraphs(test_X, test_y, num_test_examples, test_min_length:test_max_length)
-    train_batch = Flux.batch(train_data)
-    test_batch = Flux.batch(test_data)
 
-    train_loader = DataLoader(train_batch, batchsize=batch_size)
-    test_loader = DataLoader(test_batch, batchsize=batch_size)
+    train_loader = DataLoader(train_data, batchsize=batch_size)
+    test_loader = DataLoader(test_data, batchsize=batch_size)
     return train_loader, test_loader
 end
 
@@ -92,6 +88,7 @@ function train(; kws...)
     # GPU config
     if args.cuda && CUDA.has_cuda()
         device = gpu
+        CUDA.allowscalar(false)
         @info "Training on GPU"
     else
         device = cpu
@@ -131,9 +128,8 @@ function train(; kws...)
         progress = Progress(length(train_loader))
 
         for batch in train_loader
-            train_loss, back = Flux.pullback(ps) do
-                model_loss(model, batch |> device)
-            end
+            batch = batch |> device
+            train_loss, back = Flux.pullback(() -> model_loss(model, batch), ps)
             test_loss = model_loss(model, test_loader, device)
             grad = back(1f0)
             Flux.Optimise.update!(opt, ps, grad)
