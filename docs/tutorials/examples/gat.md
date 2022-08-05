@@ -13,7 +13,9 @@ Graph attention network (GAT) belongs to the message-passing network family, and
 We load dataset from Planetoid dataset. Here cora dataset is used.
 
 ```julia
-train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset, padding=true))
+data = dataset[1].node_data
+X, y = data.features, onehotbatch(data.targets, 1:7)
+train_idx, test_idx = data.train_mask, data.val_mask
 ```
 
 ## Step 2: Batch up Features and Labels
@@ -21,10 +23,16 @@ train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset, padding=tru
 Just batch up features as usual.
 
 ```julia
+s, t = dataset[1].edge_index
+g = Graphs.Graph(dataset[1].num_nodes)
+for (i, j) in zip(s, t)
+    Graphs.add_edge!(g, i, j)
+end
+
 add_all_self_loops!(g)
 fg = FeaturedGraph(g)
-train_data = (repeat(train_X, outer=(1,1,train_repeats)), repeat(train_y, outer=(1,1,train_repeats)))
-train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
+train_X, train_y = repeat(X, outer=(1,1,train_repeats)), repeat(y, outer=(1,1,train_repeats))
+train_loader = DataLoader((train_X, train_y), batchsize=batch_size, shuffle=true)
 ```
 
 Notably, self loop for all nodes are needed for GAT model.
@@ -72,9 +80,8 @@ for epoch = 1:args.epochs
     @info "Epoch $(epoch)"
 
     for (X, y) in train_loader
-        loss, back = Flux.pullback(ps) do
-            model_loss(model, X |> device, y |> device, train_idx |> device)
-        end
+        X, y, device_idx = X |> device, y |> device, train_idx |> device
+        loss, back = Flux.pullback(() -> model_loss(model, X, y, device_idx), ps)
         train_acc = accuracy(model, train_loader, device, train_idx)
         test_acc = accuracy(model, test_loader, device, test_idx)
         grad = back(1f0)
