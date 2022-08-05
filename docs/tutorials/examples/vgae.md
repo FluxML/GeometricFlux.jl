@@ -1,3 +1,9 @@
+---
+title: Variational Graph Autoencoder
+cover: assets/logo.svg
+id: vgae
+---
+
 # Variational Graph Autoencoder
 
 Variational Graph Autoencoder (VGAE) is a unsupervised generative model. It takes node features and graph structure and predicts the edge link in the graph. A link preidction task is defined for this model.

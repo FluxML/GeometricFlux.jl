@@ -1,4 +1,10 @@
-# Predicting Digits Sum from DeepSet model
+---
+title: Predicting Digits Sum from DeepSet Model
+cover: assets/logo.svg
+id: deepset
+---
+
+# Predicting Digits Sum from DeepSet Model
 
 Digits sum is a task of summing up digits in images or text. This example demonstrates summing up digits in arbitrary number of MNIST images. To accomplish such task, DeepSet model is suitable for this task. DeepSet model is excellent at the task which takes a set of objects and reduces them into single object.
 

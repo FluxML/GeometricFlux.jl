@@ -1,3 +1,9 @@
+---
+title: Graph Attention Network
+cover: assets/logo.svg
+id: gat
+---
+
 # Graph Attention Network
 
 Graph attention network (GAT) belongs to the message-passing network family, and it queries node feature over its neighbor features and generates result as layer output.
