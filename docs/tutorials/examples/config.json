@@ -1,0 +1,12 @@
+{
+  "theme": "grid",
+  "description": "To begin with GeometricFlux, it is recommended to learn with following examples.",
+  "order": [
+    "semisupervised_gcn.md",
+    "gcn_static_graph.md",
+    "gat.md",
+    "deepset.md",
+    "vgae.md",
+    "graph_embedding.md"
+  ]
+}

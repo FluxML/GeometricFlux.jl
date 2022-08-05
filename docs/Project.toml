@@ -1,7 +1,9 @@
 [deps]
+DemoCards = "311a05b2-6137-4a5a-b473-18580a3d38b5"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+GeometricFlux = "7e08b658-56d3-11e9-2997-919d5b31e4ea"
 
 [compat]
 Documenter = "0.27"

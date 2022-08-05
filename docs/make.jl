@@ -1,30 +1,31 @@
 using Documenter
 using DocumenterCitations
+using DemoCards
 using GeometricFlux
+
+const ASSETS = ["assets/flux.css", "assets/favicon.ico"]
 
 bib = CitationBibliography(joinpath(@__DIR__, "bibliography.bib"), sorting=:nyt)
 
 DocMeta.setdocmeta!(GeometricFlux, :DocTestSetup, :(using GeometricFlux, Flux); recursive=true)
 
+# DemoCards
+demopage, postprocess_cb, demo_assets = makedemos("tutorials")
+isnothing(demo_assets) || (push!(ASSETS, demo_assets))
+
 makedocs(
     bib,
     sitename = "GeometricFlux.jl",
     format = Documenter.HTML(
-      assets = ["assets/flux.css", "assets/favicon.ico"],
+      assets = ASSETS,
       canonical = "https://fluxml.ai/GeometricFlux.jl/stable/",
       analytics = "G-M61P0B2Y8E",
+      edit_link = "master",
     ),
     clean = false,
     modules = [GeometricFlux,GraphSignals],
     pages = ["Home" => "index.md",
-             "Tutorials" => [
-                 "Semi-Supervised Learning with GCN" => "tutorials/semisupervised_gcn.md",
-                 "GCN with Static Graph" => "tutorials/gcn_static_graph.md",
-                 "Graph Attention Network" => "tutorials/gat.md",
-                 "DeepSet for Digit Sum" => "tutorials/deepset.md",
-                 "Variational Graph Autoencoder" => "tutorials/vgae.md",
-                 "Graph Embedding" => "tutorials/graph_embedding.md",
-              ],
+             demopage,
              "Introduction" => "introduction.md",
              "Basics" => [
                  "Graph Convolutions" => "basics/conv.md",
@@ -54,6 +55,9 @@ makedocs(
              "References" => "references.md",
     ]
 )
+
+# callbacks of DemoCards
+postprocess_cb()
 
 deploydocs(
   repo = "github.com/FluxML/GeometricFlux.jl.git",
