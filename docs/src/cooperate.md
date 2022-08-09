@@ -26,6 +26,13 @@ model = Chain(
 
 ## Branching Different Features Through Different Layers
 
+```@raw html
+<figure>
+    <img src="../assets/graphparallel.svg" width="70%" alt="graphparallel.svg" /><br>
+    <figcaption><em>GraphParallel wraps regular Flux layers for different kinds of features for integration to GNN layers.</em></figcaption>
+</figure>
+```
+
 A [`GraphParallel`](@ref) construct is designed for passing each feature through different layers from a [`FeaturedGraph`](@ref). An example is given as follow:
 
 ```julia

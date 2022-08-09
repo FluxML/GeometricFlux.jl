@@ -55,6 +55,26 @@ Reference: [Morris2019](@cite)
 
 ---
 
+## SAmple and aggreGatE (GraphSAGE) Network
+
+```math
+\hat{\textbf{x}}_j = sample(\textbf{x}_j), \forall j \in \mathcal{N}(i) \\
+\textbf{m}_i = aggregate(\hat{\textbf{x}}_j) \\
+\textbf{x}_i' = \sigma (\Theta_1 \textbf{x}_i + \Theta_2 \textbf{m}_i)
+```
+
+```@docs
+SAGEConv
+MeanAggregator
+MeanPoolAggregator
+MaxPoolAggregator
+LSTMAggregator
+```
+
+Reference: [Hamilton2017](@cite) and [GraphSAGE website](http://snap.stanford.edu/graphsage/)
+
+---
+
 ## Graph Attentional Layer
 
 ```math
@@ -122,7 +142,7 @@ Reference: [Wang2019](@cite)
 ## Graph Isomorphism Network
 
 ```math
-\textbf{x}_i' = f_{\Theta}\left((1 + \varepsilon) \dot \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \textbf{x}_j \right)
+\textbf{x}_i' = f_{\Theta}\left((1 + \varepsilon) \cdot \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \textbf{x}_j \right)
 ```
 
 where ``f_{\Theta}`` denotes a neural network parametrized by ``\Theta``, *i.e.*, a MLP.
@@ -148,23 +168,3 @@ CGConv
 ```
 
 Reference: [Xie2018](@cite)
-
----
-
-## SAmple and aggreGatE (GraphSAGE) Network
-
-```math
-\hat{\textbf{x}}_j = sample(\textbf{x}_j), \forall j \in \mathcal{N}(i) \\
-\textbf{m}_i = aggregate(\hat{\textbf{x}}_j) \\
-\textbf{x}_i' = \sigma (\Theta_1 \textbf{x}_i + \Theta_2 \textbf{m}_i)
-```
-
-```@docs
-SAGEConv
-MeanAggregator
-MeanPoolAggregator
-MaxPoolAggregator
-LSTMAggregator
-```
-
-Reference: [Hamilton2017](@cite) and [GraphSAGE website](http://snap.stanford.edu/graphsage/)
