@@ -1,26 +1,32 @@
 using CUDA
 using GeometricFlux, GraphSignals, Flux, DiffEqFlux, DifferentialEquations
 using Statistics, Random
-using Flux: onecold, logitcrossentropy
+using Flux: onehotbatch, onecold, logitcrossentropy
 using Flux.Data: DataLoader
 using GeometricFlux.Datasets
+using Graphs
 using Parameters: @with_kw
 using ProgressMeter: Progress, next!
 
 function load_data(dataset, batch_size, train_repeats=512, test_repeats=32)
-    # (train_X, train_y) dim: (num_features, target_dim) × 2708
-    train_X, train_y = map(x -> Matrix(x), alldata(Planetoid(), dataset, padding=true))
-    # (test_X, test_y) dim: (num_features, target_dim) × 2708
-    test_X, test_y = map(x -> Matrix(x), testdata(Planetoid(), dataset, padding=true))
-    g = graphdata(Planetoid(), dataset)
-    train_idx = 1:size(train_X, 2)
-    test_idx = test_indices(Planetoid(), dataset)
+    s, t = dataset[1].edge_index
+    g = Graphs.Graph(dataset[1].num_nodes)
+    for (i, j) in zip(s, t)
+        Graphs.add_edge!(g, i, j)
+    end
+
+    data = dataset[1].node_data
+    X, y = data.features, onehotbatch(data.targets, 1:7)
+    train_idx, test_idx = data.train_mask, data.val_mask
+
+    # (train_X, train_y) dim: (num_features, target_dim) × 2708 × train_repeats
+    train_X, train_y = repeat(X, outer=(1,1,train_repeats)), repeat(y, outer=(1,1,train_repeats))
+    # (test_X, test_y) dim: (num_features, target_dim) × 2708 × test_repeats
+    test_X, test_y = repeat(X, outer=(1,1,test_repeats)), repeat(y, outer=(1,1,test_repeats))
 
     fg = FeaturedGraph(g)
-    train_data = (repeat(train_X, outer=(1,1,train_repeats)), repeat(train_y, outer=(1,1,train_repeats)))
-    test_data = (repeat(test_X, outer=(1,1,test_repeats)), repeat(test_y, outer=(1,1,test_repeats)))
-    train_loader = DataLoader(train_data, batchsize=batch_size, shuffle=true)
-    test_loader = DataLoader(test_data, batchsize=batch_size, shuffle=true)
+    train_loader = DataLoader((train_X, train_y), batchsize=batch_size, shuffle=true)
+    test_loader = DataLoader((test_X, test_y), batchsize=batch_size, shuffle=true)
     return train_loader, test_loader, fg, train_idx, test_idx
 end
 
@@ -34,6 +40,7 @@ end
     input_dim = 1433        # input dimension
     hidden_dim = 16         # hidden dimension
     target_dim = 7          # target dimension
+    dataset = Cora          # dataset to train on
 end
 
 ## Loss: cross entropy with first layer L2 regularization 
@@ -45,9 +52,8 @@ function model_loss(model, λ, X, y, idx)
     return loss
 end
 
-function accuracy(model, X::AbstractArray, y::AbstractArray, idx)
-    return mean(onecold(softmax(cpu(model(X))[:,idx,:])) .== onecold(cpu(y)[:,idx,:]))
-end
+accuracy(model, X::AbstractArray, y::AbstractArray, idx) =
+    mean(onecold(softmax(cpu(model(X))[:,idx,:])) .== onecold(cpu(y)[:,idx,:]))
 
 accuracy(model, loader::DataLoader, device, idx) = mean(accuracy(model, X |> device, y |> device, idx) for (X, y) in loader)
 
@@ -59,6 +65,7 @@ function train(; kws...)
     # GPU config
     if args.cuda && CUDA.has_cuda()
         device = gpu
+        CUDA.allowscalar(false)
         @info "Training on GPU"
     else
         device = cpu
@@ -66,7 +73,7 @@ function train(; kws...)
     end
 
     # load Cora from Planetoid dataset
-    train_loader, test_loader, fg, train_idx, test_idx = load_data(:cora, args.batch_size)
+    train_loader, test_loader, fg, train_idx, test_idx = load_data(args.dataset(), args.batch_size)
     
     # build the Neural GDE
     diffeqarray_to_array(x) = reshape(x |> device, size(x)[1:2]..., :)
@@ -99,9 +106,8 @@ function train(; kws...)
         progress = Progress(length(train_loader))
 
         for (X, y) in train_loader
-            loss, back = Flux.pullback(ps) do
-                model_loss(model, args.λ, X |> device, y |> device, train_idx |> device)
-            end
+            X, y, device_idx = X |> device, y |> device, train_idx |> device
+            loss, back = Flux.pullback(() -> model_loss(model, args.λ, X, y, device_idx), ps)
             train_acc = accuracy(model, train_loader, device, train_idx)
             test_acc = accuracy(model, test_loader, device, test_idx)
             grad = back(1f0)

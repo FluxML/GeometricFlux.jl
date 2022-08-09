@@ -1,4 +1,10 @@
-# Predicting Digits Sum from DeepSet model
+---
+title: Predicting Digits Sum from DeepSet Model
+cover: assets/logo.svg
+id: deepset
+---
+
+# Predicting Digits Sum from DeepSet Model
 
 Digits sum is a task of summing up digits in images or text. This example demonstrates summing up digits in arbitrary number of MNIST images. To accomplish such task, DeepSet model is suitable for this task. DeepSet model is excellent at the task which takes a set of objects and reduces them into single object.
 
@@ -9,8 +15,9 @@ Since a DeepSet model predicts the summation from a set of images, we have to pr
 First, the whole dataset is loaded from MLDatasets.jl and then shuffled before generating training dataset.
 
 ```julia
-train_X, train_y = MLDatasets.MNIST.traindata(Float32)
-train_X, train_y = shuffle_data(train_X, train_y)
+train_data, test_data = MNIST(:train), MNIST(:test)
+train_X, train_y = shuffle_data(train_data.features, train_data.targets)
+test_X, test_y = shuffle_data(test_data.features, test_data.targets)
 ```
 
 The `generate_featuredgraphs` here generates a set of pairs which contains a `FeaturedGraph` and a summed number for prediction target. In a `FeaturedGraph`, an arbitrary number of MNIST images are collected as node features and corresponding nodes are collected in a graph without edges.
@@ -68,9 +75,8 @@ for epoch = 1:args.epochs
     @info "Epoch $(epoch)"
 
     for batch in train_loader
-        train_loss, back = Flux.pullback(ps) do
-            model_loss(model, batch |> device)
-        end
+        batch = batch |> device
+        train_loss, back = Flux.pullback(() -> model_loss(model, batch), ps)
         test_loss = model_loss(model, test_loader, device)
         grad = back(1f0)
         Flux.Optimise.update!(opt, ps, grad)

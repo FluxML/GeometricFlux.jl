@@ -1,3 +1,9 @@
+---
+title: Semi-supervised Learning with Graph Convolution Networks (GCN)
+cover: assets/logo.svg
+id: semisupervised_gcn
+---
+
 # Semi-supervised Learning with Graph Convolution Networks (GCN)
 
 Graph convolution networks (GCN) have been considered as the first step to graph neural networks (GNN). This example will go through how to train a vanilla GCN.

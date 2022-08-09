@@ -5,6 +5,7 @@ using Flux.Losses: logitbinarycrossentropy
 using Flux.Data: DataLoader
 using GeometricFlux
 using GeometricFlux.Datasets
+using Graphs
 using GraphSignals
 using Parameters: @with_kw
 using ProgressMeter: Progress, next!
@@ -12,17 +13,20 @@ using Statistics
 using Random
 
 function load_data(dataset, batch_size, train_repeats=2)
-    # (train_X, train_y) dim: (num_features, target_dim) × 1708
-    train_X, _ = map(x -> Matrix(x), alldata(Planetoid(), dataset))
-    # (test_X, test_y) dim: (num_features, target_dim) × 1000
-    test_X, _ = map(x -> Matrix(x), testdata(Planetoid(), dataset))
-    g = graphdata(Planetoid(), dataset)
-
-    X = hcat(train_X, test_X)
+    s, t = dataset[1].edge_index
+    g = Graphs.Graph(dataset[1].num_nodes)
+    for (i, j) in zip(s, t)
+        Graphs.add_edge!(g, i, j)
+    end
     fg = FeaturedGraph(g)
     A = GraphSignals.adjacency_matrix(fg)
-    data = (repeat(X, outer=(1,1,train_repeats)), repeat(A, outer=(1,1,train_repeats)))
-    loader = DataLoader(data, batchsize=batch_size, shuffle=true)
+
+    data = dataset[1].node_data
+    X = data.features
+
+    train_X = repeat(X, outer=(1, 1, train_repeats))
+    train_y = repeat(A, outer=(1, 1, train_repeats))
+    loader = DataLoader((train_X, train_y), batchsize=batch_size, shuffle=true)
     return loader, fg
 end
 
@@ -35,6 +39,7 @@ end
     input_dim = 1433        # input dimension
     hidden1_dim = 32        # hidden1 dimension
     hidden2_dim = 16        # hidden2 dimension
+    dataset = Cora          # dataset to train on
 end
 
 ## Loss: binary cross entropy
@@ -57,6 +62,7 @@ function train(; kws...)
     # GPU config
     if args.cuda && CUDA.has_cuda()
         device = gpu
+        CUDA.allowscalar(false)
         @info "Training on GPU"
     else
         device = cpu
@@ -64,7 +70,7 @@ function train(; kws...)
     end
 
     # load Cora from Planetoid dataset
-    loader, fg = load_data(:cora, args.batch_size)
+    loader, fg = load_data(args.dataset(), args.batch_size)
     
     # build model
     encoder = Chain(
@@ -88,10 +94,9 @@ function train(; kws...)
         @info "Epoch $(epoch)"
 
         local loss
-        for (X, A) in loader
-            loss, back = Flux.pullback(ps) do
-                model_loss(model, X |> device, A |> device)
-            end
+        for (X, Â) in loader
+            X, Â = X |> device, Â |> device
+            loss, back = Flux.pullback(() -> model_loss(model, X, Â), ps)
             grad = back(1f0)
             Flux.Optimise.update!(opt, ps, grad)
             train_steps += 1

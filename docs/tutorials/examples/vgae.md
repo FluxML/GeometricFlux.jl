@@ -1,3 +1,9 @@
+---
+title: Variational Graph Autoencoder
+cover: assets/logo.svg
+id: vgae
+---
+
 # Variational Graph Autoencoder
 
 Variational Graph Autoencoder (VGAE) is a unsupervised generative model. It takes node features and graph structure and predicts the edge link in the graph. A link preidction task is defined for this model.
@@ -7,13 +13,19 @@ Variational Graph Autoencoder (VGAE) is a unsupervised generative model. It take
 We load dataset from Planetoid dataset. Here cora dataset is used.
 
 ```julia
-train_X, _ = map(x -> Matrix(x), alldata(Planetoid(), dataset))
+data = dataset[1].node_data
+X = data.features
+train_X = repeat(X, outer=(1, 1, train_repeats))
 ```
 
 Notably, a link prediction task will output a graph in the form of adjacency matrix, so an adjacency matrix is needed as label for this task.
 
 ```julia
-g = graphdata(Planetoid(), dataset)
+s, t = dataset[1].edge_index
+g = Graphs.Graph(dataset[1].num_nodes)
+for (i, j) in zip(s, t)
+    Graphs.add_edge!(g, i, j)
+end
 fg = FeaturedGraph(g)
 A = GraphSignals.adjacency_matrix(fg)
 ```
@@ -23,8 +35,7 @@ A = GraphSignals.adjacency_matrix(fg)
 Just batch up features as usual.
 
 ```julia
-data = (repeat(X, outer=(1,1,train_repeats)), repeat(A, outer=(1,1,train_repeats)))
-loader = DataLoader(data, batchsize=batch_size, shuffle=true)
+loader = DataLoader((train_X, train_y), batchsize=batch_size, shuffle=true)
 ```
 
 ## Step 3: Build a VGAE model
@@ -90,10 +101,9 @@ ps = Flux.params(model)
 for epoch = 1:args.epochs
     @info "Epoch $(epoch)"
 
-    for (X, A) in loader
-        loss, back = Flux.pullback(ps) do
-            model_loss(model, X |> device, A |> device, args.β)
-        end
+    for (X, Â) in loader
+        X, Â = X |> device, Â |> device
+        loss, back = Flux.pullback(() -> model_loss(model, X, Â, args.β), ps)
         prec = precision(model, loader, device)
         grad = back(1f0)
         Flux.Optimise.update!(opt, ps, grad)
