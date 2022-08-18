@@ -97,6 +97,16 @@ Reference: [GAT2018](@cite)
 
 ## Graph Attentional Layer v2
 
+```math
+\textbf{x}_i' = \alpha_{i,i} \Theta \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \alpha_{i,j} \Theta \textbf{x}_j
+```
+
+where the attention coefficient ``\alpha_{i,j}`` can be calculated from
+
+```math
+\alpha_{i,j} = \frac{exp(\textbf{a}^T LeakyReLU(\Theta [\textbf{x}_i || \textbf{x}_j]))}{\sum_{k \in \mathcal{N}(i) \cup \{i\}} exp(\textbf{a}^T LeakyReLU(\Theta [\textbf{x}_i || \textbf{x}_k]))}
+```
+
 
 ```@docs
 GATv2Conv
