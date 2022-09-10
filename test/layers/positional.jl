@@ -51,14 +51,14 @@
 
     @testset "LSPE" begin
         @testset "layer not accepts edge features" begin
-            f_h = GraphConv(2in_channel=>out_channel)
+            f_h = GatedGCNConv(in_channel + pos_channel=>out_channel, residual=true)
             f_e = Dense(2in_channel, out_channel)
             f_p = Dense(pos_channel, pos_channel)
             l = LSPE(f_h, f_e, f_p)
 
             nf = rand(T, in_channel, N)
             pf = rand(T, pos_channel, N)
-            fg = FeaturedGraph(adj, nf=nf, pf=pf)
+            fg = FeaturedGraph(adj, nf=vcat(nf, pf), pf=pf)
             fg_ = l(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
             @test size(positional_feature(fg_)) == (pos_channel, N)

@@ -422,4 +422,30 @@
             end
         end
     end
+
+    @testset "GatedGCNConv" begin
+        @testset "layer without graph" begin
+            l = GatedGCNConv(in_channel=>out_channel)
+            @test size(l.A.weight) == (out_channel, in_channel)
+
+            X = rand(T, in_channel, N)
+            fg = FeaturedGraph(adj, nf=X)
+            fg_ = l(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test_throws MethodError l(X)
+
+            g = gradient(() -> sum(node_feature(l(fg))), Flux.params(l))
+            @test length(g.grads) == 6
+        end
+
+        @testset "layer with static graph" begin
+            X = rand(T, in_channel, N, batch_size)
+            l = WithGraph(FeaturedGraph(adj), GatedGCNConv(in_channel=>out_channel))
+            Y = l(X)
+            @test size(Y) == (out_channel, N, batch_size)
+
+            g = gradient(() -> sum(l(X)), Flux.params(l))
+            @test length(g.grads) == 4
+        end
+    end
 end

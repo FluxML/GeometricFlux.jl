@@ -52,6 +52,7 @@ export
     SAGEConv,
     MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
     LSTMAggregator,
+    GatedGCNConv,
 
     # layers/group_conv
     EEquivGraphConv,

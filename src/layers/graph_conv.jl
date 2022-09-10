@@ -924,3 +924,74 @@ function LSTMAggregator(args...; kwargs...)
     in_ch = args[1][1]
     return SAGEConv(args..., Flux.LSTMCell(in_ch, in_ch); kwargs...)
 end
+
+
+"""
+    GatedGCNConv(in => out, σ=relu; residual=false, init=glorot_uniform)
+
+Gated graph convolutional network layer.
+
+# Arguments
+
+- `in`: The dimension of input features.
+- `out`: The dimension of output features.
+- `σ`: Activation function.
+- `residual::Bool`: Add a skip connection introduced in ResNet.
+- `init`: Weights' initializer.
+"""
+struct GatedGCNConv{I,J,K,L,F} <: MessagePassing
+    A::I
+    B::J
+    U::K
+    V::L
+    σ::F
+    residual::Bool
+end
+
+@functor GatedGCNConv
+
+Flux.trainable(l::GatedGCNConv) = (l.A, l.B, l.U, l.V)
+
+function GatedGCNConv(ch::Pair{Int,Int}, σ=relu; residual::Bool=false, init=glorot_uniform)
+    in, out = ch
+    A = Dense(in, out; init=init, bias=false)
+    B = Dense(in, out; init=init, bias=false)
+    U = Dense(in, out; init=init, bias=false)
+    V = Dense(in, out; init=init, bias=false)
+    return GatedGCNConv(A, B, V, U, σ, residual)
+end
+
+@functor GatedGCNConv
+
+function message(l::GatedGCNConv, h_i, h_j::AbstractArray, e)
+    η_ij = σ.(l.A(h_i) + l.B(h_j))
+    return η_ij .* l.V(h_j)
+end
+
+function update(l::GatedGCNConv, m::AbstractArray, h::AbstractArray)
+    y = l.σ.(l.U(h) + m)
+    l.residual && (y = y + h)
+    return y
+end
+
+# For variable graph
+function (l::GatedGCNConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
+end
+
+# For static graph
+function (l::GatedGCNConv)(el::NamedTuple, h::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, h)
+    _, V, _ = propagate(l, el, nothing, h, nothing, +, nothing, nothing)
+    return V
+end
+
+function Base.show(io::IO, l::GatedGCNConv)
+    out_channel, in_channel = size(l.A.weight)
+    print(io, "GatedGCNConv(", in_channel, " => ", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ")")
+end
