@@ -74,7 +74,7 @@
             @test size(cc.weight) == (out_channel, in_channel, k)
             @test size(cc.bias) == (out_channel,)
             @test cc.k == k
-            
+
             fg = FeaturedGraph(adj, nf=X)
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
@@ -90,7 +90,7 @@
         end
 
         @testset "layer with static graph" begin
-            cc = WithGraph(fg, ChebConv(in_channel=>out_channel, k))            
+            cc = WithGraph(fg, ChebConv(in_channel=>out_channel, k))
             Y = cc(X)
             @test size(Y) == (out_channel, N)
 
@@ -286,7 +286,7 @@
             g = gradient(() -> sum(node_feature(ec(fg))), Flux.params(ec))
             @test length(g.grads) == 4
         end
-        
+
         @testset "layer with static graph" begin
             X = rand(T, in_channel, N, batch_size)
             ec = WithGraph(fg, EdgeConv(Dense(2*in_channel, out_channel)))
@@ -322,10 +322,8 @@
         nn = Flux.Chain(Dense(in_channel, out_channel))
         eps = 0.001
         @testset "layer without graph" begin
-            gc = GraphConv(in_channel=>out_channel)
-            @test size(gc.weight1) == (out_channel, in_channel)
-            @test size(gc.weight2) == (out_channel, in_channel)
-            @test size(gc.bias) == (out_channel,)
+            gc = GINConv(nn, eps)
+            @test gc.nn == nn
 
             X = rand(T, in_channel, N)
             fg = FeaturedGraph(adj, nf=X)
@@ -334,7 +332,7 @@
             @test_throws MethodError gc(X)
 
             g = gradient(() -> sum(node_feature(gc(fg))), Flux.params(gc))
-            @test length(g.grads) == 5
+            @test length(g.grads) == 4
         end
 
         @testset "layer with static graph" begin
@@ -351,10 +349,10 @@
     @testset "CGConv" begin
         @testset "layer without graph" begin
             cgc = CGConv((in_channel, in_channel_edge))
-            @test size(cgc.Wf) == (in_channel, 2 * in_channel + in_channel_edge)
-            @test size(cgc.Ws) == (in_channel, 2 * in_channel + in_channel_edge)
-            @test size(cgc.bf) == (in_channel,)
-            @test size(cgc.bs) == (in_channel,)
+            @test size(cgc.f.weight) == (in_channel, 2 * in_channel + in_channel_edge)
+            @test size(cgc.s.weight) == (in_channel, 2 * in_channel + in_channel_edge)
+            @test size(cgc.f.bias) == (in_channel,)
+            @test size(cgc.s.bias) == (in_channel,)
 
             nf = rand(T, in_channel, N)
             ef = rand(T, in_channel_edge, E)
@@ -403,7 +401,7 @@
                 end
             end
         end
-        
+
         @testset "layer with static graph" begin
             for conv in aggregators
                 X = rand(T, in_channel, N, batch_size)
