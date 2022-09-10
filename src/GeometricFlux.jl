@@ -77,6 +77,7 @@ export
 
 include("datasets.jl")
 include("operation.jl")
+include("loss.jl")
 
 include("layers/graphlayers.jl")
 include("layers/gn.jl")
