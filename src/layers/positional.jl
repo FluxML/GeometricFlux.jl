@@ -130,11 +130,11 @@ function(l::EEquivGraphPE)(fg::AbstractFeaturedGraph)
 end
 
 # For static graph
-function(l::EEquivGraphPE)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
-    GraphSignals.check_num_nodes(el.N, X)
+function(l::EEquivGraphPE)(el::NamedTuple, H::AbstractArray, E::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, H)
     # GraphSignals.check_num_edges(el.E, E)
-    _, V, _ = propagate(l, el, E, X, nothing, mean, nothing, nothing)
-    return V
+    _, H, _ = propagate(l, el, E, H, nothing, mean, nothing, nothing)
+    return H
 end
 
 (wg::WithGraph{<:EEquivGraphPE})(args...) = wg.layer(wg.graph, args...)
@@ -150,71 +150,82 @@ positional_encode(wg::WithGraph{<:EEquivGraphPE}, args...) = wg(args...)
 positional_encode(l::EEquivGraphPE, args...) = l(args...)
 
 """
-    LSPE(fg, f_h, f_e, f_p, k; pe_method=RandomWalkPE)
+    LSPE(f_h, f_e, f_p)
 
-Learnable structural positional encoding layer. `LSPE` layer can be seen as a GNN layer
-warpped in `WithGraph`.
+Learnable structural positional encoding layer.
 
 # Arguments
 
-- `fg::FeaturedGraph`: A given graoh for positional encoding.
 - `f_h::MessagePassing`: Neural network layer for node update.
 - `f_e`: Neural network layer for edge update.
 - `f_p`: Neural network layer for positional encoding.
-- `k::Int`: Dimension of positional encoding.
-- `pe_method`: Initializer for positional encoding.
 """
-struct LSPE{H<:MessagePassing,E,F,P} <: AbstractPositionalEncoding
+struct LSPE{H<:MessagePassing,E,F} <: AbstractPositionalEncoding
     f_h::H
     f_e::E
     f_p::F
-    pe::P
 end
 
-function LSPE(fg::AbstractFeaturedGraph, f_h::MessagePassing, f_e, f_p, k::Int;
-              pe_method=RandomWalkPE)
-    A = GraphSignals.adjacency_matrix(fg)
-    return LSPE(f_h, f_e, f_p, positional_encode(pe_method{k}, A))
-end
+@functor LSPE
 
 # For variable graph
 function (l::LSPE)(fg::AbstractFeaturedGraph)
-    X = node_feature(fg)
+    H = node_feature(fg)
     E = edge_feature(fg)
-    GraphSignals.check_num_nodes(fg, X)
-    GraphSignals.check_num_edges(fg, E)
-    E, V = propagate(l, graph(fg), E, X)
-    return ConcreteFeaturedGraph(fg, nf=V, ef=E)
+    X = positional_feature(fg)
+    GraphSignals.has_node_feature(fg) && GraphSignals.check_num_nodes(fg, H)
+    GraphSignals.has_positional_feature(fg) && GraphSignals.check_num_nodes(fg, X)
+    GraphSignals.has_edge_feature(fg) && GraphSignals.check_num_edges(fg, E)
+    E, H, X = propagate(l, graph(fg), E, H, X)
+    if isnothing(E)
+        return ConcreteFeaturedGraph(fg, nf=H, pf=X)
+    else
+        return ConcreteFeaturedGraph(fg, nf=H, ef=E, pf=X)
+    end
 end
 
-# For static graph
-function (l::LSPE)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
+function (l::LSPE)(el::NamedTuple, H::AbstractArray, E::AbstractArray, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, H)
     GraphSignals.check_num_nodes(el.N, X)
     GraphSignals.check_num_edges(el.E, E)
-    E, V = propagate(l, graph(fg), E, X)
-    return V, E
+    E, H, X = propagate(l, graph(fg), E, H, X)
+    return H, E, X
 end
 
-update_vertex(l::LSPE, el::NamedTuple, X, E::AbstractArray) = l.f_h(el, X, E)
-update_vertex(l::LSPE, el::NamedTuple, X, E::Nothing) = l.f_h(el, X)
+update_vertex(l::LSPE, el::NamedTuple, H, E::AbstractArray) = l.f_h(el, H, E)
+update_vertex(l::LSPE, el::NamedTuple, H, ::Nothing) = l.f_h(el, H)
 
 update_edge(l::LSPE, h_i, h_j, e_ij) = l.f_e(e_ij)
+update_edge(l::LSPE, h_i, h_j, ::Nothing) = l.f_e(vcat(h_i, h_j))
 
 positional_encode(l::LSPE, p_i, p_j, e_ij) = l.f_p(p_i)
 
-propagate(l::LSPE, sg::SparseGraph, E, V) = propagate(l, to_namedtuple(sg), E, V)
+propagate(l::LSPE, sg::SparseGraph, E, H, X) =
+    propagate(l, GraphSignals.to_namedtuple(sg), E, H, X)
 
-function propagate(l::LSPE, el::NamedTuple, E, V)
+function propagate(l::LSPE, el::NamedTuple, E, H, X)
     e_ij = _gather(E, el.es)
-    h_i = _gather(V, el.xs)
-    h_j = _gather(V, el.nbrs)
-    p_i = _gather(l.pe, el.xs)
-    p_j = _gather(l.pe, el.nbrs)
+    h_i = _gather(H, el.xs)
+    h_j = _gather(H, el.nbrs)
+    p_i = _gather(X, el.xs)
+    p_j = _gather(X, el.nbrs)
 
-    V = update_vertex(l, el, vcat(V, l.pe), E)
-    E = update_edge(l, h_i, h_j, e_ij)
-    l.pe = positional_encode(l, p_i, p_j, e_ij)
-    return E, V
+    H = update_vertex(l, el, vcat(H, X), E)
+    E = update_edge(l, h_i, h_j, E)
+    X = positional_encode(l, p_i, p_j, e_ij)
+    return E, H, X
+end
+
+function propagate(l::LSPE, el::NamedTuple, ::Nothing, H, X)
+    h_i = _gather(H, el.xs)
+    h_j = _gather(H, el.nbrs)
+    p_i = _gather(X, el.xs)
+    p_j = _gather(X, el.nbrs)
+
+    H = update_vertex(l, el, vcat(H, X), nothing)
+    E = update_edge(l, h_i, h_j, nothing)
+    X = positional_encode(l, p_i, p_j, nothing)
+    return nothing, H, X
 end
 
 function Base.show(io::IO, l::LSPE)

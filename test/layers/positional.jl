@@ -3,6 +3,7 @@
     batch_size = 10
     in_channel = 3
     in_channel_edge = 2
+    pos_channel = 3
     out_channel = 5
 
     N = 4
@@ -12,7 +13,7 @@
             0. 1. 0. 1.;
             1. 0. 1. 0.]
     fg = FeaturedGraph(adj)
-    
+
     @testset "EEquivGraphPE" begin
         @testset "layer without graph" begin
             l = EEquivGraphPE(in_channel_edge=>out_channel)
@@ -38,17 +39,46 @@
             @test length(g.grads) == 2
         end
     end
-    
-    @testset "LSPE" begin
-        K = 3
-        f_h = GraphConv(in_channel=>out_channel)
-        f_e = Dense(in_channel, out_channel)
-        f_p = Dense(in_channel, out_channel)
-        l = LSPE(fg, f_h, f_e, f_p, K)
 
-        # nf = rand(T, out_channel, N)
-        # fg = FeaturedGraph(adj, nf=nf)
-        # fg_ = l(fg)
-        # @test size(node_feature(fg_)) == (out_channel, N)
+    @testset "PositionalEncoding" begin
+        K = 3
+    end
+
+    @testset "LSPE" begin
+        @testset "layer not accepts edge features" begin
+            f_h = GraphConv(2in_channel=>out_channel)
+            f_e = Dense(2in_channel, out_channel)
+            f_p = Dense(pos_channel, pos_channel)
+            l = LSPE(f_h, f_e, f_p)
+
+            nf = rand(T, in_channel, N)
+            pf = rand(T, pos_channel, N)
+            fg = FeaturedGraph(adj, nf=nf, pf=pf)
+            fg_ = l(fg)
+            @test size(node_feature(fg_)) == (out_channel, N)
+            @test size(positional_feature(fg_)) == (pos_channel, N)
+
+            g = gradient(() -> sum(positional_feature(l(fg))), Flux.params(l))
+            @test length(g.grads) == 2
+        end
+
+        # @testset "layer accepts edge features" begin
+        #     f_h = GraphConv(in_channel=>out_channel)
+        #     f_e = Dense(in_channel_edge, out_channel)
+        #     f_p = Dense(pos_channel, pos_channel)
+        #     l = LSPE(f_h, f_e, f_p)
+
+        #     nf = rand(T, in_channel, N)
+        #     ef = rand(T, in_channel_edge, E)
+        #     pf = rand(T, pos_channel, N)
+        #     fg = FeaturedGraph(adj, nf=nf, ef=ef, pf=pf)
+        #     fg_ = l(fg)
+        #     @test size(node_feature(fg_)) == (out_channel, N)
+        #     @test size(edge_feature(fg_)) == (out_channel, N)
+        #     @test size(positional_feature(fg_)) == (pos_channel, N)
+
+        #     g = gradient(() -> sum(positional_feature(l(fg))), Flux.params(l))
+        #     @test length(g.grads) == 2
+        # end
     end
 end
