@@ -42,6 +42,11 @@
 
     @testset "PositionalEncoding" begin
         K = 3
+        l = PositionalEncoding(fg, K)
+        @test size(l.pe) == (K, N)
+
+        fg_ = l(fg)
+        @test GraphSignals.has_positional_feature(fg_)
     end
 
     @testset "LSPE" begin

@@ -37,6 +37,7 @@ export
     positional_encode,
     EEquivGraphPE,
     LSPE,
+    PositionalEncoding,
 
     # layers/graph_conv
     GCNConv,

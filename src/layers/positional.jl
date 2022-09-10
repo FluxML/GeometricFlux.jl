@@ -149,6 +149,45 @@ output_dim(l::EEquivGraphPE) = size(l.nn.weight, 1)
 positional_encode(wg::WithGraph{<:EEquivGraphPE}, args...) = wg(args...)
 positional_encode(l::EEquivGraphPE, args...) = l(args...)
 
+
+"""
+    PositionalEncoding(graph, k; init_method=RandomWalkPE)
+
+Positional encoding layer which adds learnable positional encoding to input data.
+
+# Arguments
+
+- `graph`: A given graph for positional encoding.
+- `k::Int`: Dimension of positional encoding.
+- `init_method`: Initializer for positional encoding.
+"""
+struct PositionalEncoding{P} <: AbstractPositionalEncoding
+    pe::P
+end
+
+@functor PositionalEncoding
+
+function PositionalEncoding(graph, k::Int; init_method=RandomWalkPE)
+    fg = FeaturedGraph(graph)
+    A = GraphSignals.adjacency_matrix(fg)
+    pe = positional_encode(init_method{k}, A)
+    return PositionalEncoding(pe)
+end
+
+positional_encode(l::PositionalEncoding) = l.pe
+
+# For variable graph
+function (l::PositionalEncoding)(fg::AbstractFeaturedGraph)
+    if GraphSignals.has_positional_feature(fg)
+        return fg
+    else
+        return ConcreteFeaturedGraph(fg, pf=positional_encode(l))
+    end
+end
+
+Base.show(io::IO, l::PositionalEncoding) = print(io, "PositionalEncoding($(size(l.pe)))")
+
+
 """
     LSPE(f_h, f_e, f_p)
 
