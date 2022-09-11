@@ -47,6 +47,9 @@
 
         fg_ = l(fg)
         @test GraphSignals.has_positional_feature(fg_)
+
+        g = gradient(() -> sum(positional_feature(l(fg))), Flux.params(l))
+        @test length(g.grads) == 2
     end
 
     @testset "GatedGCNLSPEConv" begin
