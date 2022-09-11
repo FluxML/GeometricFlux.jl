@@ -275,20 +275,13 @@ update_edge(l::GatedGCNLSPEConv, h_i, h_j, e_ij) = σ.(l.B1(h_i) + l.B2(h_j) + l
 
 function normalize_η(l::GatedGCNLSPEConv, el::NamedTuple, η̂)
     summed_η = aggregate_neighbors(l, el, +, η̂)
-    return η̂ ./ _gather(summed_η .+ 1f-6, el.xs)
+    return η̂ ./ gather(summed_η .+ 1f-6, el.xs)
 end
 
 message_vertex(l::GatedGCNLSPEConv, h_j, p_j, η_ij) = η_ij .* l.A2(vcat(h_j, p_j))
 
-function aggregate_neighbors(l::GatedGCNLSPEConv, el::NamedTuple, aggr, E)
-    batch_size = size(E)[end]
-    dstsize = (size(E, 1), el.N, batch_size)
-    xs = batched_index(el.xs, batch_size)
-    return _scatter(aggr, E, xs, dstsize)
-end
-
-aggregate_neighbors(l::GatedGCNLSPEConv, el::NamedTuple, aggr, E::AbstractMatrix) =
-    _scatter(aggr, E, el.xs)
+aggregate_neighbors(l::GatedGCNLSPEConv, el::NamedTuple, aggr, E) = scatter(aggr, E, el.xs, el.N)
+aggregate_neighbors(l::GatedGCNLSPEConv, el::NamedTuple, aggr, E::AbstractMatrix) = scatter(aggr, E, el.xs)
 
 update_vertex(l::GatedGCNLSPEConv, m, h, p) = l.σ.(l.A1(vcat(h, p)) + m)
 
@@ -300,11 +293,11 @@ propagate(l::GatedGCNLSPEConv, sg::SparseGraph, E, H, X) =
     propagate(l, GraphSignals.to_namedtuple(sg), E, H, X)
 
 function propagate(l::GatedGCNLSPEConv, el::NamedTuple, E, H, X)
-    e_ij = _gather(E, el.es)
-    h_i = _gather(H, el.xs)
-    h_j = _gather(H, el.nbrs)
-    p_i = _gather(X, el.xs)
-    p_j = _gather(X, el.nbrs)
+    e_ij = gather(E, el.es)
+    h_i = gather(H, el.xs)
+    h_j = gather(H, el.nbrs)
+    p_i = gather(X, el.xs)
+    p_j = gather(X, el.nbrs)
 
     η̂ = update_edge(l, h_i, h_j, e_ij)
     Ê = l.σ.(η̂)

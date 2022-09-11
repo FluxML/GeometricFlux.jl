@@ -38,7 +38,7 @@ end
 @functor GCNConv
 
 function (l::GCNConv)(Ã::AbstractMatrix, X::AbstractArray)
-    z = _matmul(l.weight, _matmul(X, Ã))
+    z = matmul(l.weight, matmul(X, Ã))
     return l.σ.(z .+ l.bias)
 end
 
@@ -113,12 +113,12 @@ Flux.trainable(l::ChebConv) = (l.weight, l.bias)
 
 function (l::ChebConv)(L̃::AbstractMatrix, X::AbstractArray)
     Z_prev = X
-    Z = _matmul(X, L̃)
-    Y = _matmul(view(l.weight,:,:,1), Z_prev)
-    Y += _matmul(view(l.weight,:,:,2), Z)
+    Z = matmul(X, L̃)
+    Y = matmul(view(l.weight,:,:,1), Z_prev)
+    Y += matmul(view(l.weight,:,:,2), Z)
     for k = 3:l.k
-        Z, Z_prev = 2 .* _matmul(Z, L̃) .- Z_prev, Z
-        Y += _matmul(view(l.weight,:,:,k), Z)
+        Z, Z_prev = 2 .* matmul(Z, L̃) .- Z_prev, Z
+        Y += matmul(view(l.weight,:,:,k), Z)
     end
     return l.σ.(Y .+ l.bias)
 end
@@ -203,9 +203,9 @@ end
 
 Flux.trainable(l::GraphConv) = (l.weight1, l.weight2, l.bias)
 
-message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = _matmul(gc.weight2, x_j)
+message(gc::GraphConv, x_i, x_j::AbstractArray, e_ij) = matmul(gc.weight2, x_j)
 
-update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(_matmul(gc.weight1, x) .+ m .+ gc.bias)
+update(gc::GraphConv, m::AbstractArray, x::AbstractArray) = gc.σ.(matmul(gc.weight1, x) .+ m .+ gc.bias)
 
 # For variable graph
 function (l::GraphConv)(fg::AbstractFeaturedGraph)
@@ -299,7 +299,7 @@ function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractMatrix, u
 end
 
 function update_batch_edge(gat::GATConv, el::NamedTuple, E, X::AbstractArray, u)
-    Xi, Xj = _gather(X, el.xs), _gather(X, el.nbrs)
+    Xi, Xj = gather(X, el.xs), gather(X, el.nbrs)
     _, nb, bch_sz = size(Xj)
     heads = gat.heads
     Q = reshape(NNlib.batched_mul(gat.weight, Xi), :, heads, nb, bch_sz)  # dims: (out, heads, nb, bch_sz)
@@ -429,7 +429,7 @@ function update_batch_edge(gat::GATv2Conv, el::NamedTuple, E, X::AbstractMatrix,
 end
 
 function update_batch_edge(gat::GATv2Conv, el::NamedTuple, E, X::AbstractArray, u)
-    Xi, Xj = _gather(X, el.xs), _gather(X, el.nbrs)
+    Xi, Xj = gather(X, el.xs), gather(X, el.nbrs)
     _, nb, bch_sz = size(Xj)
     heads = gat.heads
     Q = reshape(NNlib.batched_mul(gat.wi, Xi) .+ gat.biasi, :, heads, nb, bch_sz)  # dims: (out, heads, nb, bch_sz)
@@ -556,7 +556,7 @@ function (l::GatedGraphConv)(el::NamedTuple, H::AbstractArray{T}) where {T<:Real
         H = vcat(H, Hpad)
     end
     for i = 1:l.num_layers
-        M = _matmul(view(l.weight, :, :, i), H)
+        M = matmul(view(l.weight, :, :, i), H)
         _, M = propagate(l, el, nothing, M, nothing, l.aggr, nothing, nothing)
         H, _ = l.gru(H, M)
     end
@@ -822,20 +822,17 @@ end
 message(l::SAGEConv, x_i, x_j::AbstractArray, e) = l.proj(x_j)
 
 function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E)
-    batch_size = size(E)[end]
     sample_idx = sample_node_index(E, l.num_sample; dims=2)
-    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
-    dstsize = (size(E, 1), el.N, batch_size)  # ensure outcome has the same dimension as x in update
-    xs = batched_index(el.xs[sample_idx], batch_size)
-    Ē = _scatter(aggr, E[idx...], xs, dstsize)
+    indexed_E = selectdim(E, 2, sample_idx)
+    Ē = scatter(aggr, indexed_E, el.xs[sample_idx], el.N)
     return Ē
 end
 
 function aggregate_neighbors(l::SAGEConv, el::NamedTuple, aggr, E::AbstractMatrix)
     sample_idx = sample_node_index(E, l.num_sample; dims=2)
-    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
+    indexed_E = selectdim(E, 2, sample_idx)
     dstsize = (size(E, 1), el.N)  # ensure outcome has the same dimension as x in update
-    Ē = _scatter(aggr, E[idx...], el.xs[sample_idx], dstsize)
+    Ē = NNlib.scatter(aggr, indexed_E, el.xs[sample_idx]; dstsize=dstsize)
     return Ē
 end
 
@@ -844,13 +841,13 @@ aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::Abstract
 
 function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractMatrix)
     sample_idx = sample_node_index(E, el.N; dims=2)
-    idx = ntuple(i -> (i == 2) ? sample_idx : Colon(), ndims(E))
-    state, Ē = lstm(lstm.state0, E[idx...])
+    indexed_E = selectdim(E, 2, sample_idx)
+    state, Ē = lstm(lstm.state0, indexed_E)
     return Ē
 end
 
 function update(l::SAGEConv, m::AbstractArray, x::AbstractArray)
-    y = l.σ.(_matmul(l.weight1, x) + _matmul(l.weight2, m) .+ l.bias)
+    y = l.σ.(matmul(l.weight1, x) + matmul(l.weight2, m) .+ l.bias)
     l.normalize && (y = l2normalize(y; dims=2))  # across all nodes
     return y
 end
