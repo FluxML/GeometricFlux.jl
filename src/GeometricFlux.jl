@@ -37,6 +37,7 @@ export
     positional_encode,
     EEquivGraphPE,
     LSPE,
+    GatedGCNLSPEConv,
 
     # layers/graph_conv
     GCNConv,
@@ -51,6 +52,7 @@ export
     SAGEConv,
     MeanAggregator, MeanPoolAggregator, MaxPoolAggregator,
     LSTMAggregator,
+    GatedGCNConv,
 
     # layers/group_conv
     EEquivGraphConv,
@@ -68,6 +70,9 @@ export
     VariationalGraphEncoder,
     DeepSet,
 
+    # loss
+    laplacian_eig_loss,
+
     # layer/utils
     WithGraph,
     GraphParallel,
@@ -77,6 +82,7 @@ export
 
 include("datasets.jl")
 include("operation.jl")
+include("loss.jl")
 
 include("layers/graphlayers.jl")
 include("layers/gn.jl")

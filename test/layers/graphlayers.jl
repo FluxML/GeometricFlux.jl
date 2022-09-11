@@ -22,14 +22,8 @@
 
         model2 = WithGraph(fg, model)
 
-        @test model2[1].graph ≈ T[1/3  1/3  0.0  1/3;
-                                  1/3  1/3  1/3  0.0;
-                                  0.0  1/3  1/3  1/3;
-                                  1/3  0.0  1/3  1/3]
-        @test model2[2].graph ≈ T[0.2  0.2  0.0  0.6;
-                                  0.2  0.2  0.6  0.0;
-                                  0.0  0.6  0.2  0.2;
-                                  0.6  0.0  0.2  0.2]
+        @test model2[1].graph == GraphSignals.normalized_adjacency_matrix(fg, T; selfloop=true)
+        @test model2[2].graph == GraphSignals.normalized_adjacency_matrix(fg2, T; selfloop=true)
         @test model2[3] isa Dense
     end
 

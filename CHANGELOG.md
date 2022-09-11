@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.6]
+
+- fix tests
+- update doc
+
 ## [0.13.5]
 
 - replace GraphMLDatasets in favor of MLDatasets

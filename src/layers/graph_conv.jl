@@ -128,7 +128,7 @@ function (l::ChebConv)(fg::AbstractFeaturedGraph)
     nf = node_feature(fg)
     GraphSignals.check_num_nodes(fg, nf)
     @assert size(nf, 1) == size(l.weight, 2) "Input feature size must match input channel size."
-    
+
     L̃ = ChainRulesCore.ignore_derivatives() do
         GraphSignals.scaled_laplacian(fg, eltype(nf))
     end
@@ -245,7 +245,7 @@ Graph attentional layer.
 - `out`: The dimension of output features.
 - `bias::Bool`: Keyword argument, whether to learn the additive bias.
 - `σ`: Activation function.
-- `heads`: Number attention heads 
+- `heads`: Number attention heads
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 
@@ -280,7 +280,7 @@ end
 
 function GATConv(ch::Pair{Int,Int}, σ=identity; heads::Int=1, concat::Bool=true,
                  negative_slope=0.2f0, init=glorot_uniform, bias::Bool=true)
-    in, out = ch             
+    in, out = ch
     W = init(out*heads, in)
     b = Flux.create_bias(W, bias, out*heads)
     a = init(2*out, heads)
@@ -372,7 +372,7 @@ Graph attentional layer v2.
 - `in`: The dimension of input features.
 - `out`: The dimension of output features.
 - `σ`: Activation function.
-- `heads`: Number attention heads 
+- `heads`: Number attention heads
 - `concat`: Concatenate layer output or not. If not, layer output is averaged.
 - `negative_slope::Real`: Keyword argument, the parameter of LeakyReLU.
 
@@ -661,7 +661,7 @@ GINConv(nn, eps=0f0) = GINConv(nn, eps)
 
 Flux.trainable(g::GINConv) = (g.nn,)
 
-message(g::GINConv, x_i::AbstractArray, x_j::AbstractArray) = x_j 
+message(g::GINConv, x_i::AbstractArray, x_j::AbstractArray) = x_j
 update(g::GINConv, m::AbstractArray, x::AbstractArray) = g.nn((1 + g.eps) * x + m)
 
 # For variable graph
@@ -705,30 +705,24 @@ CGConv(node dim=128, edge dim=32)
 
 See also [`WithGraph`](@ref) for training layer with static graph.
 """
-struct CGConv{A<:AbstractMatrix,B} <: MessagePassing
-    Wf::A
-    Ws::A
-    bf::B
-    bs::B
+struct CGConv{A,B} <: MessagePassing
+    f::A
+    s::B
 end
 
 @functor CGConv
 
-Flux.trainable(l::CGConv) = (l.Wf, l.Ws, l.bf, l.bs)
-
 function CGConv(dims::NTuple{2,Int}; init=glorot_uniform, bias=true)
     node_dim, edge_dim = dims
-    Wf = init(node_dim, 2*node_dim + edge_dim)
-    Ws = init(node_dim, 2*node_dim + edge_dim)
-    bf = Flux.create_bias(Wf, bias, node_dim)
-    bs = Flux.create_bias(Ws, bias, node_dim)
-    return CGConv(Wf, Ws, bf, bs)
+    f = Dense(2*node_dim + edge_dim, node_dim; bias=bias, init=init)
+    s = Dense(2*node_dim + edge_dim, node_dim; bias=bias, init=init)
+    return CGConv(f, s)
 end
 
-function message(c::CGConv, x_i::AbstractArray, x_j::AbstractArray, e::AbstractArray)
+function message(l::CGConv, x_i::AbstractArray, x_j::AbstractArray, e::AbstractArray)
     z = vcat(x_i, x_j, e)
 
-    return σ.(_matmul(c.Wf, z) .+ c.bf) .* softplus.(_matmul(c.Ws, z) .+ c.bs)
+    return σ.(l.f(z)) .* softplus.(l.s(z))
 end
 
 update(c::CGConv, m::AbstractArray, x) = x + m
@@ -752,7 +746,7 @@ function (l::CGConv)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
 end
 
 function Base.show(io::IO, l::CGConv)
-    node_dim, d = size(l.Wf)
+    node_dim, d = size(l.f.weight)
     edge_dim = d - 2*node_dim
     print(io, "CGConv(node dim=", node_dim, ", edge dim=", edge_dim, ")")
 end
@@ -929,4 +923,88 @@ See also [`SAGEConv`](@ref).
 function LSTMAggregator(args...; kwargs...)
     in_ch = args[1][1]
     return SAGEConv(args..., Flux.LSTMCell(in_ch, in_ch); kwargs...)
+end
+
+
+"""
+    GatedGCNConv(in_dim => out_dim, σ=relu; residual=false, init=glorot_uniform)
+
+Gated graph convolutional network layer.
+
+# Arguments
+
+- `in_dim::Int`: The dimension of input features.
+- `out_dim::Int`: The dimension of output features.
+- `σ`: Activation function.
+- `residual::Bool`: Add a skip connection introduced in ResNet.
+- `init`: Weights' initialization function.
+
+# Examples
+
+```jldoctest
+julia> GatedGCNConv(3 => 5)
+GatedGCNConv(3 => 5, relu, residual=false)
+
+julia> GatedGCNConv(3 => 5, residual=true)
+GatedGCNConv(3 => 5, relu, residual=true)
+```
+"""
+struct GatedGCNConv{I,J,K,L,F} <: MessagePassing
+    A::I
+    B::J
+    U::K
+    V::L
+    σ::F
+    residual::Bool
+end
+
+@functor GatedGCNConv
+
+Flux.trainable(l::GatedGCNConv) = (l.A, l.B, l.U, l.V)
+
+function GatedGCNConv(ch::Pair{Int,Int}, σ=relu; residual::Bool=false, init=glorot_uniform)
+    in, out = ch
+    A = Dense(in, out; init=init, bias=false)
+    B = Dense(in, out; init=init, bias=false)
+    U = Dense(in, out; init=init, bias=false)
+    V = Dense(in, out; init=init, bias=false)
+    return GatedGCNConv(A, B, V, U, σ, residual)
+end
+
+function message(l::GatedGCNConv, h_i, h_j::AbstractArray, e)
+    η_ij = σ.(l.A(h_i) + l.B(h_j))
+    return η_ij .* l.V(h_j)
+end
+
+function update(l::GatedGCNConv, m::AbstractArray, h::AbstractArray)
+    y = l.σ.(l.U(h) + m)
+    if l.residual
+        msg = "output dimension must be the same as input dimension while `l.residual = true`."
+        @assert size(y, 1) == size(h, 1) msg
+        y = y + h
+    end
+    return y
+end
+
+# For variable graph
+function (l::GatedGCNConv)(fg::AbstractFeaturedGraph)
+    nf = node_feature(fg)
+    GraphSignals.check_num_nodes(fg, nf)
+    _, V, _ = propagate(l, graph(fg), nothing, nf, nothing, +, nothing, nothing)
+    return ConcreteFeaturedGraph(fg, nf=V)
+end
+
+# For static graph
+function (l::GatedGCNConv)(el::NamedTuple, h::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, h)
+    _, V, _ = propagate(l, el, nothing, h, nothing, +, nothing, nothing)
+    return V
+end
+
+function Base.show(io::IO, l::GatedGCNConv)
+    out_channel, in_channel = size(l.A.weight)
+    print(io, "GatedGCNConv(", in_channel, " => ", out_channel)
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ", residual=", l.residual)
+    print(io, ")")
 end

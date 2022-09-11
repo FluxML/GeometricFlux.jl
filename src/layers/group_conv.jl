@@ -5,11 +5,12 @@ E(n)-equivariant graph neural network layer.
 
 # Arguments
 
-- `in_dim::Int`: node feature dimension. Data is assumed to be of the form [feature; coordinate], so `in_dim` must strictly be less than the dimension of the input vectors.
-- `out_dim`: the output of the layer will have dimension `out_dim` + (dimension of input vector - `in_dim`).
-- `hidden_dim::Int`: dimension of positional encoding.
-- `edge_dim::Int`: dimension of edge feature.
-- `init`: neural network initialization function.
+- `in_dim::Int`: The dimension of node feature. Data is assumed to be the form of `[feature; coordinate]`,
+    so `in_dim` must strictly be less than the dimension of the input vectors.
+- `out_dim`: The output of the layer will have dimension `out_dim` + (dimension of input vector - `in_dim`).
+- `pos_dim::Int`: The dimension of positional encoding.
+- `edge_dim::Int`: The dimension of edge feature.
+- `init`: Weights' initialization function.
 
 # Examples
 

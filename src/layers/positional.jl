@@ -130,11 +130,11 @@ function(l::EEquivGraphPE)(fg::AbstractFeaturedGraph)
 end
 
 # For static graph
-function(l::EEquivGraphPE)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
-    GraphSignals.check_num_nodes(el.N, X)
+function(l::EEquivGraphPE)(el::NamedTuple, H::AbstractArray, E::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, H)
     # GraphSignals.check_num_edges(el.E, E)
-    _, V, _ = propagate(l, el, E, X, nothing, mean, nothing, nothing)
-    return V
+    _, H, _ = propagate(l, el, E, H, nothing, mean, nothing, nothing)
+    return H
 end
 
 (wg::WithGraph{<:EEquivGraphPE})(args...) = wg.layer(wg.graph, args...)
@@ -149,76 +149,188 @@ output_dim(l::EEquivGraphPE) = size(l.nn.weight, 1)
 positional_encode(wg::WithGraph{<:EEquivGraphPE}, args...) = wg(args...)
 positional_encode(l::EEquivGraphPE, args...) = l(args...)
 
-"""
-    LSPE(fg, f_h, f_e, f_p, k; pe_method=RandomWalkPE)
 
-Learnable structural positional encoding layer. `LSPE` layer can be seen as a GNN layer
-warpped in `WithGraph`.
+## LSPE
+
+"""
+    LSPE(graph, k; init_method=RandomWalkPE)
+
+Learnable structural positional encoding layer which adds learnable positional encoding to
+input data.
 
 # Arguments
 
-- `fg::FeaturedGraph`: A given graoh for positional encoding.
-- `f_h::MessagePassing`: Neural network layer for node update.
-- `f_e`: Neural network layer for edge update.
-- `f_p`: Neural network layer for positional encoding.
+- `graph`: A given graph for positional encoding.
 - `k::Int`: Dimension of positional encoding.
-- `pe_method`: Initializer for positional encoding.
+- `init_method`: Initializer for positional encoding.
+
+See also [`GatedGCNLSPEConv`](@ref) layer and [`laplacian_eig_loss`](@ref) for positional loss.
 """
-struct LSPE{H<:MessagePassing,E,F,P} <: AbstractPositionalEncoding
-    f_h::H
-    f_e::E
-    f_p::F
+struct LSPE{P} <: AbstractPositionalEncoding
     pe::P
 end
 
-function LSPE(fg::AbstractFeaturedGraph, f_h::MessagePassing, f_e, f_p, k::Int;
-              pe_method=RandomWalkPE)
+@functor LSPE
+
+function LSPE(graph, k::Int; init_method=RandomWalkPE)
+    fg = FeaturedGraph(graph)
     A = GraphSignals.adjacency_matrix(fg)
-    return LSPE(f_h, f_e, f_p, positional_encode(pe_method{k}, A))
+    pe = positional_encode(init_method{k}, A)
+    return LSPE(pe)
 end
+
+positional_encode(l::LSPE) = l.pe
 
 # For variable graph
 function (l::LSPE)(fg::AbstractFeaturedGraph)
-    X = node_feature(fg)
+    if GraphSignals.has_positional_feature(fg)
+        return fg
+    else
+        return ConcreteFeaturedGraph(fg, pf=positional_encode(l))
+    end
+end
+
+Base.show(io::IO, l::LSPE) = print(io, "LSPE($(size(l.pe)))")
+
+
+"""
+    GatedGCNLSPEConv(in_dim => out_dim, pos_dim, σ=relu; residual=false, init=glorot_uniform)
+
+Gated graph convolutional network layer with LSPE.
+
+# Arguments
+
+- `in_dim::Int`: The dimension of input features.
+- `out_dim::Int`: The dimension of output features.
+- `pos_dim::Int`: The dimension of positional encoding.
+- `σ`: Activation function.
+- `residual::Bool`: Add a skip connection introduced in ResNet.
+- `init`: Weights' initialization function.
+
+# Examples
+
+```jldoctest
+julia> GatedGCNLSPEConv(3 => 5, 4)
+GatedGCNLSPEConv(3 => 5, positional dim=4, relu, residual=false)
+
+julia> GatedGCNLSPEConv(3 => 5, 4, residual=true)
+GatedGCNLSPEConv(3 => 5, positional dim=4, relu, residual=true)
+```
+
+See also [`LSPE`](@ref) for learnable positional encodings.
+"""
+struct GatedGCNLSPEConv{H,I,J,K,L,M,N,F} <: AbstractGraphLayer
+    A1::H
+    A2::I
+    B1::J
+    B2::K
+    B3::L
+    C1::M
+    C2::N
+    σ::F
+    residual::Bool
+end
+
+@functor GatedGCNLSPEConv
+
+function GatedGCNLSPEConv(ch::Pair{Int,Int}, pos_dim::Int, σ=relu; residual::Bool=false, init=glorot_uniform)
+    in_dim, out_dim = ch
+    A1 = Dense(in_dim + pos_dim, out_dim; init=init)
+    A2 = Dense(in_dim + pos_dim, out_dim; init=init)
+    B1 = Dense(in_dim, out_dim; init=init)
+    B2 = Dense(in_dim, out_dim; init=init)
+    B3 = Dense(in_dim, out_dim; init=init)
+    C1 = Dense(in_dim, out_dim; init=init)
+    C2 = Dense(in_dim, out_dim; init=init)
+    return GatedGCNLSPEConv(A1, A2, B1, B2, B3, C1, C2, σ, residual)
+end
+
+# For variable graph
+function (l::GatedGCNLSPEConv)(fg::AbstractFeaturedGraph)
+    H = node_feature(fg)
     E = edge_feature(fg)
-    GraphSignals.check_num_nodes(fg, X)
-    GraphSignals.check_num_edges(fg, E)
-    E, V = propagate(l, graph(fg), E, X)
-    return ConcreteFeaturedGraph(fg, nf=V, ef=E)
+    X = positional_feature(fg)
+    GraphSignals.has_node_feature(fg) && GraphSignals.check_num_nodes(fg, H)
+    GraphSignals.has_positional_feature(fg) && GraphSignals.check_num_nodes(fg, X)
+    GraphSignals.has_edge_feature(fg) && GraphSignals.check_num_edges(fg, E)
+    E, H, X = propagate(l, graph(fg), E, H, X)
+    return ConcreteFeaturedGraph(fg, nf=H, ef=E, pf=X)
 end
 
 # For static graph
-function (l::LSPE)(el::NamedTuple, X::AbstractArray, E::AbstractArray)
+WithGraph(fg::AbstractFeaturedGraph, l::GatedGCNLSPEConv) =
+    WithGraph(GraphSignals.to_namedtuple(fg), l, GraphSignals.NullDomain())
+
+(wg::WithGraph{<:GatedGCNLSPEConv})(args...) = wg.layer(wg.graph, args...)
+
+function (l::GatedGCNLSPEConv)(el::NamedTuple, H::AbstractArray, E::AbstractArray, X::AbstractArray)
+    GraphSignals.check_num_nodes(el.N, H)
     GraphSignals.check_num_nodes(el.N, X)
     GraphSignals.check_num_edges(el.E, E)
-    E, V = propagate(l, graph(fg), E, X)
-    return V, E
+    E, H, X = propagate(l, el, E, H, X)
+    return H, E, X
 end
 
-update_vertex(l::LSPE, el::NamedTuple, X, E::AbstractArray) = l.f_h(el, X, E)
-update_vertex(l::LSPE, el::NamedTuple, X, E::Nothing) = l.f_h(el, X)
+update_edge(l::GatedGCNLSPEConv, h_i, h_j, e_ij) = σ.(l.B1(h_i) + l.B2(h_j) + l.B3(e_ij))
 
-update_edge(l::LSPE, h_i, h_j, e_ij) = l.f_e(e_ij)
+function normalize_η(l::GatedGCNLSPEConv, el::NamedTuple, η̂)
+    summed_η = aggregate_neighbors(l, el, +, η̂)
+    return η̂ ./ _gather(summed_η .+ 1f-6, el.xs)
+end
 
-positional_encode(l::LSPE, p_i, p_j, e_ij) = l.f_p(p_i)
+message_vertex(l::GatedGCNLSPEConv, h_j, p_j, η_ij) = η_ij .* l.A2(vcat(h_j, p_j))
 
-propagate(l::LSPE, sg::SparseGraph, E, V) = propagate(l, to_namedtuple(sg), E, V)
+function aggregate_neighbors(l::GatedGCNLSPEConv, el::NamedTuple, aggr, E)
+    batch_size = size(E)[end]
+    dstsize = (size(E, 1), el.N, batch_size)
+    xs = batched_index(el.xs, batch_size)
+    return _scatter(aggr, E, xs, dstsize)
+end
 
-function propagate(l::LSPE, el::NamedTuple, E, V)
+aggregate_neighbors(l::GatedGCNLSPEConv, el::NamedTuple, aggr, E::AbstractMatrix) =
+    _scatter(aggr, E, el.xs)
+
+update_vertex(l::GatedGCNLSPEConv, m, h, p) = l.σ.(l.A1(vcat(h, p)) + m)
+
+message_position(l::GatedGCNLSPEConv, p_j, η_ij) = η_ij .* l.C2(p_j)
+
+update_position(l::GatedGCNLSPEConv, m, p) = NNlib.tanh_fast.(l.C1(p) + m)
+
+propagate(l::GatedGCNLSPEConv, sg::SparseGraph, E, H, X) =
+    propagate(l, GraphSignals.to_namedtuple(sg), E, H, X)
+
+function propagate(l::GatedGCNLSPEConv, el::NamedTuple, E, H, X)
     e_ij = _gather(E, el.es)
-    h_i = _gather(V, el.xs)
-    h_j = _gather(V, el.nbrs)
-    p_i = _gather(l.pe, el.xs)
-    p_j = _gather(l.pe, el.nbrs)
+    h_i = _gather(H, el.xs)
+    h_j = _gather(H, el.nbrs)
+    p_i = _gather(X, el.xs)
+    p_j = _gather(X, el.nbrs)
 
-    V = update_vertex(l, el, vcat(V, l.pe), E)
-    E = update_edge(l, h_i, h_j, e_ij)
-    l.pe = positional_encode(l, p_i, p_j, e_ij)
-    return E, V
+    η̂ = update_edge(l, h_i, h_j, e_ij)
+    Ê = l.σ.(η̂)
+    η_ij = normalize_η(l, el, η̂)
+
+    m_h = message_vertex(l, h_j, p_j, η_ij)
+    m_h = aggregate_neighbors(l, el, +, m_h)
+    Ĥ = update_vertex(l, m_h, H, X)
+
+    m_p = message_position(l, p_j, η_ij)
+    m_p = aggregate_neighbors(l, el, +, m_p)
+    X̂ = update_position(l, m_p, X)
+
+    if l.residual
+        Ĥ = H + Ĥ
+        X̂ = X + X̂
+    end
+    return E, H, X
 end
 
-function Base.show(io::IO, l::LSPE)
-    print(io, "LSPE(node_layer=", l.f_h)
-    print(io, ", edge_layer=", l.f_e)
-    print(io, ", positional_encode=", l.f_p, ")")
+function Base.show(io::IO, l::GatedGCNLSPEConv)
+    out_dim, in_dim = size(l.B1.weight)
+    pos_dim = size(l.A1.weight, 2) - in_dim
+    print(io, "GatedGCNLSPEConv(", in_dim, " => ", out_dim)
+    print(io, ", positional dim=", pos_dim)
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ", residual=", l.residual)
+    print(io, ")")
 end
