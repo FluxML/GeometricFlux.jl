@@ -149,7 +149,7 @@ Reference: [Wang2019](@cite)
 
 ---
 
-## Graph Isomorphism Network
+## Graph Isomorphism Network Layer
 
 ```math
 \textbf{x}_i' = f_{\Theta}\left((1 + \varepsilon) \cdot \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \textbf{x}_j \right)
@@ -165,7 +165,7 @@ Reference: [Xu2019](@cite)
 
 ---
 
-## Crystal Graph Convolutional Network
+## Crystal Graph Convolutional Network Layer
 
 ```math
 \textbf{x}_i' = \textbf{x}_i + \sum_{j \in \mathcal{N}(i)} \sigma\left( \textbf{z}_{i,j} \textbf{W}_f + \textbf{b}_f \right) \odot \text{softplus}\left(\textbf{z}_{i,j} \textbf{W}_s + \textbf{b}_s \right)
@@ -178,3 +178,19 @@ CGConv
 ```
 
 Reference: [Xie2018](@cite)
+
+---
+
+## Residual Gated Graph Convolutional Network Layer
+
+```math
+\textbf{h}_i' = \textbf{h}_i + ReLU \left( U \textbf{h}_i + \sum_{j \in \mathcal{N}(i)} \textbf{\eta}_{ij} \odot V \textbf{h}_j \right)
+```
+
+where ``\textbf{\eta}_{ij} = \sigma(A \textbf{h}_i + B \textbf{h}_j)``.
+
+```@docs
+GatedGCNConv
+```
+
+Reference: [Bresson2017](@cite)

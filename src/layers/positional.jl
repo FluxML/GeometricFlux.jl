@@ -164,7 +164,7 @@ input data.
 - `k::Int`: Dimension of positional encoding.
 - `init_method`: Initializer for positional encoding.
 
-See also [`GatedGCNLSPEConv`](@ref).
+See also [`GatedGCNLSPEConv`](@ref) layer and [`laplacian_eig_loss`](@ref) for positional loss.
 """
 struct LSPE{P} <: AbstractPositionalEncoding
     pe::P
@@ -207,7 +207,17 @@ Gated graph convolutional network layer with LSPE.
 - `residual::Bool`: Add a skip connection introduced in ResNet.
 - `init`: Weights' initialization function.
 
-See also [`LSPE`](@ref).
+# Examples
+
+```jldoctest
+julia> GatedGCNLSPEConv(3 => 5, 4)
+GatedGCNLSPEConv(3 => 5, positional dim=4, relu, residual=false)
+
+julia> GatedGCNLSPEConv(3 => 5, 4, residual=true)
+GatedGCNLSPEConv(3 => 5, positional dim=4, relu, residual=true)
+```
+
+See also [`LSPE`](@ref) for learnable positional encodings.
 """
 struct GatedGCNLSPEConv{H,I,J,K,L,M,N,F} <: AbstractGraphLayer
     A1::H

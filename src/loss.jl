@@ -15,6 +15,8 @@ where ``\mathcal{L}`` is graph Laplacian (same as `L`) and ``\lVert \cdot \rVert
 - `L::AbstractMatrix`: The Laplacian with dimensions of ``(N, N)`` from a graph which has
     ``N`` nodes.
 - `λ::Real`: Regularization term and it must be positive.
+
+See also [`LSPE`](@ref) for learnable positional encodings.
 """
 function laplacian_eig_loss(p::AbstractMatrix, L::AbstractMatrix, λ::Real)
     @assert λ > 0 "λ must be positive."

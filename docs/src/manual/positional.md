@@ -35,9 +35,9 @@ Reference: [Satorras2021](@cite)
 
 ```@docs
 LSPE
+GatedGCNLSPEConv
 ```
 
 Reference: [Dwivedi2021](@cite)
 
 ---
-

@@ -28,6 +28,7 @@ tests = [
     "layers/graphlayers",
     "sampling",
     "models",
+    "loss",
 ]
 
 if CUDA.functional()

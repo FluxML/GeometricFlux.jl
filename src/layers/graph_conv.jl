@@ -938,6 +938,16 @@ Gated graph convolutional network layer.
 - `σ`: Activation function.
 - `residual::Bool`: Add a skip connection introduced in ResNet.
 - `init`: Weights' initialization function.
+
+# Examples
+
+```jldoctest
+julia> GatedGCNConv(3 => 5)
+GatedGCNConv(3 => 5, relu, residual=false)
+
+julia> GatedGCNConv(3 => 5, residual=true)
+GatedGCNConv(3 => 5, relu, residual=true)
+```
 """
 struct GatedGCNConv{I,J,K,L,F} <: MessagePassing
     A::I
@@ -960,8 +970,6 @@ function GatedGCNConv(ch::Pair{Int,Int}, σ=relu; residual::Bool=false, init=glo
     V = Dense(in, out; init=init, bias=false)
     return GatedGCNConv(A, B, V, U, σ, residual)
 end
-
-@functor GatedGCNConv
 
 function message(l::GatedGCNConv, h_i, h_j::AbstractArray, e)
     η_ij = σ.(l.A(h_i) + l.B(h_j))
@@ -997,5 +1005,6 @@ function Base.show(io::IO, l::GatedGCNConv)
     out_channel, in_channel = size(l.A.weight)
     print(io, "GatedGCNConv(", in_channel, " => ", out_channel)
     l.σ == identity || print(io, ", ", l.σ)
+    print(io, ", residual=", l.residual)
     print(io, ")")
 end

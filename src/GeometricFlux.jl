@@ -70,6 +70,9 @@ export
     VariationalGraphEncoder,
     DeepSet,
 
+    # loss
+    laplacian_eig_loss,
+
     # layer/utils
     WithGraph,
     GraphParallel,
