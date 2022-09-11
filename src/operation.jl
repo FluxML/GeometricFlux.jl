@@ -42,29 +42,20 @@ end
 function indexed_softmax(x::AbstractArray, xs, N; dims=1)
     y = copy(x)
     for i in 1:N
-        idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
-        NNlib.softmax!(view(y, idx...); dims)
+        indexed_y = selectdim(y, dims, (xs .== i))
+        NNlib.softmax!(indexed_y; dims)
     end
     return y
 end
 
 function ∇indexed_softmax(dy::AbstractArray{T}, y::AbstractArray{S}, xs, N; dims=1) where {T,S}
-    dx = if NNlib.within_grad()
-        tmp = dy .* y
-        for i in 1:N
-            idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
-            tmp[idx...] .= tmp[idx...] .- y[idx...] .* sum(tmp[idx...]; dims)
-        end
-        tmp
-    else
-        out = similar(y, promote_type(T,S))
-        out .= dy .* y
-        for i in 1:N
-            idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
-            out[idx...] .= out[idx...] .- y[idx...] .* sum(out[idx...]; dims)
-        end
-        out
+    out = NNlib.∇softmax_data(dy, y; dims)
+    for i in 1:N
+        indexed_y = selectdim(y, dims, (xs .== i))
+        indexed_out = selectdim(out, dims, (xs .== i))
+        indexed_out .= indexed_out .- indexed_y .* sum(indexed_out; dims)
     end
+    return out
 end
 
 function ChainRulesCore.rrule(::typeof(indexed_softmax), x, xs, N; dims=1)
