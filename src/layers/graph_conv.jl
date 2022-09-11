@@ -927,17 +927,17 @@ end
 
 
 """
-    GatedGCNConv(in => out, σ=relu; residual=false, init=glorot_uniform)
+    GatedGCNConv(in_dim => out_dim, σ=relu; residual=false, init=glorot_uniform)
 
 Gated graph convolutional network layer.
 
 # Arguments
 
-- `in`: The dimension of input features.
-- `out`: The dimension of output features.
+- `in_dim::Int`: The dimension of input features.
+- `out_dim::Int`: The dimension of output features.
 - `σ`: Activation function.
 - `residual::Bool`: Add a skip connection introduced in ResNet.
-- `init`: Weights' initializer.
+- `init`: Weights' initialization function.
 """
 struct GatedGCNConv{I,J,K,L,F} <: MessagePassing
     A::I
@@ -970,7 +970,11 @@ end
 
 function update(l::GatedGCNConv, m::AbstractArray, h::AbstractArray)
     y = l.σ.(l.U(h) + m)
-    l.residual && (y = y + h)
+    if l.residual
+        msg = "output dimension must be the same as input dimension while `l.residual = true`."
+        @assert size(y, 1) == size(h, 1) msg
+        y = y + h
+    end
     return y
 end
 
