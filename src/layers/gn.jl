@@ -75,9 +75,9 @@ See also [`update_edge`](@ref), [`update_vertex`](@ref), [`update_global`](@ref)
 update_batch_edge(gn::GraphNet, el::NamedTuple, E, V, u) =
     update_edge(
         gn,
-        _gather(E, el.es),
-        _gather(V, el.xs),
-        _gather(V, el.nbrs),
+        gather(E, el.es),
+        gather(V, el.xs),
+        gather(V, el.nbrs),
         u
     )
 
@@ -116,17 +116,11 @@ See also [`update_edge`](@ref), [`update_vertex`](@ref), [`update_global`](@ref)
 [`update_batch_edge`](@ref), [`update_batch_vertex`](@ref), [`aggregate_edges`](@ref),
 [`aggregate_vertices`](@ref).
 """
-function aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E)
-    batch_size = size(E)[end]
-    dstsize = (size(E, 1), el.N, batch_size)
-    xs = batched_index(el.xs, batch_size)
-    return _scatter(aggr, E, xs, dstsize)
-end
+aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E) = scatter(aggr, E, el.xs, el.N)
+aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = scatter(aggr, E, el.xs)
 
-aggregate_neighbors(::GraphNet, el::NamedTuple, aggr, E::AbstractMatrix) = _scatter(aggr, E, el.xs)
-
-@inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, E) = nothing
-@inline aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing
+aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, E) = nothing
+aggregate_neighbors(::GraphNet, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing
 
 """
     aggregate_edges(gn, aggr, E)

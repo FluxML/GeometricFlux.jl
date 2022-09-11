@@ -104,26 +104,20 @@ function Base.show(io::IO, l::EEquivGraphConv)
     print(io, ")")
 end
 
-function aggregate_neighbors(::EEquivGraphConv, el::NamedTuple, aggr, E)
-    batch_size = size(E)[end]
-    dstsize = (size(E, 1), el.N, batch_size)
-    xs = batched_index(el.xs, batch_size)
-    return _scatter(aggr, E, xs, dstsize)
-end
+aggregate_neighbors(::EEquivGraphConv, el::NamedTuple, aggr, E) = scatter(aggr, E, el.xs, el.N)
+aggregate_neighbors(::EEquivGraphConv, el::NamedTuple, aggr, E::AbstractMatrix) = scatter(aggr, E, el.xs)
 
-aggregate_neighbors(::EEquivGraphConv, el::NamedTuple, aggr, E::AbstractMatrix) = _scatter(aggr, E, el.xs)
-
-@inline aggregate_neighbors(::EEquivGraphConv, ::NamedTuple, ::Nothing, E) = nothing
-@inline aggregate_neighbors(::EEquivGraphConv, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing
+aggregate_neighbors(::EEquivGraphConv, ::NamedTuple, ::Nothing, E) = nothing
+aggregate_neighbors(::EEquivGraphConv, ::NamedTuple, ::Nothing, ::AbstractMatrix) = nothing
 
 propagate(l::EEquivGraphConv, sg::SparseGraph, E, V, X, aggr) =
     propagate(l, GraphSignals.to_namedtuple(sg), E, V, X, aggr)
 
 function propagate(l::EEquivGraphConv, el::NamedTuple, E, V, X, aggr)
     E = message(
-        l, _gather(V, el.xs), _gather(V, el.nbrs),
-        _gather(X, el.xs), _gather(X, el.nbrs),
-        _gather(E, el.es)
+        l, gather(V, el.xs), gather(V, el.nbrs),
+        gather(X, el.xs), gather(X, el.nbrs),
+        gather(E, el.es)
         )
     X = positional_encode(l.pe, el, X, E)
     Ē = aggregate_neighbors(l, el, aggr, E)
