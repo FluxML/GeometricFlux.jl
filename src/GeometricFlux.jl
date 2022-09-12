@@ -39,7 +39,7 @@ export
     LSPE,
     GatedGCNLSPEConv,
 
-    # layers/graph_conv
+    # layers/graphconv
     GCNConv,
     ChebConv,
     GraphConv,
@@ -54,7 +54,7 @@ export
     LSTMAggregator,
     GatedGCNConv,
 
-    # layers/group_conv
+    # layers/groupconv
     EEquivGraphConv,
 
     # layer/pool
@@ -89,8 +89,8 @@ include("layers/gn.jl")
 include("layers/msgpass.jl")
 
 include("layers/positional.jl")
-include("layers/graph_conv.jl")
-include("layers/group_conv.jl")
+include("layers/graphconv.jl")
+include("layers/groupconv.jl")
 include("layers/pool.jl")
 include("models.jl")
 

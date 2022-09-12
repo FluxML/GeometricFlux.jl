@@ -841,8 +841,8 @@ aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::Abstract
 
 function aggregate_neighbors(::SAGEConv, el::NamedTuple, lstm::Flux.LSTMCell, E::AbstractMatrix)
     sample_idx = sample_node_index(E, el.N; dims=2)
-    indexed_E = selectdim(E, 2, sample_idx)
-    state, Ē = lstm(lstm.state0, indexed_E)
+    idx = ntuple(i -> i == 2 ? sample_idx : Colon(), ndims(E))
+    state, Ē = lstm(lstm.state0, E[idx...])
     return Ē
 end
 

@@ -14,16 +14,18 @@ using Statistics: mean
 using Test
 
 cuda_tests = [
-    "cuda/graph_conv",
+    "cuda/graphconv",
     "cuda/msgpass",
+    "cuda/groupconv",
+    "cuda/positional",
 ]
 
 tests = [
     "layers/gn",
     "layers/msgpass",
     "layers/positional",
-    "layers/graph_conv",
-    "layers/group_conv",
+    "layers/graphconv",
+    "layers/groupconv",
     "layers/pool",
     "layers/graphlayers",
     "sampling",
