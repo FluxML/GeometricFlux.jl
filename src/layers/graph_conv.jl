@@ -556,17 +556,23 @@ function (l::GatedGraphConv)(el::NamedTuple, H::AbstractArray{T}) where {T<:Real
         H = vcat(H, Hpad)
     end
     for i = 1:l.num_layers
-        M = _matmul(view(l.weight, :, :, i), H)
+        M = _matmul(selectdim(l.weight, 3, i), H)
         _, M = propagate(l, el, nothing, M, nothing, l.aggr, nothing, nothing)
-        H, _ = l.gru(H, M)
+        H = apply_gru(l.gru, H, M)
     end
     return H
 end
 
+function apply_gru(gru, H::AbstractArray, M::AbstractArray)
+    H′ = apply_gru(gru, reshape(H, size(H, 1), :), reshape(M, size(M, 1), :))
+    return reshape(H′, size(H′, 1), size(H)[2:end]...)
+end
+
+apply_gru(gru, H::AbstractMatrix, M::AbstractMatrix) = gru(H, M)[1]
+
 function Base.show(io::IO, l::GatedGraphConv)
     print(io, "GatedGraphConv(($(l.out_ch) => $(l.out_ch))^$(l.num_layers)")
-    print(io, ", aggr=", l.aggr)
-    print(io, ")")
+    print(io, ", aggr=", l.aggr, ")")
 end
 
 
