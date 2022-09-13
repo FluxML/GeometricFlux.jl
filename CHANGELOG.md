@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.7]
+
+- fix `GatedGraphConv`
+
 ## [0.13.6]
 
 - fix tests
