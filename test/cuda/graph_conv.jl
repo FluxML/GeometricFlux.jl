@@ -3,7 +3,7 @@
     in_channel = 3
     out_channel = 5
     batch_size = 10
-    
+
     N = 4
     adj = T[0 1 0 1;
            1 0 1 0;
@@ -48,7 +48,7 @@
             @test size(cc.weight) == (out_channel, in_channel, k)
             @test size(cc.bias) == (out_channel,)
             @test cc.k == k
-            
+
             fg = FeaturedGraph(adj, nf=X) |> gpu
             fg_ = cc(fg)
             @test size(node_feature(fg_)) == (out_channel, N)
@@ -106,12 +106,12 @@
             @test size(gat.weight) == (out_channel * heads, in_channel)
             @test size(gat.bias) == (out_channel * heads,)
             @test size(gat.a) == (2*out_channel, heads)
-            
+
             X = rand(T, in_channel, N)
             fg = FeaturedGraph(adj, nf=X) |> gpu
             fg_ = gat(fg)
             @test size(node_feature(fg_)) == (out_channel * heads, N)
-    
+
             g = gradient(() -> sum(node_feature(gat(fg))), Flux.params(gat))
             @test length(g.grads) == 5
         end
@@ -121,7 +121,7 @@
             gat = WithGraph(fg, GATConv(in_channel=>out_channel, heads=2)) |> gpu
             Y = gat(X |> gpu)
             @test size(Y) == (out_channel * heads, N, batch_size)
-    
+
             g = gradient(() -> sum(gat(X |> gpu)), Flux.params(gat))
             @test length(g.grads) == 4
         end
@@ -145,11 +145,11 @@
         @testset "layer with static graph" begin
             X = rand(T, in_channel, N, batch_size)
             ggc = WithGraph(fg, GatedGraphConv(out_channel, num_layers)) |> gpu
-            @test_broken Y = ggc(X |> gpu)
-            @test_broken size(Y) == (out_channel, N, batch_size)
+            Y = ggc(X |> gpu)
+            @test size(Y) == (out_channel, N, batch_size)
 
-            @test_broken g = gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
-            @test_broken length(g.grads) == 6
+            g = gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
+            @test length(g.grads) == 7
         end
     end
 

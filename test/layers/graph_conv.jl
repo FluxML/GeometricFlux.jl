@@ -265,11 +265,11 @@
         @testset "layer with static graph" begin
             X = rand(T, in_channel, N, batch_size)
             ggc = WithGraph(fg, GatedGraphConv(out_channel, num_layers))
-            @test_broken Y = ggc(X)
-            @test_broken size(Y) == (out_channel, N, batch_size)
+            Y = ggc(X)
+            @test size(Y) == (out_channel, N, batch_size)
 
-            @test_broken g = gradient(() -> sum(ggc(X)), Flux.params(ggc))
-            @test_broken length(g.grads) == 6
+            g = gradient(() -> sum(ggc(X)), Flux.params(ggc))
+            @test length(g.grads) == 6
         end
     end
 
