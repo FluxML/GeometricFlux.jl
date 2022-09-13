@@ -556,7 +556,7 @@ function (l::GatedGraphConv)(el::NamedTuple, H::AbstractArray{T}) where {T<:Real
         H = vcat(H, Hpad)
     end
     for i = 1:l.num_layers
-        M = _matmul(selectdim(l.weight, 3, i), H)
+        M = _matmul(l.weight[:, :, i], H)
         _, M = propagate(l, el, nothing, M, nothing, l.aggr, nothing, nothing)
         H = apply_gru(l.gru, H, M)
     end

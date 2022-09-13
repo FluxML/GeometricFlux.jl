@@ -149,7 +149,7 @@
             @test size(Y) == (out_channel, N, batch_size)
 
             g = gradient(() -> sum(ggc(X |> gpu)), Flux.params(ggc))
-            @test length(g.grads) == 6
+            @test length(g.grads) == 7
         end
     end
 
