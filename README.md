@@ -38,7 +38,7 @@ A `FeaturedGraph` can be constructed from various graph structures, including
 adjacency matrices, adjacency lists, Graphs' types...
 
 ```julia
-fg = FeaturedGraph(adj_list)   
+fg = FeaturedGraph(adj_list)
 ```
 
 ### Graph convolutional layers
@@ -75,7 +75,7 @@ Flux.train!(loss, ps, train_data, opt, cb=throttle(evalcb, 10))
 
 To achieve geometric deep learning raised by Bronstein *et al*, 5G fields of deep learning models will be supported in GeometricFlux.jl. For details, you could check the [geometric deep learning official website](https://geometricdeeplearning.com/).
 
-5G including the following fields:
+5(+1)G including the following fields:
 
 * **Graphs** and Sets
   * including classical GNN models and networks over sets.
@@ -87,3 +87,8 @@ To achieve geometric deep learning raised by Bronstein *et al*, 5G fields of dee
   * including a series of equivariant/invariant models.
 * **Geodesics** and Manifolds
 * **Gauges** and Bundles
+* **Geometric algebra**
+
+## Discussions
+
+It's welcome to have direct discussions in #graphnet channel or in #flux-bridged channel on slack. For usage issues, it's welcome to post your minimal working examples (MWE) on [Julia discourse](https://discourse.julialang.org/) and then tag maintainer `@yuehhua`.
