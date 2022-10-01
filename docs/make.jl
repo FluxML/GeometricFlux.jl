@@ -1,5 +1,6 @@
 using Documenter
 using DocumenterCitations
+using MultiDocumenter
 using DemoCards
 using GeometricFlux
 
@@ -7,12 +8,13 @@ const ASSETS = ["assets/flux.css", "assets/favicon.ico"]
 
 bib = CitationBibliography(joinpath(@__DIR__, "bibliography.bib"), sorting=:nyt)
 
-DocMeta.setdocmeta!(GeometricFlux, :DocTestSetup, :(using GeometricFlux, Flux); recursive=true)
+DocMeta.setdocmeta!(GeometricFlux, :DocTestSetup, :(using GeometricFlux, GraphSignals, Flux); recursive=true)
 
 # DemoCards
 demopage, postprocess_cb, demo_assets = makedemos("tutorials")
 isnothing(demo_assets) || (push!(ASSETS, demo_assets))
 
+# build GeometricFlux documentation
 makedocs(
     bib,
     sitename = "GeometricFlux.jl",
@@ -23,7 +25,7 @@ makedocs(
       edit_link = "master",
     ),
     clean = false,
-    modules = [GeometricFlux,GraphSignals],
+    modules = [GeometricFlux, GraphSignals],
     pages = ["Home" => "index.md",
              demopage,
              "Introduction" => "introduction.md",
@@ -59,7 +61,39 @@ makedocs(
 # callbacks of DemoCards
 postprocess_cb()
 
+# build MultiDocumenter
+clonedir = mktempdir()
+
+docs = [
+    ("FluxML/GeometricFlux.jl.git", "gh-pages", false) => MultiDocumenter.MultiDocRef(
+        upstream = joinpath(clonedir, "GeometricFlux"),
+        path = "geometricflux",
+        name = "GeometricFlux"
+    ),
+    ("yuehhua/GraphSignals.jl.git", "gh-pages", false) => MultiDocumenter.MultiDocRef(
+        upstream = joinpath(clonedir, "GraphSignals"),
+        path = "graphsignals",
+        name = "GraphSignals"
+    ),
+]
+
+for ((remote, branch, use_ssh), docref) in docs
+  prefix = use_ssh ? "git@github.com:" : "https://github.com/"
+  run(`git clone --depth 1 $prefix$remote --branch $branch --single-branch $(docref.upstream)`)
+end
+
+outpath = joinpath(@__DIR__, "out")
+
+MultiDocumenter.make(
+  outpath,
+  collect(last.(docs));
+  search_engine = MultiDocumenter.SearchConfig(
+      index_versions = ["stable"],
+      engine = MultiDocumenter.FlexSearch
+  )
+)
+
 deploydocs(
   repo = "github.com/FluxML/GeometricFlux.jl.git",
-  target = "build",
+  target = "out",
 )
