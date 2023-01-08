@@ -43,7 +43,7 @@ function indexed_softmax(x::AbstractArray, xs, N; dims=1)
 end
 
 function ∇indexed_softmax(dy::AbstractArray{T}, y::AbstractArray{S}, xs, N; dims=1) where {T,S}
-    dx = if NNlib.within_grad()
+    dx = if NNlib.within_gradient(y)
         tmp = dy .* y
         for i in 1:N
             idx = ntuple(j -> (j == dims) ? (xs .== i) : Colon(), ndims(y))
