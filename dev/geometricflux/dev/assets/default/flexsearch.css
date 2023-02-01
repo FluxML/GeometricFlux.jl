@@ -1,0 +1,120 @@
+#multi-page-nav .search {
+    margin-left: auto;
+    font-size: 16px;
+}
+
+#multi-page-nav .search .search-keybinding {
+    float: right;
+    width: 0;
+    transform: translateX(-1em);
+    color: #999;
+}
+
+#multi-page-nav .search:focus-within .search-keybinding {
+    display: none;
+}
+
+#multi-page-nav .search #search-input {
+    border: 1px solid #666;
+    border-radius: 3.2px;
+    color: #999;
+    background-color: unset;
+    height: 28px;
+    font-family: Glober;
+    width: 20em;
+    font-size: 14px;
+    padding: 0 8px;
+}
+
+#multi-page-nav .search #search-input::placeholder {
+    color: #999;
+    opacity: 1;
+}
+
+#multi-page-nav .search:focus-within #search-input {
+    background-color: #fff;
+    outline: none;
+    box-shadow: none;
+    color: #000;
+}
+
+.theme--documenter-dark #multi-page-nav .search:focus-within #search-input {
+    background-color: #202227;
+    color: #eee;
+}
+
+#multi-page-nav .search:focus-within .suggestions {
+    display: block;
+}
+
+#multi-page-nav .hidden {
+    display: none !important;
+}
+
+#multi-page-nav .suggestions {
+    margin: -10px 20px 0 0;
+    display: none;
+    background: #fff;
+    min-width: 20em;
+    max-width: 50vw;
+    position: absolute;
+    border: 1px solid #cfd4db;
+    border-radius: 6px;
+    padding: .4rem;
+    list-style-type: none;
+    z-index: 10;
+    right: 0;
+    max-height: max(50vh, 250px);
+    overflow-y: auto;
+}
+
+.theme--documenter-dark #multi-page-nav .suggestions {
+    background: #2e3138;
+    border: 1px solid #5e6d6f;
+}
+
+.theme--documenter-dark #multi-page-nav .suggestion a:hover,
+.theme--documenter-dark #multi-page-nav .suggestion a:focus {
+    background-color: #202227;
+}
+
+#multi-page-nav .suggestions .suggestion {
+    line-height: 1.4;
+    border-radius: 4px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all;
+}
+
+#multi-page-nav .suggestion a {
+    padding: .4rem .6rem;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: black;
+}
+
+.theme--documenter-dark #multi-page-nav .suggestion a {
+    color: white;
+}
+
+#multi-page-nav .suggestion a:hover,
+#multi-page-nav .suggestion a:focus {
+    background-color: #eee;
+}
+
+#multi-page-nav .suggestions .suggestion .page-title {
+    font-weight: bold;
+}
+
+@media screen and (max-width: 1055px) {
+    #multi-page-nav .search #search-input {
+        width: 100%;
+    }
+    #multi-page-nav .suggestions {
+        max-width: 100vw;
+        width: calc(100% - 7.5rem);
+        margin: 10px 2em 4.5em 0;
+    }
+}
