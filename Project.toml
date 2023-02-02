@@ -25,7 +25,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Word2Vec = "c64b6f0f-98cd-51d1-af78-58ae84944834"
 
 [compat]
-CUDA = "3"
+CUDA = "3, 4"
 ChainRulesCore = "1"
 DataStructures = "0.18"
 FillArrays = "0.13"
