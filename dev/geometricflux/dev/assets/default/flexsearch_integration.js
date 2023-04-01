@@ -20,9 +20,10 @@
         input.setAttribute('placeholder', 'Loading...')
         successfullyLoadedIndex = false
         const keys = ['content.cfg', 'content.ctx', 'content.map', 'reg', 'store']
+        const rootPath = window.MULTIDOCUMENTER_ROOT_PATH ?? '/'
         const promises = keys.map(key => {
             return new Promise((resolve, reject) => {
-                fetch('/search-data/' + key + '.json').then(r => {
+                fetch(`${rootPath}search-data/${key}.json`).then(r => {
                     if (r && r.ok) {
                         r.json().then(idx => {
                             flexsearchIdx.import(key, idx)
