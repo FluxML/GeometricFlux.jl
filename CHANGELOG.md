@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.9]
+
+- update compact
+
 ## [0.13.8]
 
 - adapt to new NNlib API `within_gradient`
