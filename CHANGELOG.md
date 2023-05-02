@@ -2,9 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.10]
+
+- update compat
+
 ## [0.13.9]
 
-- update compact
+- update compat
 
 ## [0.13.8]
 
