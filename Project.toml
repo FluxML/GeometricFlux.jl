@@ -4,7 +4,6 @@ authors = ["Yueh-Hua Tu <a504082002@gmail.com>"]
 version = "0.13.10"
 
 [deps]
-CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -15,36 +14,37 @@ Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Word2Vec = "c64b6f0f-98cd-51d1-af78-58ae84944834"
 
 [compat]
-CUDA = "3, 4"
 ChainRulesCore = "1"
 DataStructures = "0.18"
-FillArrays = "0.13, 1"
-Flux = "0.12 - 0.13"
-GraphSignals = "0.7 - 0.8"
+DelimitedFiles = "1"
+FillArrays = "1"
+Flux = "0.14"
+GraphSignals = "0.9"
 Graphs = "1"
 MLDatasets = "0.7"
-NNlib = "0.8"
-NNlibCUDA = "0.2"
-Optimisers = "0.2"
+NNlib = "0.9"
+Optimisers = "0.2, 0.3"
 Reexport = "1"
+Requires = "1"
 StatsBase = "0.33, 0.34"
 Word2Vec = "0.5"
-julia = "1.6"
+julia = "1.9"
 
 [extras]
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Clustering", "SparseArrays", "Test"]
+test = ["Clustering", "CUDA", "SparseArrays", "Test"]

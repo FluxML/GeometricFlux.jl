@@ -1,3 +1,8 @@
+using LinearAlgebra
+using SparseArrays: SparseMatrixCSC
+using Statistics: mean
+using Test
+
 using GeometricFlux
 using GeometricFlux.Datasets
 using Clustering
@@ -7,11 +12,7 @@ using Flux: @functor
 using FillArrays
 using GraphSignals
 using Graphs
-using LinearAlgebra
-using NNlib, NNlibCUDA
-using SparseArrays: SparseMatrixCSC
-using Statistics: mean
-using Test
+using NNlib
 
 cuda_tests = [
     "cuda/graph_conv",
