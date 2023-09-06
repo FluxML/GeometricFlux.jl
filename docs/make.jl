@@ -6,7 +6,7 @@ using GeometricFlux
 
 const ASSETS = ["assets/flux.css", "assets/favicon.ico"]
 
-bib = CitationBibliography(joinpath(@__DIR__, "bibliography.bib"), sorting=:nyt)
+bib = CitationBibliography(joinpath(@__DIR__, "bibliography.bib"))
 
 DocMeta.setdocmeta!(GeometricFlux, :DocTestSetup, :(using GeometricFlux, GraphSignals, Flux); recursive=true)
 
