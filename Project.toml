@@ -1,7 +1,7 @@
 name = "GeometricFlux"
 uuid = "7e08b658-56d3-11e9-2997-919d5b31e4ea"
 authors = ["Yueh-Hua Tu <a504082002@gmail.com>"]
-version = "0.13.10"
+version = "0.14.0"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"

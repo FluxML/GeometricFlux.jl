@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0]
+
+- update compat
+- support Julia greater than or equals to v1.9
+
 ## [0.13.10]
 
 - update compat
