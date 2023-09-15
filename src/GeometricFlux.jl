@@ -7,7 +7,6 @@ using LinearAlgebra
 using Random
 using Reexport
 
-using CUDA, CUDA.CUSPARSE
 using ChainRulesCore
 using ChainRulesCore: @non_differentiable
 using FillArrays: Fill
@@ -15,7 +14,7 @@ using Flux
 using Flux: glorot_uniform, leakyrelu, GRUCell, @functor
 @reexport using GraphSignals
 using Graphs
-using NNlib, NNlibCUDA
+using NNlib
 using Optimisers
 
 import Word2Vec: word2vec, wordvectors, get_vector

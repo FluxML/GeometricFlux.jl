@@ -320,7 +320,7 @@
 
     @testset "GINConv" begin
         nn = Flux.Chain(Dense(in_channel, out_channel))
-        eps = 0.001
+        eps = T(0.001)
         @testset "layer without graph" begin
             gc = GINConv(nn, eps)
             @test gc.nn == nn
