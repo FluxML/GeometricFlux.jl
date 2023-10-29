@@ -36,13 +36,14 @@ NNlib = "0.9"
 Optimisers = "0.2, 0.3"
 Reexport = "1"
 Requires = "1"
+Statistics = "1"
 StatsBase = "0.33, 0.34"
 Word2Vec = "0.5"
 julia = "1.9"
 
 [extras]
-Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
